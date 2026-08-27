@@ -265,6 +265,9 @@
   .roomCard h3 { color:#ffd76a; font-size:10px; margin-bottom:8px; }
   .roomCard .players { font-size:8px; color:#9ab; margin-bottom:10px; }
   .roomCard .roomBtns { display:flex; gap:8px; justify-content:center; }
+  .voteCard { background:#22222f; border:2px solid #ffd76a; border-radius:8px; padding:8px 12px; cursor:pointer; color:#ccc; font-size:9px; font-family:'Press Start 2P',monospace; transition:all .15s; }
+  .voteCard:hover { border-color:#fff; color:#fff; }
+  .voteCard.voted { border-color:#5fd65f; color:#5fd65f; background:#1a2a1a; }
   #roomInfo {
     position:absolute; bottom:12px; right:12px;
     width:auto; max-width:280px; min-width:220px;
@@ -497,6 +500,14 @@
     </div>
   </div>
 
+  <div id="voteScreen" class="screen">
+    <h1 style="color:#ffd76a;">🗳️ Vota la dificultad</h1>
+    <p style="color:#ccc;font-size:11px;">Elige una dificultad. Si no votas a tiempo se elige al azar.</p>
+    <div id="voteTimer" style="font-size:20px;color:#ff6b6b;margin:8px 0;">10</div>
+    <div id="voteGrid" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:380px;"></div>
+    <div id="voteStatus" style="margin-top:10px;font-size:9px;color:#aaa;"></div>
+  </div>
+
   <div id="loginModal">
     <div id="loginCard">
       <h3>👤 Guardar tu progreso</h3>
@@ -710,6 +721,12 @@ let mpConnections = {};     // { peerId: { nickname, conn, data } }
 let mpMyId = null;          // Mi PeerJS ID
 let mpRoomCode = null;      // Código de sala actual
 let mpRoomPlayers = [];     // Lista de jugadores en la sala
+let mpReady = {};           // { peerId: true/false } - estado de listo
+let mpVotes = {};           // { peerId: diffId } - votos de dificultad
+let mpVoteTimer = null;     // Timer de votación (10s)
+let mpVoteStartTime = 0;
+let mpVoteActive = false;
+let mpOtherPlayers = {};    // { peerId: {x,y,nickname,shooting,facingDir,moving,walkFrame,hp} } durante juego
 
 // ---------- Sistema de apodo ----------
 let myNickname = localStorage.getItem('insectgames_nickname') || null;
@@ -846,6 +863,7 @@ document.getElementById('createRoomBtn').onclick = async () => {
     await initPeer(true, mpRoomCode);
     mpConnections = {};
     mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname, isHost: true }];
+    mpReady[mpMyId] = true;
     renderRoomUI();
     document.getElementById('roomInfo').style.display = 'block';
   } catch(e){
@@ -916,24 +934,44 @@ function handleIncomingConnection(conn){
 // ---------- Host: Recibir datos de guests ----------
 function handleGuestData(data, peerId){
   if(data.type === 'requestPlayers'){
-    // Enviar estado actual de la sala al nuevo jugador
     const conn = mpConnections[peerId]?.conn;
     if(conn && conn.open){
-      conn.send({ type: 'roomState', players: mpRoomPlayers, code: mpRoomCode });
+      conn.send({ type: 'roomState', players: mpRoomPlayers, code: mpRoomCode, ready: mpReady });
     }
   } else if(data.type === 'playerUpdate'){
-    // Actualizar datos del jugador
     if(mpConnections[peerId]){
       Object.assign(mpConnections[peerId].data, data.update);
     }
   } else if(data.type === 'playerState'){
-    // Estado del juego (posición, disparo, etc.)
     if(mpConnections[peerId]){
-      mpConnections[peerId].data.x = data.x;
-      mpConnections[peerId].data.y = data.y;
-      mpConnections[peerId].data.shooting = data.shooting;
-      mpConnections[peerId].data.angle = data.angle;
+      Object.assign(mpConnections[peerId].data, data);
     }
+    mpOtherPlayers[peerId] = {
+      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp,
+      facingDir: data.facingDir || 'down', moving: data.moving || false,
+      walkFrame: data.walkFrame || 0, nickname: data.nickname || 'Jugador'
+    };
+    // Reenviar a otros guests para que se vean entre ellos
+    for(const id in mpConnections){
+      if(id === peerId) continue;
+      const conn = mpConnections[id].conn;
+      if(conn && conn.open){ conn.send(data); }
+    }
+  } else if(data.type === 'ready'){
+    mpReady[peerId] = data.ready;
+    broadcastToAll({ type: 'readyUpdate', peerId: peerId, ready: data.ready });
+    renderRoomUI();
+  } else if(data.type === 'vote'){
+    mpVotes[peerId] = data.diffId;
+    broadcastToAll({ type: 'voteUpdate', peerId: peerId, diffId: data.diffId });
+    checkVotes();
+  }
+}
+
+function broadcastToAll(msg){
+  for(const id in mpConnections){
+    const conn = mpConnections[id].conn;
+    if(conn && conn.open){ conn.send(msg); }
   }
 }
 
@@ -941,30 +979,44 @@ function handleGuestData(data, peerId){
 function handleHostData(data, hostId){
   if(data.type === 'roomState'){
     mpRoomPlayers = data.players;
+    if(data.ready) mpReady = data.ready;
     renderRoomUI();
   } else if(data.type === 'roomFull'){
     alert('La sala está llena (máx. 5 jugadores)');
     leaveRoom();
   } else if(data.type === 'startGame'){
-    // El host inició la partida
     document.getElementById('joinRoomModal').style.display = 'none';
-    showScreen('difficultyScreen');
-  } else if(data.type === 'playerState'){
-    // Actualizar posición de otro jugador
-    const player = mpRoomPlayers.find(p => p.peerId === data.peerId);
-    if(player){
-      player.x = data.x;
-      player.y = data.y;
-      player.shooting = data.shooting;
-      player.angle = data.angle;
-      player.hp = data.hp;
+    if(data.diffId){
+      currentDiff = DIFFICULTIES.find(d => d.id === data.diffId) || DIFFICULTIES[1];
+      showScreen(null);
+      startRun();
+    } else {
+      showScreen('difficultyScreen');
     }
+  } else if(data.type === 'startVote'){
+    mpVotes = {};
+    mpVoteActive = true;
+    mpVoteStartTime = Date.now();
+    showVoteScreen();
+    mpVoteTimer = setInterval(updateVoteTimer, 200);
+  } else if(data.type === 'voteUpdate'){
+    mpVotes[data.peerId] = data.diffId;
+    updateVoteStatus();
+  } else if(data.type === 'readyUpdate'){
+    mpReady[data.peerId] = data.ready;
+    renderRoomUI();
+  } else if(data.type === 'playerState'){
+    mpOtherPlayers[data.peerId] = {
+      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp,
+      facingDir: data.facingDir || 'down', moving: data.moving || false,
+      walkFrame: data.walkFrame || 0, nickname: data.nickname || 'Jugador'
+    };
   }
 }
 
 // ---------- Broadcast: Enviar estado a todos ----------
 function broadcastRoomState(){
-  const msg = { type: 'roomState', players: mpRoomPlayers, code: mpRoomCode };
+  const msg = { type: 'roomState', players: mpRoomPlayers, code: mpRoomCode, ready: mpReady };
   for(const id in mpConnections){
     const conn = mpConnections[id].conn;
     if(conn && conn.open){ conn.send(msg); }
@@ -974,26 +1026,47 @@ function broadcastRoomState(){
 
 // ---------- Broadcast: Enviar estado de juego ----------
 function broadcastGameState(){
-  if(!mpIsHost || !mpRoomCode) return;
-  const msg = { type: 'playerState', peerId: mpMyId, x: player.x, y: player.y, shooting: player.shooting, angle: player.angle, hp: player.hp };
-  for(const id in mpConnections){
-    const conn = mpConnections[id].conn;
-    if(conn && conn.open){ conn.send(msg); }
+  if(!mpRoomCode) return;
+  const msg = { type: 'playerState', peerId: mpMyId, x: player.x, y: player.y, shooting: player.shooting, angle: player.angle, hp: player.hp, facingDir: player.facingDir, moving: player.moving, walkFrame: player.walkFrame, nickname: myNickname };
+  if(mpIsHost){
+    for(const id in mpConnections){
+      const conn = mpConnections[id].conn;
+      if(conn && conn.open){ conn.send(msg); }
+    }
+  } else {
+    // Guest envía al host
+    for(const id in mpConnections){
+      const conn = mpConnections[id].conn;
+      if(conn && conn.open){ conn.send(msg); }
+    }
   }
 }
 
 // ---------- Renderizar UI de sala ----------
 function renderRoomUI(){
   const info = document.getElementById('roomInfo');
-  const playerNames = mpRoomPlayers.map(p => (p.isHost ? '👑 ' : '') + p.nickname).join(', ');
+  const allReady = mpRoomPlayers.every(p => p.isHost || mpReady[p.peerId]);
+  const playerListHTML = mpRoomPlayers.map(p => {
+    const ready = mpReady[p.peerId] ? '✅' : '⏳';
+    return `<div style="font-size:8px;color:${p.isHost?'#ffd76a':'#ccc'};margin:3px 0;">${p.isHost?'👑 ':''}${p.nickname} ${ready}</div>`;
+  }).join('');
+  let startBtnHTML = '';
+  if(mpIsHost){
+    const canStart = mpRoomPlayers.length >= 2 && allReady;
+    startBtnHTML = `<button class="bigBtn" id="startGameBtn" style="font-size:8px;padding:8px 16px;${canStart?'':'opacity:0.4;pointer-events:none;'}">▶ Empezar</button>`;
+  } else {
+    const myReady = mpReady[mpMyId];
+    startBtnHTML = `<button class="bigBtn" id="readyBtn" style="font-size:8px;padding:8px 16px;${myReady?'background:#2a6b2a;border-color:#5fd65f;':''}">${myReady?'✅ Listo':'⏳ Listo'}</button>`;
+  }
   info.innerHTML = `<div class="roomCard">
     <h3>🏠 Sala</h3>
     <div style="background:#111;border:2px dashed #ffd76a;border-radius:6px;padding:6px 12px;margin:6px 0;cursor:pointer;" id="copyCodeBtn" title="Clic para copiar">
       <div style="font-size:7px;color:#999;margin-bottom:2px;">Comparte este código:</div>
       <div style="font-size:16px;color:#ffd76a;letter-spacing:3px;font-weight:bold;">${mpRoomCode.toUpperCase()}</div>
     </div>
-    <div class="players">${playerNames} (${mpRoomPlayers.length}/5)</div>
-    ${mpIsHost ? `<button class="bigBtn" id="startGameBtn" style="font-size:8px;padding:8px 16px;${mpRoomPlayers.length < 2 ? 'opacity:0.5;' : ''}">▶ Empezar</button>` : ''}
+    <div style="margin:6px 0;">${playerListHTML}</div>
+    <div class="players">${mpRoomPlayers.length}/5 jugadores</div>
+    ${startBtnHTML}
     <button class="smallBtn" id="leaveRoomBtn" style="margin-top:4px;background:#8b3a3a;">Salir</button>
   </div>`;
   // Copiar código
@@ -1007,18 +1080,120 @@ function renderRoomUI(){
       prompt('Copia este código:', mpRoomCode);
     });
   };
-  // Empezar partida
+  // Host: Empezar partida (inicia votación)
   if(mpIsHost){
-    document.getElementById('startGameBtn').onclick = () => {
+    const startBtn = document.getElementById('startGameBtn');
+    if(startBtn) startBtn.onclick = () => {
       if(mpRoomPlayers.length < 2){ alert('Espera a que al menos 1 jugador se una.'); return; }
+      startVoting();
+    };
+  }
+  // Guest: Botón de listo
+  if(!mpIsHost){
+    const readyBtn = document.getElementById('readyBtn');
+    if(readyBtn) readyBtn.onclick = () => {
+      const newReady = !mpReady[mpMyId];
+      mpReady[mpMyId] = newReady;
+      // Enviar al host
       for(const id in mpConnections){
         const conn = mpConnections[id].conn;
-        if(conn && conn.open){ conn.send({ type: 'startGame' }); }
+        if(conn && conn.open){ conn.send({ type: 'ready', ready: newReady }); }
       }
-      showScreen('difficultyScreen');
+      renderRoomUI();
     };
   }
   document.getElementById('leaveRoomBtn').onclick = leaveRoom;
+}
+
+// ---------- Sistema de votación ----------
+function startVoting(){
+  mpVotes = {};
+  mpReady = {};
+  mpVoteActive = true;
+  mpVoteStartTime = Date.now();
+  // Enviar a todos que empieza la votación
+  for(const id in mpConnections){
+    const conn = mpConnections[id].conn;
+    if(conn && conn.open){ conn.send({ type: 'startVote' }); }
+  }
+  showVoteScreen();
+  mpVoteTimer = setInterval(updateVoteTimer, 200);
+}
+function showVoteScreen(){
+  document.getElementById('voteGrid').innerHTML = DIFFICULTIES.map(d =>
+    `<div class="voteCard" data-diff="${d.id}"><b>${d.name}</b><br><span style="font-size:7px;">${d.desc}</span></div>`
+  ).join('');
+  document.querySelectorAll('.voteCard').forEach(el => {
+    el.onclick = () => {
+      const diffId = el.dataset.diff;
+      mpVotes[mpMyId] = diffId;
+      document.querySelectorAll('.voteCard').forEach(c => c.classList.remove('voted'));
+      el.classList.add('voted');
+      // Enviar voto a todos
+      for(const id in mpConnections){
+        const conn = mpConnections[id].conn;
+        if(conn && conn.open){ conn.send({ type: 'voteUpdate', peerId: mpMyId, diffId: diffId }); }
+      }
+      checkVotes();
+    };
+  });
+  updateVoteStatus();
+}
+function updateVoteTimer(){
+  if(!mpVoteActive) return;
+  const elapsed = (Date.now() - mpVoteStartTime) / 1000;
+  const remaining = Math.max(0, 10 - elapsed);
+  const el = document.getElementById('voteTimer');
+  if(el) el.textContent = Math.ceil(remaining);
+  if(remaining <= 0){
+    clearInterval(mpVoteTimer);
+    mpVoteActive = false;
+    resolveVote();
+  }
+}
+function updateVoteStatus(){
+  const el = document.getElementById('voteStatus');
+  if(!el) return;
+  const voted = Object.keys(mpVotes).length;
+  const total = mpRoomPlayers.length;
+  el.textContent = `${voted}/${total} han votado`;
+}
+function checkVotes(){
+  updateVoteStatus();
+  // Si todos votaron lo mismo, empezar ya
+  const votes = Object.values(mpVotes);
+  if(votes.length >= mpRoomPlayers.length && votes.every(v => v === votes[0])){
+    clearInterval(mpVoteTimer);
+    mpVoteActive = false;
+    resolveVote();
+  }
+}
+function resolveVote(){
+  const votes = Object.values(mpVotes);
+  let chosenId;
+  if(votes.length === 0){
+    chosenId = DIFFICULTIES[1].id; // default: Medio
+  } else if(votes.length === 1){
+    chosenId = votes[0];
+  } else if(votes.every(v => v === votes[0])){
+    chosenId = votes[0];
+  } else {
+    // Elegir al azar entre los votos únicos
+    const unique = [...new Set(votes)];
+    chosenId = unique[Math.floor(Math.random() * unique.length)];
+  }
+  const chosen = DIFFICULTIES.find(d => d.id === chosenId);
+  if(!chosen) return;
+  mpVotes = {};
+  mpVoteActive = false;
+  currentDiff = chosen;
+  // Enviar a todos
+  for(const id in mpConnections){
+    const conn = mpConnections[id].conn;
+    if(conn && conn.open){ conn.send({ type: 'startGame', diffId: chosenId }); }
+  }
+  showScreen(null);
+  startRun();
 }
 
 // ---------- Salir de sala ----------
@@ -1031,6 +1206,11 @@ function leaveRoom(){
   mpRoomPlayers = [];
   mpRoomCode = null;
   mpIsHost = false;
+  mpReady = {};
+  mpVotes = {};
+  mpOtherPlayers = {};
+  mpVoteActive = false;
+  if(mpVoteTimer) clearInterval(mpVoteTimer);
   if(mpPeer){ mpPeer.destroy(); mpPeer = null; }
   document.getElementById('roomInfo').innerHTML = '';
   document.getElementById('roomInfo').style.display = 'none';
@@ -1748,7 +1928,7 @@ function spawnParticles(x,y,color,n){
   }
 }
 
-document.getElementById('goToHubBtn').onclick = () => { showScreen('hub'); showMobileControls(false); refreshHubUI(); };
+document.getElementById('goToHubBtn').onclick = () => { showScreen('hub'); showMobileControls(false); mpOtherPlayers = {}; refreshHubUI(); };
 document.getElementById('retryBtn').onclick = () => { startRun(); };
 
 // ---------- Dibujo ----------
@@ -1910,6 +2090,51 @@ function draw(){
   drawSprite(playerSprite, 0, 0, player.r, player.hitFlash > 0, false, 0);
   ctx.restore();
 
+  // Dibujar otros jugadores (multijugador)
+  for(const peerId in mpOtherPlayers){
+    const op = mpOtherPlayers[peerId];
+    if(!op || !op.x) continue;
+    const opBob = op.moving ? Math.sin(performance.now() / 85) * 4 : 0;
+    // Sombra
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(op.x, op.y + 32, 22, 8, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Sprite
+    const opWalkFrames = {
+      up: [sprites.walkUp0, sprites.walkUp1, sprites.walkUp2],
+      down: [sprites.walkDown0, sprites.walkDown1, sprites.walkDown2],
+      left: [sprites.walkLeft0, sprites.walkLeft1],
+      right: [sprites.walkRight0, sprites.walkRight1]
+    };
+    const opIdleFrames = { up: sprites.idleUp, down: sprites.idleDown, left: sprites.idleLeft, right: sprites.idleRight };
+    let opSprite;
+    if(op.moving){
+      const frames = opWalkFrames[op.facingDir] || opWalkFrames.down;
+      opSprite = frames[(op.walkFrame||0) % frames.length];
+    } else {
+      opSprite = opIdleFrames[op.facingDir] || opIdleFrames.down;
+    }
+    if(!opSprite || !opSprite.width) opSprite = sprites.player;
+    ctx.save();
+    ctx.translate(op.x, op.y + opBob);
+    drawSprite(opSprite, 0, 0, 30, false, false, 0);
+    ctx.restore();
+    // Nametag
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    const nameW = ctx.measureText(op.nickname).width;
+    ctx.fillRect(op.x - nameW/2 - 4, op.y - 44, nameW + 8, 12);
+    ctx.fillStyle = '#ffd76a';
+    ctx.fillText(op.nickname, op.x, op.y - 35);
+    // Barra de vida
+    ctx.fillStyle = '#000';
+    ctx.fillRect(op.x - 15, op.y - 50, 30, 3);
+    ctx.fillStyle = '#5fd65f';
+    ctx.fillRect(op.x - 15, op.y - 50, 30 * Math.max(0, (op.hp||100)/100), 3);
+  }
+
 
 
   for(const d of dmgNumbers){
@@ -1934,7 +2159,7 @@ let last = performance.now();
 function loop(t){
   const dt = Math.min(t - last, 40);
   last = t;
-  if(assetsReady){ update(dt, t); draw(); }
+  if(assetsReady){ update(dt, t); draw(); broadcastGameState(); }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
