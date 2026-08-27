@@ -500,12 +500,15 @@
     </div>
   </div>
 
-  <div id="voteScreen" class="screen">
-    <h1 style="color:#ffd76a;display:flex;align-items:center;justify-content:center;gap:10px;"><img src="beetle-king.png" style="height:40px;width:40px;object-fit:contain;"> Vota la dificultad</h1>
+  <div id="voteScreen" class="screen" style="background-image:url('beetle-king.png');background-size:cover;background-position:center;position:relative;">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.7);"></div>
+    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
+    <h1 style="color:#ffd76a;">Vota la dificultad</h1>
     <p style="color:#ccc;font-size:11px;">Elige una dificultad. Si no votas a tiempo se elige al azar.</p>
     <div id="voteTimer" style="font-size:20px;color:#ff6b6b;margin:8px 0;">10</div>
     <div id="voteGrid" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:380px;"></div>
     <div id="voteStatus" style="margin-top:10px;font-size:9px;color:#aaa;"></div>
+    </div>
   </div>
 
   <div id="loginModal">
