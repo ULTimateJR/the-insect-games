@@ -961,7 +961,7 @@ function handleGuestData(data, peerId){
     mpReady[peerId] = data.ready;
     broadcastToAll({ type: 'readyUpdate', peerId: peerId, ready: data.ready });
     renderRoomUI();
-  } else if(data.type === 'vote'){
+  } else if(data.type === 'vote' || data.type === 'voteUpdate'){
     mpVotes[peerId] = data.diffId;
     broadcastToAll({ type: 'voteUpdate', peerId: peerId, diffId: data.diffId });
     checkVotes();
@@ -1120,6 +1120,7 @@ function startVoting(){
   mpVoteTimer = setInterval(updateVoteTimer, 200);
 }
 function showVoteScreen(){
+  showScreen('voteScreen');
   document.getElementById('voteGrid').innerHTML = DIFFICULTIES.map(d =>
     `<div class="voteCard" data-diff="${d.id}"><b>${d.name}</b><br><span style="font-size:7px;">${d.desc}</span></div>`
   ).join('');
