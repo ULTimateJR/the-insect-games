@@ -96,7 +96,7 @@
   #difficultyScreen {
     background-image: url('fondo.png');
     background-size: cover;
-    background-position: center bottom;
+    background-position: center center;
     background-repeat: no-repeat;
   }
   #hub > *:not(#hubGrassTop) { position:relative; z-index:1; }
@@ -979,6 +979,8 @@ function handleHostData(data, hostId){
     } else {
       showScreen('difficultyScreen');
     }
+  } else if(data.type === 'showDifficulty'){
+    showScreen('difficultyScreen');
   } else if(data.type === 'readyUpdate'){
     mpReady[data.peerId] = data.ready;
     renderRoomUI();
@@ -1084,8 +1086,11 @@ function renderRoomUI(){
 
 // ---------- Iniciar partida multijugador ----------
 function startMultiplayerGame(){
-  // Host elige dificultad, guests esperan
   showScreen('difficultyScreen');
+  for(const id in mpConnections){
+    const conn = mpConnections[id].conn;
+    if(conn && conn.open){ conn.send({ type: 'showDifficulty' }); }
+  }
 }
 function hostPickDifficulty(diffId){
   currentDiff = DIFFICULTIES.find(d => d.id === diffId) || DIFFICULTIES[1];
