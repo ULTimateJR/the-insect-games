@@ -810,10 +810,16 @@ document.getElementById('searchFriendBtn').onclick = () => {
 };
 
 // ---------- PeerJS: Crear Peer ----------
-function initPeer(isHost){
+function generateRoomCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for(let i=0;i<6;i++) c += chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+function initPeer(isHost, customId){
   if(mpPeer){ mpPeer.destroy(); mpPeer = null; }
   return new Promise((resolve) => {
-    mpPeer = new Peer();
+    mpPeer = customId ? new Peer(customId) : new Peer();
     mpPeer.on('open', (id) => {
       mpMyId = id;
       mpIsHost = isHost;
@@ -836,9 +842,8 @@ document.getElementById('createRoomBtn').onclick = async () => {
   if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
   if(mpRoomCode){ alert('Ya estás en una sala. Sal primero.'); return; }
   try {
-    await initPeer(true);
-    // Generar código de sala corto
-    mpRoomCode = mpMyId.substring(0, 6).toUpperCase();
+    mpRoomCode = generateRoomCode();
+    await initPeer(true, mpRoomCode.toLowerCase());
     mpConnections = {};
     mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname, isHost: true }];
     renderRoomUI();
@@ -890,7 +895,7 @@ document.getElementById('joinRoomConfirmBtn').onclick = async () => {
 function handleIncomingConnection(conn){
   conn.on('open', () => {
     const nick = conn.metadata?.nickname || 'Jugador';
-    if(Object.keys(mpConnections).length >= 4){
+    if(Object.keys(mpConnections).length >= 5){
       conn.send({ type: 'roomFull' });
       conn.close();
       return;
