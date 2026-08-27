@@ -287,7 +287,6 @@
   /* ---- CONTROLES MÓVILES ---- */
   .mobileOnly { display:none !important; }
   @media (pointer:coarse), (hover:none) {
-    .mobileOnly { display:flex !important; }
     .noMobile { display:none !important; }
   }
   #joystickArea {
@@ -1181,6 +1180,12 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
 }
+function showMobileControls(show){
+  const jc = document.getElementById('joystickArea');
+  const sb = document.getElementById('shootBtn');
+  if(show && ('ontouchstart' in window)){ jc.style.display='flex'; sb.style.display='flex'; }
+  else { jc.style.display='none'; sb.style.display='none'; }
+}
 document.querySelectorAll('#hubTabs button').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('#hubTabs button').forEach(b=>b.classList.remove('active'));
@@ -1310,6 +1315,7 @@ function startRun(){
   costs = {...costs0};
   runStats = {money:0, xp:0, gems:0};
   showScreen(null);
+  showMobileControls(true);
   openShop();
 }
 
@@ -1711,6 +1717,7 @@ function update(dt, t){
       document.getElementById('goGems').textContent = Math.round(runStats.gems);
       refreshHubUI();
       showScreen('gameOverPanel');
+      showMobileControls(false);
     } else {
       openShop();
     }
@@ -1725,6 +1732,7 @@ function update(dt, t){
     document.getElementById('goGems').textContent = Math.round(runStats.gems);
     refreshHubUI();
     showScreen('gameOverPanel');
+    showMobileControls(false);
   }
 }
 
@@ -1735,7 +1743,7 @@ function spawnParticles(x,y,color,n){
   }
 }
 
-document.getElementById('goToHubBtn').onclick = () => { showScreen('hub'); refreshHubUI(); };
+document.getElementById('goToHubBtn').onclick = () => { showScreen('hub'); showMobileControls(false); refreshHubUI(); };
 document.getElementById('retryBtn').onclick = () => { startRun(); };
 
 // ---------- Dibujo ----------
