@@ -94,7 +94,6 @@
     gap: 10px;
   }
   #difficultyScreen {
-    background-image: url('fondo.png');
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -1305,7 +1304,7 @@ DIFFICULTIES.forEach(d => {
   el.onclick = () => { if(mpIsHost && mpRoomCode && mpRoomPlayers.length >= 2){ hostPickDifficulty(d.id); } else { currentDiff = d; showScreen(null); startRun(); } };
   diffGrid.appendChild(el);
 });
-document.getElementById('goDifficulty').onclick = () => showScreen('difficultyScreen');
+document.getElementById('goDifficulty').onclick = () => { document.getElementById('difficultyScreen').style.backgroundImage = "url('fondo.png')"; document.getElementById('difficultyScreen').style.backgroundPosition = 'center center'; showScreen('difficultyScreen'); };
 document.getElementById('backToHubFromDiff').onclick = () => { document.getElementById('difficultyScreen').style.backgroundImage = "url('fondo.png')"; document.getElementById('difficultyScreen').style.backgroundPosition = 'center center'; showScreen('hub'); };
 
 // ========================================================
