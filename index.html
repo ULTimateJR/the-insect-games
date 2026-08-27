@@ -811,7 +811,7 @@ document.getElementById('searchFriendBtn').onclick = () => {
 
 // ---------- PeerJS: Crear Peer ----------
 function generateRoomCode(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
   let c = '';
   for(let i=0;i<6;i++) c += chars[Math.floor(Math.random()*chars.length)];
   return c;
@@ -843,7 +843,7 @@ document.getElementById('createRoomBtn').onclick = async () => {
   if(mpRoomCode){ alert('Ya estás en una sala. Sal primero.'); return; }
   try {
     mpRoomCode = generateRoomCode();
-    await initPeer(true, mpRoomCode.toLowerCase());
+    await initPeer(true, mpRoomCode);
     mpConnections = {};
     mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname, isHost: true }];
     renderRoomUI();
@@ -863,7 +863,7 @@ document.getElementById('joinRoomCancelBtn').onclick = () => {
   document.getElementById('joinRoomModal').style.display = 'none';
 };
 document.getElementById('joinRoomConfirmBtn').onclick = async () => {
-  const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+  const code = document.getElementById('roomCodeInput').value.trim().toLowerCase();
   if(!code){ alert('Ingresa un código'); return; }
   if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
   try {
@@ -990,7 +990,7 @@ function renderRoomUI(){
     <h3>🏠 Sala</h3>
     <div style="background:#111;border:2px dashed #ffd76a;border-radius:6px;padding:6px 12px;margin:6px 0;cursor:pointer;" id="copyCodeBtn" title="Clic para copiar">
       <div style="font-size:7px;color:#999;margin-bottom:2px;">Comparte este código:</div>
-      <div style="font-size:16px;color:#ffd76a;letter-spacing:3px;font-weight:bold;">${mpRoomCode}</div>
+      <div style="font-size:16px;color:#ffd76a;letter-spacing:3px;font-weight:bold;">${mpRoomCode.toUpperCase()}</div>
     </div>
     <div class="players">${playerNames} (${mpRoomPlayers.length}/5)</div>
     ${mpIsHost ? `<button class="bigBtn" id="startGameBtn" style="font-size:8px;padding:8px 16px;${mpRoomPlayers.length < 2 ? 'opacity:0.5;' : ''}">▶ Empezar</button>` : ''}
@@ -998,10 +998,10 @@ function renderRoomUI(){
   </div>`;
   // Copiar código
   document.getElementById('copyCodeBtn').onclick = () => {
-    navigator.clipboard.writeText(mpRoomCode).then(() => {
+    navigator.clipboard.writeText(mpRoomCode.toUpperCase()).then(() => {
       document.getElementById('copyCodeBtn').querySelector('div:last-child').textContent = '¡Copiado! ✅';
       setTimeout(() => {
-        document.getElementById('copyCodeBtn').querySelector('div:last-child').textContent = mpRoomCode;
+        document.getElementById('copyCodeBtn').querySelector('div:last-child').textContent = mpRoomCode.toUpperCase();
       }, 1500);
     }).catch(() => {
       prompt('Copia este código:', mpRoomCode);
