@@ -980,6 +980,8 @@ function handleHostData(data, hostId){
       showScreen('difficultyScreen');
     }
   } else if(data.type === 'showDifficulty'){
+    document.getElementById('difficultyScreen').style.backgroundImage = "url('beetle-king.png')";
+    document.getElementById('difficultyScreen').style.backgroundPosition = 'center center';
     showScreen('difficultyScreen');
   } else if(data.type === 'readyUpdate'){
     mpReady[data.peerId] = data.ready;
@@ -1086,6 +1088,8 @@ function renderRoomUI(){
 
 // ---------- Iniciar partida multijugador ----------
 function startMultiplayerGame(){
+  document.getElementById('difficultyScreen').style.backgroundImage = "url('beetle-king.png')";
+  document.getElementById('difficultyScreen').style.backgroundPosition = 'center center';
   showScreen('difficultyScreen');
   for(const id in mpConnections){
     const conn = mpConnections[id].conn;
@@ -1302,7 +1306,7 @@ DIFFICULTIES.forEach(d => {
   diffGrid.appendChild(el);
 });
 document.getElementById('goDifficulty').onclick = () => showScreen('difficultyScreen');
-document.getElementById('backToHubFromDiff').onclick = () => showScreen('hub');
+document.getElementById('backToHubFromDiff').onclick = () => { document.getElementById('difficultyScreen').style.backgroundImage = "url('fondo.png')"; document.getElementById('difficultyScreen').style.backgroundPosition = 'center center'; showScreen('hub'); };
 
 // ========================================================
 // ESTADO DE PARTIDA
