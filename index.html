@@ -2122,12 +2122,14 @@ function draw(){
     drawSprite(opSprite, 0, 0, 30, false, false, 0);
     ctx.restore();
     // Nametag
+    const isFriend = getFriends().some(f => f.nickname === op.nickname);
+    const tagColor = isFriend ? '#5fd65f' : '#ffffff';
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.font = 'bold 8px monospace';
     ctx.textAlign = 'center';
     const nameW = ctx.measureText(op.nickname).width;
     ctx.fillRect(op.x - nameW/2 - 4, op.y - 44, nameW + 8, 12);
-    ctx.fillStyle = '#ffd76a';
+    ctx.fillStyle = tagColor;
     ctx.fillText(op.nickname, op.x, op.y - 35);
     // Barra de vida
     ctx.fillStyle = '#000';
