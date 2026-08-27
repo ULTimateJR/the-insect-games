@@ -500,16 +500,7 @@
     </div>
   </div>
 
-  <div id="voteScreen" class="screen" style="background-image:url('beetle-king.png');background-size:cover;background-position:center;position:relative;">
-    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.7);"></div>
-    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;">
-    <h1 style="color:#ffd76a;">Vota la dificultad</h1>
-    <p style="color:#ccc;font-size:11px;">Elige una dificultad. Si no votas a tiempo se elige al azar.</p>
-    <div id="voteTimer" style="font-size:20px;color:#ff6b6b;margin:8px 0;">10</div>
-    <div id="voteGrid" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:380px;"></div>
-    <div id="voteStatus" style="margin-top:10px;font-size:9px;color:#aaa;"></div>
-    </div>
-  </div>
+
 
   <div id="loginModal">
     <div id="loginCard">
@@ -725,10 +716,6 @@ let mpMyId = null;          // Mi PeerJS ID
 let mpRoomCode = null;      // Código de sala actual
 let mpRoomPlayers = [];     // Lista de jugadores en la sala
 let mpReady = {};           // { peerId: true/false } - estado de listo
-let mpVotes = {};           // { peerId: diffId } - votos de dificultad
-let mpVoteTimer = null;     // Timer de votación (10s)
-let mpVoteStartTime = 0;
-let mpVoteActive = false;
 let mpOtherPlayers = {};    // { peerId: {x,y,nickname,shooting,facingDir,moving,walkFrame,hp} } durante juego
 
 // ---------- Sistema de apodo ----------
@@ -964,10 +951,6 @@ function handleGuestData(data, peerId){
     mpReady[peerId] = data.ready;
     broadcastToAll({ type: 'readyUpdate', peerId: peerId, ready: data.ready });
     renderRoomUI();
-  } else if(data.type === 'vote' || data.type === 'voteUpdate'){
-    mpVotes[peerId] = data.diffId;
-    broadcastToAll({ type: 'voteUpdate', peerId: peerId, diffId: data.diffId });
-    checkVotes();
   }
 }
 
@@ -996,15 +979,6 @@ function handleHostData(data, hostId){
     } else {
       showScreen('difficultyScreen');
     }
-  } else if(data.type === 'startVote'){
-    mpVotes = {};
-    mpVoteActive = true;
-    mpVoteStartTime = Date.now();
-    showVoteScreen();
-    mpVoteTimer = setInterval(updateVoteTimer, 200);
-  } else if(data.type === 'voteUpdate'){
-    mpVotes[data.peerId] = data.diffId;
-    updateVoteStatus();
   } else if(data.type === 'readyUpdate'){
     mpReady[data.peerId] = data.ready;
     renderRoomUI();
@@ -1088,7 +1062,7 @@ function renderRoomUI(){
     const startBtn = document.getElementById('startGameBtn');
     if(startBtn) startBtn.onclick = () => {
       if(mpRoomPlayers.length < 2){ alert('Espera a que al menos 1 jugador se una.'); return; }
-      startVoting();
+      startMultiplayerGame();
     };
   }
   // Guest: Botón de listo
@@ -1108,93 +1082,16 @@ function renderRoomUI(){
   document.getElementById('leaveRoomBtn').onclick = leaveRoom;
 }
 
-// ---------- Sistema de votación ----------
-function startVoting(){
-  mpVotes = {};
-  mpReady = {};
-  mpVoteActive = true;
-  mpVoteStartTime = Date.now();
-  // Enviar a todos que empieza la votación
+// ---------- Iniciar partida multijugador ----------
+function startMultiplayerGame(){
+  // Host elige dificultad, guests esperan
+  showScreen('difficultyScreen');
+}
+function hostPickDifficulty(diffId){
+  currentDiff = DIFFICULTIES.find(d => d.id === diffId) || DIFFICULTIES[1];
   for(const id in mpConnections){
     const conn = mpConnections[id].conn;
-    if(conn && conn.open){ conn.send({ type: 'startVote' }); }
-  }
-  showVoteScreen();
-  mpVoteTimer = setInterval(updateVoteTimer, 200);
-}
-function showVoteScreen(){
-  showScreen('voteScreen');
-  document.getElementById('voteGrid').innerHTML = DIFFICULTIES.map(d =>
-    `<div class="voteCard" data-diff="${d.id}"><b>${d.name}</b><br><span style="font-size:7px;">${d.desc}</span></div>`
-  ).join('');
-  document.querySelectorAll('.voteCard').forEach(el => {
-    el.onclick = () => {
-      const diffId = el.dataset.diff;
-      mpVotes[mpMyId] = diffId;
-      document.querySelectorAll('.voteCard').forEach(c => c.classList.remove('voted'));
-      el.classList.add('voted');
-      // Enviar voto a todos
-      for(const id in mpConnections){
-        const conn = mpConnections[id].conn;
-        if(conn && conn.open){ conn.send({ type: 'voteUpdate', peerId: mpMyId, diffId: diffId }); }
-      }
-      checkVotes();
-    };
-  });
-  updateVoteStatus();
-}
-function updateVoteTimer(){
-  if(!mpVoteActive) return;
-  const elapsed = (Date.now() - mpVoteStartTime) / 1000;
-  const remaining = Math.max(0, 10 - elapsed);
-  const el = document.getElementById('voteTimer');
-  if(el) el.textContent = Math.ceil(remaining);
-  if(remaining <= 0){
-    clearInterval(mpVoteTimer);
-    mpVoteActive = false;
-    resolveVote();
-  }
-}
-function updateVoteStatus(){
-  const el = document.getElementById('voteStatus');
-  if(!el) return;
-  const voted = Object.keys(mpVotes).length;
-  const total = mpRoomPlayers.length;
-  el.textContent = `${voted}/${total} han votado`;
-}
-function checkVotes(){
-  updateVoteStatus();
-  // Si todos votaron lo mismo, empezar ya
-  const votes = Object.values(mpVotes);
-  if(votes.length >= mpRoomPlayers.length && votes.every(v => v === votes[0])){
-    clearInterval(mpVoteTimer);
-    mpVoteActive = false;
-    resolveVote();
-  }
-}
-function resolveVote(){
-  const votes = Object.values(mpVotes);
-  let chosenId;
-  if(votes.length === 0){
-    chosenId = DIFFICULTIES[1].id; // default: Medio
-  } else if(votes.length === 1){
-    chosenId = votes[0];
-  } else if(votes.every(v => v === votes[0])){
-    chosenId = votes[0];
-  } else {
-    // Elegir al azar entre los votos únicos
-    const unique = [...new Set(votes)];
-    chosenId = unique[Math.floor(Math.random() * unique.length)];
-  }
-  const chosen = DIFFICULTIES.find(d => d.id === chosenId);
-  if(!chosen) return;
-  mpVotes = {};
-  mpVoteActive = false;
-  currentDiff = chosen;
-  // Enviar a todos
-  for(const id in mpConnections){
-    const conn = mpConnections[id].conn;
-    if(conn && conn.open){ conn.send({ type: 'startGame', diffId: chosenId }); }
+    if(conn && conn.open){ conn.send({ type: 'startGame', diffId: diffId }); }
   }
   showScreen(null);
   startRun();
@@ -1211,10 +1108,7 @@ function leaveRoom(){
   mpRoomCode = null;
   mpIsHost = false;
   mpReady = {};
-  mpVotes = {};
   mpOtherPlayers = {};
-  mpVoteActive = false;
-  if(mpVoteTimer) clearInterval(mpVoteTimer);
   if(mpPeer){ mpPeer.destroy(); mpPeer = null; }
   document.getElementById('roomInfo').innerHTML = '';
   document.getElementById('roomInfo').style.display = 'none';
@@ -1399,7 +1293,7 @@ DIFFICULTIES.forEach(d => {
   const el = document.createElement('div');
   el.className = 'diffCard';
   el.innerHTML = `<div class="dname">${d.name}</div><div class="ddesc">${d.desc}</div>`;
-  el.onclick = () => { currentDiff = d; showScreen(null); startRun(); };
+  el.onclick = () => { if(mpIsHost && mpRoomCode && mpRoomPlayers.length >= 2){ hostPickDifficulty(d.id); } else { currentDiff = d; showScreen(null); startRun(); } };
   diffGrid.appendChild(el);
 });
 document.getElementById('goDifficulty').onclick = () => showScreen('difficultyScreen');
