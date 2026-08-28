@@ -1718,7 +1718,7 @@ function update(dt, t){
     else if(dx < 0) player.facingDir = 'left';
     else player.facingDir = 'right';
     // Animación: frame counts por dirección
-    const maxFrames = {up:3, down:3, left:4, right:2};
+    const maxFrames = {up:3, down:3, left:2, right:2};
     player.walkTimer += dt;
     if(player.walkTimer > 250){
       player.walkTimer = 0;
@@ -2160,14 +2160,8 @@ function draw(){
     left: sprites.idleLeft, right: sprites.idleRight
   };
   if(player.moving){
-    if(player.facingDir === 'left'){
-      // Izquierda: alternar caminar → idle → caminar → idle
-      const leftWalkCycle = [sprites.walkLeft0, sprites.idleLeft, sprites.walkLeft1, sprites.idleLeft];
-      playerSprite = leftWalkCycle[player.walkFrame % leftWalkCycle.length];
-    } else {
-      const frames = walkFrames[player.facingDir];
-      playerSprite = frames[player.walkFrame % frames.length];
-    }
+    const frames = walkFrames[player.facingDir];
+    playerSprite = frames[player.walkFrame % frames.length];
   } else {
     playerSprite = idleFrames[player.facingDir];
   }
