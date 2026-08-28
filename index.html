@@ -287,7 +287,7 @@
   .nicknameCard p { font-size:7px; color:#9ab; margin-bottom:12px; line-height:1.4; }
 
   /* ---- CONTROLES MÓVILES ---- */
-  .mobileOnly { display:none !important; }
+  .mobileOnly { display:none; }
   @media (pointer:coarse), (hover:none) {
     .noMobile { display:none !important; }
   }
@@ -936,7 +936,7 @@ function handleGuestData(data, peerId){
       Object.assign(mpConnections[peerId].data, data);
     }
     mpOtherPlayers[peerId] = {
-      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp,
+      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp, maxHp: data.maxHp || 100,
       facingDir: data.facingDir || 'down', moving: data.moving || false,
       walkFrame: data.walkFrame || 0, nickname: data.nickname || 'Jugador'
     };
@@ -987,10 +987,50 @@ function handleHostData(data, hostId){
     renderRoomUI();
   } else if(data.type === 'playerState'){
     mpOtherPlayers[data.peerId] = {
-      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp,
+      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp, maxHp: data.maxHp || 100,
       facingDir: data.facingDir || 'down', moving: data.moving || false,
       walkFrame: data.walkFrame || 0, nickname: data.nickname || 'Jugador'
     };
+    // El host sincroniza los enemigos - el guest NO genera sus propios enemigos
+    if(data.enemies && !mpIsHost){
+      enemies = data.enemies.map(e => ({
+        x: e.x, y: e.y, r: e.r, type: e.type,
+        hp: e.hp, maxHp: e.maxHp,
+        flash: e.flash ? 60 : 0, animT: e.animT,
+        bossState: e.bossState, attackPulse: e.attackPulse,
+        // Propiedades necesarias para que draw() funcione
+        reward: 0, rewardXp: 0, rewardGems: 0,
+        dmg: 0, speed: 0, dead: false
+      }));
+      // Actualizar HUD del guest
+      wave = data.wave || wave;
+      killsThisWave = data.killsThisWave || killsThisWave;
+      waveTargetKills = data.waveTargetKills || waveTargetKills;
+      money = data.money || money;
+      // Boss bar
+      if(data.bossHp > 0){
+        currentBoss = { hp: data.bossHp, maxHp: data.bossMaxHp };
+        document.getElementById('bossBar').style.display = 'flex';
+        document.getElementById('bossFill').style.width = Math.max(0,(data.bossHp/data.bossMaxHp)*100) + '%';
+      } else {
+        currentBoss = null;
+        document.getElementById('bossBar').style.display = 'none';
+      }
+      // Sincronizar estado de juego (shop, gameover)
+      if(data.gameState === 'shop' && state !== 'shop'){
+        openShop();
+      } else if(data.gameState === 'gameover' && state !== 'gameover'){
+        state = 'gameover';
+        document.getElementById('bossBar').style.display = 'none';
+        document.getElementById('gameOverWave').textContent = data.gameOverMsg || `Caíste en la oleada ${wave}`;
+        document.getElementById('goMoney').textContent = data.goMoney || 0;
+        document.getElementById('goXp').textContent = data.goXp || 0;
+        document.getElementById('goGems').textContent = data.goGems || 0;
+        refreshHubUI();
+        showScreen('gameOverPanel');
+        showMobileControls(false);
+      }
+    }
   }
 }
 
@@ -1007,18 +1047,33 @@ function broadcastRoomState(){
 // ---------- Broadcast: Enviar estado de juego ----------
 function broadcastGameState(){
   if(!mpRoomCode) return;
-  const msg = { type: 'playerState', peerId: mpMyId, x: player.x, y: player.y, shooting: player.shooting, angle: player.angle, hp: player.hp, facingDir: player.facingDir, moving: player.moving, walkFrame: player.walkFrame, nickname: myNickname };
+  const msg = { type: 'playerState', peerId: mpMyId, x: player.x, y: player.y, shooting: player.shooting, angle: player.angle, hp: player.hp, maxHp: player.maxHp, facingDir: player.facingDir, moving: player.moving, walkFrame: player.walkFrame, nickname: myNickname };
   if(mpIsHost){
-    for(const id in mpConnections){
-      const conn = mpConnections[id].conn;
-      if(conn && conn.open){ conn.send(msg); }
+    // Host envia el estado de TODOS los enemigos para que todos vean lo mismo
+    msg.enemies = enemies.filter(e => !e.dead).map(e => ({
+      x: Math.round(e.x), y: Math.round(e.y), r: e.r, type: e.type,
+      hp: Math.round(e.hp), maxHp: Math.round(e.maxHp),
+      flash: e.flash > 0, animT: Math.round(e.animT),
+      bossState: e.bossState, attackPulse: e.attackPulse || 0
+    }));
+    msg.wave = wave;
+    msg.killsThisWave = killsThisWave;
+    msg.waveTargetKills = waveTargetKills;
+    msg.money = money;
+    msg.gameState = state;
+    msg.bossHp = currentBoss ? Math.round(currentBoss.hp) : 0;
+    msg.bossMaxHp = currentBoss ? Math.round(currentBoss.maxHp) : 0;
+    if(state === 'gameover'){
+      msg.gameOverMsg = document.getElementById('gameOverWave').textContent;
+      msg.goMoney = runStats.money;
+      msg.goXp = Math.round(runStats.xp);
+      msg.goGems = Math.round(runStats.gems);
     }
-  } else {
-    // Guest envía al host
-    for(const id in mpConnections){
-      const conn = mpConnections[id].conn;
-      if(conn && conn.open){ conn.send(msg); }
-    }
+  }
+  // Enviar a todos los peers
+  for(const id in mpConnections){
+    const conn = mpConnections[id].conn;
+    if(conn && conn.open){ conn.send(msg); }
   }
 }
 
@@ -1468,10 +1523,11 @@ window.addEventListener('mouseup', () => mouse.down = false);
     jsKnob.style.transform = 'translate(-50%,-50%)';
   }
 
-  jsArea.addEventListener('touchend', e => {
+  // Usar document para capturar touchend incluso si el dedo sale del área
+  document.addEventListener('touchend', e => {
     for(const t of e.changedTouches){ if(t.identifier===jsTouchId){ resetJoystick(); break; } }
   });
-  jsArea.addEventListener('touchcancel', e => {
+  document.addEventListener('touchcancel', e => {
     for(const t of e.changedTouches){ if(t.identifier===jsTouchId){ resetJoystick(); break; } }
   });
 
@@ -1666,16 +1722,19 @@ function update(dt, t){
     player.hp -= player.poisonDps * (dt/1000);
   }
 
-  if(spawnQueue > 0){
-    spawnTimer -= dt;
-    if(spawnTimer <= 0){
-      const roll = Math.random();
-      if(wave >= 5 && roll < 0.10) spawnEnemy('caterpillar');
-      else spawnEnemy('normal');
-      spawnQueue--;
-      spawnTimer = Math.max(180, (700 - wave*15) * currentDiff.spawnMult);
+  // Guests NO generan sus propios enemigos - el host los sincroniza
+  const isGuest = mpRoomCode && !mpIsHost;
+  if(!isGuest) {
+    if(spawnQueue > 0){
+      spawnTimer -= dt;
+      if(spawnTimer <= 0){
+        const roll = Math.random();
+        if(wave >= 5 && roll < 0.10) spawnEnemy('caterpillar');
+        else spawnEnemy('normal');
+        spawnQueue--;
+        spawnTimer = Math.max(180, (700 - wave*15) * currentDiff.spawnMult);
+      }
     }
-  }
 
   for(const en of enemies){
     if(en.flash > 0) en.flash -= dt;
@@ -1787,13 +1846,14 @@ function update(dt, t){
   }
   bullets = bullets.filter(b => b.hitsLeft > 0);
   enemies = enemies.filter(en => !en.dead);
+  } // cierra if(!isGuest)
 
   for(const p of particles){ p.x += p.vx; p.y += p.vy; p.life -= dt; p.vx*=0.9; p.vy*=0.9; }
   particles = particles.filter(p => p.life > 0);
   for(const d of dmgNumbers){ d.y += d.vy; d.life -= dt; }
   dmgNumbers = dmgNumbers.filter(d => d.life > 0);
 
-  if(spawnQueue === 0 && enemies.length === 0 && killsThisWave >= waveTargetKills){
+  if(!isGuest && spawnQueue === 0 && enemies.length === 0 && killsThisWave >= waveTargetKills){
     const waveXp = Math.round(15*wave*currentDiff.xpMult);
     runStats.xp += waveXp; addXp(waveXp);
     wave++;
