@@ -1421,6 +1421,14 @@ function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} 
 document.addEventListener('click', function(){ playLobbyMusic(); }, { once: true });
 document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once: true });
 
+// DEBUG overlay
+const _debugDiv = document.createElement('div');
+_debugDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:#fff;font:12px monospace;z-index:9999;padding:4px;text-align:center;display:none;';
+document.body.appendChild(_debugDiv);
+let _lastErr = null;
+window.onerror = function(msg,src,line,col,err){ _lastErr = msg+' @'+line; _debugDiv.textContent = 'ERROR: '+msg+' line:'+line; _debugDiv.style.display='block'; };
+window.onunhandledrejection = function(e){ _lastErr = e.reason; _debugDiv.textContent = 'Promise ERROR: '+e.reason; _debugDiv.style.display='block'; };
+
 // ---------- Navegacion de pantallas ----------
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
@@ -2112,6 +2120,8 @@ function drawSpriteSheet(img, frameX, frameY, cols, rows, x, y, boxSize, flashAc
 
 
 function draw(){
+  // DEBUG: show game state
+  document.title = 'State:'+state+' Wave:'+wave+' Q:'+spawnQueue+' Enemies:'+enemies.length+' HP:'+Math.round(player.hp);
   ctx.save();
   if(shake > 0){
     ctx.translate((Math.random()-0.5)*Math.min(shake,10)*0.4, (Math.random()-0.5)*Math.min(shake,10)*0.4);
@@ -2316,10 +2326,17 @@ function draw(){
 }
 
 let last = performance.now();
+let _frameCount = 0;
 function loop(t){
   const dt = Math.min(t - last, 40);
   last = t;
-  if(assetsReady){ update(dt, t); draw(); broadcastGameState(); }
+  if(assetsReady){
+    try { update(dt, t); } catch(e){ if(_frameCount%300===0) console.error('[LOOP] update error:', e.message, e.stack); }
+    try { draw(); } catch(e){ if(_frameCount%300===0) console.error('[LOOP] draw error:', e.message); }
+    try { broadcastGameState(); } catch(e){}
+  }
+  if(_frameCount===0) console.log('[LOOP] first frame, state='+state+', assetsReady='+assetsReady);
+  _frameCount++;
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
