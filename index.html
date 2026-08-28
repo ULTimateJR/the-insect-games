@@ -1413,13 +1413,19 @@ function refreshHubUI(){
   renderFriends();
 }
 
+// ==================== LOBBY MUSIC ====================
+let lobbyAudio = null;
+try { lobbyAudio = new Audio('jazz-synth.mp3'); lobbyAudio.loop = true; lobbyAudio.volume = 0.5; lobbyAudio.preload = 'auto'; } catch(e){}
+function playLobbyMusic(){ if(lobbyAudio) lobbyAudio.play().catch(()=>{}); }
+function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} }
+document.addEventListener('click', function(){ playLobbyMusic(); }, { once: true });
+document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once: true });
+
 // ---------- Navegacion de pantallas ----------
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
-  if(typeof playLobbyMusic==='function' && typeof pauseLobbyMusic==='function'){
-    if(id==='hub') playLobbyMusic(); else pauseLobbyMusic();
-  }
+  if(id==='hub') playLobbyMusic(); else pauseLobbyMusic();
 }
 function showMobileControls(show){
   const jc = document.getElementById('joystickArea');
@@ -2366,15 +2372,6 @@ document.getElementById('continueBtn').onclick = () => {
   }
 })();
 
-// ==================== LOBBY MUSIC ====================
-let lobbyAudio = null;
-try { lobbyAudio = new Audio('jazz-synth.mp3'); lobbyAudio.loop = true; lobbyAudio.volume = 0.5; lobbyAudio.preload = 'auto'; } catch(e){}
-function playLobbyMusic(){ if(lobbyAudio) lobbyAudio.play().catch(()=>{}); }
-function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} }
-
-// Auto-start on first user interaction
-document.addEventListener('click', function(){ playLobbyMusic(); }, { once: true });
-document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once: true });
 </script>
 </body>
 </html>
