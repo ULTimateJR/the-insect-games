@@ -91,7 +91,7 @@
     background-position: center 30%;
     background-repeat: no-repeat;
     justify-content: flex-start;
-    padding-top: 240px;
+    padding-top: 0;
     padding-bottom: 30px;
     gap: 10px;
     overflow-y: auto;
@@ -102,6 +102,30 @@
   #hub::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
   #hub::-webkit-scrollbar-thumb { background: #ffd76a; border-radius: 4px; }
   #hub::-webkit-scrollbar-thumb:hover { background: #ffe38a; }
+  #hubSky {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 250px;
+    min-height: 250px;
+    flex-shrink: 0;
+    z-index: 5;
+    pointer-events: none;
+    background: url('fondo.png') center 30% / cover no-repeat;
+    mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+  }
+  #hubSky #hubLogo {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 220px;
+    image-rendering: pixelated;
+    z-index: 6;
+    pointer-events: none;
+  }
   #difficultyScreen {
     background-size: cover;
     background-position: center center;
@@ -380,12 +404,14 @@
 
   <!-- HUB PRINCIPAL -->
   <div id="hub" class="screen">
+    <div id="hubSky">
+      <img id="hubLogo" src="" alt="The Insect Games">
+    </div>
     <div id="authBar">
       <span id="authStatus">👤 Invitado (progreso solo en esta partida)</span>
       <button class="smallBtn" id="openLoginBtn">Iniciar sesión con correo</button>
       <button class="smallBtn" id="logoutBtn" style="display:none; background:#8b3a3a;">Cerrar sesión</button>
     </div>
-    <img id="hubLogo" src="" alt="The Insect Games" style="position:absolute; top:10px; left:50%; transform:translateX(-50%); height:220px; image-rendering:pixelated; z-index:2; pointer-events:none;">
     <div id="hubTop">
       <div>Nivel <span id="hubLevel">1</span></div>
       <div>💎 <span id="hubGems">0</span></div>
