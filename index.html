@@ -1793,7 +1793,7 @@ function spawnEnemy(type){
       x, y, r: 40, type:'caterpillar',
       hp: Math.round((90 + wave*7)*d.hpMult * pm), maxHp: 0,
       speed: 0.8*d.speedMult, reward: Math.round(18*d.moneyMult), rewardXp: 12*d.xpMult, rewardGems: 3*d.gemMult,
-      dmg: Math.round(10*d.dmgMult * pm), flash:0, atkCooldown: 900, animT: Math.random()*1000
+      dmg: Math.round(10*d.dmgMult * pm), flash:0, atkCooldown: 900, animT: Math.random()*1000, atkTimer: 0
     });
     enemies[enemies.length-1].maxHp = enemies[enemies.length-1].hp;
     return;
@@ -2063,6 +2063,7 @@ function update(dt, t){
 
     // Colisión enemigo -> todos los jugadores
     if(en.type !== 'boss'){
+      // Decrementar cooldown cada frame
       if(en.atkTimer > 0) en.atkTimer -= dt;
       for(const pl of allPlayers){
         const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
