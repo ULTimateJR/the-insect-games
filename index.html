@@ -90,10 +90,18 @@
     background-size: cover;
     background-position: center 30%;
     background-repeat: no-repeat;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    padding-top: 240px;
     padding-bottom: 30px;
     gap: 10px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ffd76a #1a1a2e;
   }
+  #hub::-webkit-scrollbar { width: 8px; }
+  #hub::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
+  #hub::-webkit-scrollbar-thumb { background: #ffd76a; border-radius: 4px; }
+  #hub::-webkit-scrollbar-thumb:hover { background: #ffe38a; }
   #difficultyScreen {
     background-size: cover;
     background-position: center center;
@@ -124,10 +132,7 @@
   #hubTabs { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
   #hubTabs button { background:#2a2a3a; border:2px solid #444; color:#ccc; padding:10px 22px; font-family:inherit; cursor:pointer; border-radius:6px; font-size:9px; }
   #hubTabs button.active { border-color:#ffd76a; color:#ffd76a; }
-  .hubPanel { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; max-height:35vh; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#ffd76a #1a1a2e; padding:8px; }
-  .hubPanel::-webkit-scrollbar { width:6px; }
-  .hubPanel::-webkit-scrollbar-track { background:#1a1a2e; border-radius:3px; }
-  .hubPanel::-webkit-scrollbar-thumb { background:#ffd76a; border-radius:3px; }
+  .hubPanel { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; padding:8px 0; }
   .hubPanel.active { display:flex; }
 
   .diffGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:560px; }
