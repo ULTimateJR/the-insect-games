@@ -1814,7 +1814,6 @@ function update(dt, t){
           en.bossState = 'meteor'; en.meteorT = 0; en.meteorVolley = 0; en.meteorCooldown = 400;
           en.attackPulse = 0;
           document.getElementById('bossBar').style.display = 'flex';
-          shake = 200;
         }
       } else if(en.bossState === 'meteor'){
         // Ataque AOE: lanza proyectiles en todas direcciones
@@ -1838,7 +1837,6 @@ function update(dt, t){
               isMeteor: true
             });
           }
-          shake = 80;
           spawnParticles(en.x, en.y, '#3a9aff', 20);
         }
         // Después de 6 vueltas, volver a chase
@@ -1864,7 +1862,7 @@ function update(dt, t){
             const dmg = en.dmg * 1.4;
             if(pl.isLocal){ player.hp -= dmg; player.hitFlash = 200; player.x += en.dashDirX*10; player.y += en.dashDirY*10; }
             else { sendDamageToGuest(pl.peerId, dmg); }
-            shake = 150; en.dashHitSet.add(pl.peerId||'local');
+            en.dashHitSet.add(pl.peerId||'local');
           }
         }
         if(en.dashT <= 0){ en.bossState = 'chase'; en.atkCooldown = 5000; }
@@ -2141,24 +2139,15 @@ function draw(){
     }
   }
 
-  // Animación de caminata realista
-  const walkPhase = player.moving ? player.animT / 85 : 0;
-  const walkBob = player.moving ? Math.sin(walkPhase * Math.PI * 2) * 4 : 0;
-  const walkLean = player.moving ? Math.sin(walkPhase * Math.PI * 2) * 0.06 : 0;
-  const legSwing = player.moving ? Math.sin(walkPhase * Math.PI * 2) * 0.3 : 0;
-  const facing = player.facing;
-  const facingLeft = Math.cos(facing) < 0;
-
+  // personaje con animación de caminata por sprites individuales por dirección
   // sombra del jugador
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.beginPath();
   ctx.ellipse(player.x, player.y + player.r + 2, player.r * 0.9, player.r * 0.35, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // personaje con animación de caminata por sprites individuales por dirección
   ctx.save();
-  ctx.translate(player.x, player.y + walkBob);
-  ctx.rotate(walkLean);
+  ctx.translate(player.x, player.y);
   let playerSprite;
   const walkFrames = {
     up: [sprites.walkUp0, sprites.walkUp1, sprites.walkUp2],
