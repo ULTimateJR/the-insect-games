@@ -1475,14 +1475,26 @@ function stopBattleMusic(){
 }
 
 // ==================== BUTTON SFX ====================
-let btnSfx = null;
-try { btnSfx = new Audio('button-fxs.mp3'); btnSfx.volume = 0.9; btnSfx.preload = 'auto'; } catch(e){}
-function playBtnSfx(){ if(btnSfx){ btnSfx.currentTime = 0; btnSfx.play().catch(()=>{}); } }
+const SFX_BTN_SRC = 'button-fxs.mp3';
+let _lastBtnSfx = 0;
+function playBtnSfx(){
+  const now = Date.now();
+  if(now - _lastBtnSfx < 80) return; // anti-spam 80ms
+  _lastBtnSfx = now;
+  try {
+    const s = new Audio(SFX_BTN_SRC);
+    s.volume = 0.9;
+    s.play().catch(()=>{});
+  } catch(e){}
+}
 
 // ==================== FAILURE SFX ====================
 let failureSfx = null;
 try { failureSfx = new Audio('failure.mp3'); failureSfx.volume = 0.7; failureSfx.preload = 'auto'; } catch(e){}
-function playFailureSfx(){ if(failureSfx){ failureSfx.currentTime = 0; failureSfx.play().catch(()=>{}); } }
+function playFailureSfx(){
+  stopBattleMusic();
+  if(failureSfx){ failureSfx.currentTime = 0; failureSfx.play().catch(()=>{}); }
+}
 
 // Agregar sonido a todos los botones del juego
 document.addEventListener('click', function(e){
