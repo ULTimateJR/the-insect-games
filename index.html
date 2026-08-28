@@ -1805,7 +1805,7 @@ function spawnEnemy(type){
       x, y, r: 24, type:'wasp',
       hp: Math.round((40 + wave*4)*d.hpMult * pm), maxHp:0,
       speed: (1.5 + Math.random()*0.5)*d.speedMult, reward: Math.round(8*d.moneyMult), rewardXp: 5*d.xpMult, rewardGems: 1*d.gemMult,
-      dmg: Math.round(14*d.dmgMult * pm), flash: 0, animT: Math.random()*1000
+      dmg: Math.round(14*d.dmgMult * pm), flash: 0, animT: Math.random()*1000, atkTimer: 0
     });
     enemies[enemies.length-1].maxHp = enemies[enemies.length-1].hp;
   } else {
@@ -1813,7 +1813,7 @@ function spawnEnemy(type){
       x, y, r: 13, type:'fly',
       hp: Math.round((14 + wave*2)*d.hpMult * pm), maxHp:0,
       speed: (1.1 + Math.random()*0.5)*d.speedMult, reward: Math.round(3*d.moneyMult), rewardXp: 2*d.xpMult, rewardGems: 0,
-      dmg: Math.round(7*d.dmgMult * pm), flash: 0, animT: Math.random()*1000
+      dmg: Math.round(7*d.dmgMult * pm), flash: 0, animT: Math.random()*1000, atkTimer: 0
     });
     enemies[enemies.length-1].maxHp = enemies[enemies.length-1].hp;
   }
@@ -2063,12 +2063,15 @@ function update(dt, t){
 
     // Colisión enemigo -> todos los jugadores
     if(en.type !== 'boss'){
+      if(en.atkTimer > 0) en.atkTimer -= dt;
       for(const pl of allPlayers){
         const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
-        if(dd < pl.r + en.r){
+        if(dd < pl.r + en.r && en.atkTimer <= 0){
+          const atkCD = en.type==='wasp' ? 500 : 1000;
           if(pl.isLocal){ player.hp -= en.dmg*(dt/1000)*4; player.hitFlash = 150; }
           else { sendDamageToGuest(pl.peerId, en.dmg*(dt/1000)*4); }
           en.x -= (edx/elen)*2; en.y -= (edy/elen)*2;
+          en.atkTimer = atkCD;
         }
       }
     }
