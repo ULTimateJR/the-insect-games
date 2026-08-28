@@ -2143,7 +2143,7 @@ function draw(){
   // sombra del jugador
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.beginPath();
-  ctx.ellipse(player.x, player.y + player.r + 2, player.r * 0.55, player.r * 0.18, 0, 0, Math.PI*2);
+  ctx.ellipse(player.x, player.y + player.r * 0.85, player.r * 0.55, player.r * 0.18, 0, 0, Math.PI*2);
   ctx.fill();
 
   ctx.save();
