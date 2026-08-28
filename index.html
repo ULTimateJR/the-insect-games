@@ -1472,6 +1472,16 @@ function stopBattleMusic(){
   if(pesadillaAudio) try{ pesadillaAudio.pause(); pesadillaAudio.currentTime = 0; }catch(e){}
 }
 
+// ==================== BUTTON SFX ====================
+let btnSfx = null;
+try { btnSfx = new Audio('button-sfx.mp3'); btnSfx.volume = 0.6; btnSfx.preload = 'auto'; } catch(e){}
+function playBtnSfx(){ if(btnSfx){ btnSfx.currentTime = 0; btnSfx.play().catch(()=>{}); } }
+// Agregar sonido a todos los botones del juego
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.bigBtn, .smallBtn, .diffCard, .crateCard, #hubTabs button, .tabBtn, #continueBtn, #goDifficulty, #backToHubFromDiff, #goToHubBtn, #retryBtn, #createRoomBtn, #joinRoomBtn, #searchFriendBtn, #setNicknameBtn, #changeNicknameBtn, #buyPassiveCrate, #buyWeaponCrate, #buyPassiveSlot, #buyWeaponSlot, #buyMoneyBonus, #buyGemBonus, .invCard, .friendCard, #readyBtn, #startGameBtn');
+  if(btn) playBtnSfx();
+});
+
 // ---------- Navegacion de pantallas ----------
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
