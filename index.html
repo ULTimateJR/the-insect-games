@@ -1455,13 +1455,28 @@ function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} 
 document.addEventListener('click', function(){ playLobbyMusic(); }, { once: true });
 document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once: true });
 
-
+// ==================== BATTLE MUSIC ====================
+let battleAudio = null;
+let pesadillaAudio = null;
+try { battleAudio = new Audio('batalla-tig.mp3'); battleAudio.loop = true; battleAudio.volume = 0.4; battleAudio.preload = 'auto'; } catch(e){}
+try { pesadillaAudio = new Audio('pesadilla.mp3'); pesadillaAudio.loop = true; pesadillaAudio.volume = 0.4; pesadillaAudio.preload = 'auto'; } catch(e){}
+function playBattleMusic(diffId){
+  pauseLobbyMusic();
+  stopBattleMusic();
+  const isPesadilla = (diffId === 'infinito' || diffId === 'pesadilla');
+  const track = isPesadilla ? pesadillaAudio : battleAudio;
+  if(track){ track.currentTime = 0; track.play().catch(()=>{}); }
+}
+function stopBattleMusic(){
+  if(battleAudio) try{ battleAudio.pause(); battleAudio.currentTime = 0; }catch(e){}
+  if(pesadillaAudio) try{ pesadillaAudio.pause(); pesadillaAudio.currentTime = 0; }catch(e){}
+}
 
 // ---------- Navegacion de pantallas ----------
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
-  if(id==='hub') playLobbyMusic(); else pauseLobbyMusic();
+  if(id==='hub') { stopBattleMusic(); playLobbyMusic(); } else { pauseLobbyMusic(); }
 }
 function showMobileControls(show){
   const jc = document.getElementById('joystickArea');
@@ -1600,6 +1615,7 @@ function startRun(){
   runStats = {money:0, xp:0, gems:0};
   showScreen(null);
   showMobileControls(true);
+  playBattleMusic(currentDiff.id);
   openShop();
 }
 
