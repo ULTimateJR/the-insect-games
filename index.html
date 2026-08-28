@@ -1405,7 +1405,7 @@ let keys = {}, mouse = {x:W/2,y:H/2,down:false};
 let state = 'hub';
 let spawnQueue = 0, spawnTimer = 0, waveTargetKills = 0, killsThisWave = 0;
 let currentBoss = null, shake = 0;
-let bossIntroActive = false, bossIntroTarget = null, bossIntroZoom = 1.55;
+let bossIntroActive = false, bossIntroTarget = null, bossIntroZoom = 1.55, bossIntroPhase = 'player'; // 'player' -> 'pan'
 let runStats = {money:0, xp:0, gems:0};
 
 const costs0 = { dmg: 15, rate: 20, hp: 15, speed: 18 };
@@ -1606,9 +1606,8 @@ function spawnEnemy(type){
     en.maxHp = en.hp;
     enemies.push(en);
     currentBoss = en;
-    document.getElementById('bossBar').style.display = 'flex';
+    document.getElementById('bossBar').style.display = 'none';
     showMsg('👑 ¡JEFE ESCARABAJO!', 2000);
-    shake = 300;
     return;
   }
   if(type === 'caterpillar'){
@@ -1719,7 +1718,7 @@ function update(dt, t){
     else if(dx < 0) player.facingDir = 'left';
     else player.facingDir = 'right';
     // Animación: frame counts por dirección
-    const maxFrames = {up:3, down:3, left:2, right:2};
+    const maxFrames = {up:3, down:3, left:4, right:2};
     player.walkTimer += dt;
     if(player.walkTimer > 250){
       player.walkTimer = 0;
@@ -1735,13 +1734,22 @@ function update(dt, t){
   // aimAngle sigue la dirección de movimiento
   player.aimAngle = player.facing;
 
-  // Cámara: si hay intro de boss, hacer zoom a él
+  // Cámara: si hay intro de boss,Animación cinematográfica
   if(bossIntroActive && bossIntroTarget){
-    bossIntroZoom = Math.max(2.2, bossIntroZoom - dt*0.0008);
-    camera.x = Math.max(W/(2*bossIntroZoom), Math.min(WORLD_W - W/(2*bossIntroZoom), bossIntroTarget.x));
-    camera.y = Math.max(H/(2*bossIntroZoom), Math.min(WORLD_H - H/(2*bossIntroZoom), bossIntroTarget.y));
+    if(bossIntroPhase === 'player'){
+      // Fase 1: cámara enfocada en el personaje (1 segundo)
+      bossIntroZoom = ZOOM;
+      camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
+      camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
+    } else {
+      // Fase 2: pan lento hacia el boss
+      bossIntroZoom = Math.max(2.0, bossIntroZoom - dt*0.0006);
+      camera.x += (bossIntroTarget.x - camera.x) * 0.02;
+      camera.y += (bossIntroTarget.y - camera.y) * 0.02;
+    }
   } else {
     bossIntroZoom = ZOOM;
+    bossIntroPhase = 'player';
     camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
     camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
   }
@@ -1793,17 +1801,19 @@ function update(dt, t){
     if(en.type === 'boss'){
       en.atkCooldown -= dt;
       if(en.bossState === 'intro'){
-        // Animación de entrada: zoom a la cámara sobre el boss
         en.introT -= dt;
         bossIntroActive = true;
         bossIntroTarget = { x: en.x, y: en.y };
-        // Efecto de pulsación visual
+        // Fase 1: 1s enfocado en personaje, luego pan al boss
+        if(en.introT < 1500) bossIntroPhase = 'pan';
+        else bossIntroPhase = 'player';
+        // Efecto visual creciente
         en.attackPulse = Math.min(1, (en.introT < 800 ? (800 - en.introT)/800 : 0));
         if(en.introT <= 0){
           bossIntroActive = false;
           en.bossState = 'meteor'; en.meteorT = 0; en.meteorVolley = 0; en.meteorCooldown = 400;
           en.attackPulse = 0;
-          showMsg('☄️ ¡LLUVIA DE METEORITOS!', 1200);
+          document.getElementById('bossBar').style.display = 'flex';
           shake = 200;
         }
       } else if(en.bossState === 'meteor'){
@@ -1829,7 +1839,7 @@ function update(dt, t){
             });
           }
           shake = 80;
-          spawnParticles(en.x, en.y, '#ff6b3a', 20);
+          spawnParticles(en.x, en.y, '#3a9aff', 20);
         }
         // Después de 6 vueltas, volver a chase
         if(en.meteorVolley >= 6 && en.meteorCooldown <= 0){
@@ -1924,7 +1934,7 @@ function update(dt, t){
         en.x += (kdx/klen)*kb; en.y += (kdy/klen)*kb;
         spawnParticles(b.x,b.y,'#ffd76a',5);
         dmgNumbers.push({x:en.x,y:en.y-en.r,text:Math.round(dmg)+(isCrit?'!':''),life:600,vy:-0.6,crit:isCrit});
-        if(en.type==='boss') shake = 60;
+        // shake removed for smoother gameplay
         if(en.hp <= 0 && !en.dead) killEnemy(en);
         if(b.hitsLeft <= 0) break;
       }
@@ -2056,10 +2066,10 @@ function draw(){
   for(const b of bullets){ ctx.fillRect(b.x-b.r, b.y-b.r, b.r*2, b.r*2); }
   for(const p of enemyProjectiles){
     if(p.isMeteor){
-      // Meteoritos: rojo/naranja con glow
-      ctx.fillStyle = '#ff4a1a';
+      // Proyectiles del boss: azul con glow
+      ctx.fillStyle = '#3a9aff';
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle = 'rgba(255,180,50,0.3)';
+      ctx.fillStyle = 'rgba(100,180,255,0.3)';
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r*1.8,0,Math.PI*2); ctx.fill();
     } else {
       // Veneno normal: verde
@@ -2108,19 +2118,19 @@ function draw(){
       // Efecto visual de intro: aura creciente
       if(en.bossState === 'intro'){
         const introProgress = 1 - (en.introT / 2500);
-        ctx.strokeStyle = `rgba(255,107,58,${introProgress * 0.6})`;
+        ctx.strokeStyle = `rgba(58,154,255,${introProgress * 0.6})`;
         ctx.lineWidth = 4;
         ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (1.5 + introProgress * 1.5), 0, Math.PI*2); ctx.stroke();
-        ctx.fillStyle = `rgba(255,60,20,${introProgress * 0.15})`;
+        ctx.fillStyle = `rgba(30,100,255,${introProgress * 0.15})`;
         ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (2 + introProgress * 2), 0, Math.PI*2); ctx.fill();
       }
-      // Efecto visual de meteor: aura roja pulsante
+      // Efecto visual de meteor: aura azul pulsante
       if(en.bossState === 'meteor'){
         const pulse = en.attackPulse || 0;
-        ctx.strokeStyle = `rgba(255,80,30,${0.4 + pulse * 0.5})`;
+        ctx.strokeStyle = `rgba(58,154,255,${0.4 + pulse * 0.5})`;
         ctx.lineWidth = 3 + pulse * 3;
         ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (1.2 + pulse * 0.8), 0, Math.PI*2); ctx.stroke();
-        ctx.fillStyle = `rgba(255,50,0,${0.05 + pulse * 0.1})`;
+        ctx.fillStyle = `rgba(30,100,255,${0.05 + pulse * 0.1})`;
         ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (2 + pulse * 1.5), 0, Math.PI*2); ctx.fill();
       }
     } else {
@@ -2161,8 +2171,14 @@ function draw(){
     left: sprites.idleLeft, right: sprites.idleRight
   };
   if(player.moving){
-    const frames = walkFrames[player.facingDir];
-    playerSprite = frames[player.walkFrame % frames.length];
+    if(player.facingDir === 'left'){
+      // Izquierda: alternar caminar → idle → caminar → idle
+      const leftWalkCycle = [sprites.walkLeft0, sprites.idleLeft, sprites.walkLeft1, sprites.idleLeft];
+      playerSprite = leftWalkCycle[player.walkFrame % leftWalkCycle.length];
+    } else {
+      const frames = walkFrames[player.facingDir];
+      playerSprite = frames[player.walkFrame % frames.length];
+    }
   } else {
     playerSprite = idleFrames[player.facingDir];
   }
