@@ -1460,8 +1460,8 @@ document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once:
 // ==================== BATTLE MUSIC ====================
 let battleAudio = null;
 let pesadillaAudio = null;
-try { battleAudio = new Audio('batalla-tig.mp3'); battleAudio.loop = true; battleAudio.volume = 0.4; battleAudio.preload = 'auto'; } catch(e){}
-try { pesadillaAudio = new Audio('pesadilla.mp3'); pesadillaAudio.loop = true; pesadillaAudio.volume = 0.4; pesadillaAudio.preload = 'auto'; } catch(e){}
+try { battleAudio = new Audio('batalla-tig.mp3'); battleAudio.loop = true; battleAudio.volume = 0.5; battleAudio.preload = 'auto'; } catch(e){}
+try { pesadillaAudio = new Audio('pesadilla.mp3'); pesadillaAudio.loop = true; pesadillaAudio.volume = 0.5; pesadillaAudio.preload = 'auto'; } catch(e){}
 function playBattleMusic(diffId){
   pauseLobbyMusic();
   stopBattleMusic();
@@ -1494,6 +1494,15 @@ try { failureSfx = new Audio('failure.mp3'); failureSfx.volume = 0.7; failureSfx
 function playFailureSfx(){
   stopBattleMusic();
   if(failureSfx){ failureSfx.currentTime = 0; failureSfx.play().catch(()=>{}); }
+}
+
+// ==================== GUNSHOT SFX ====================
+function playGunshotSfx(){
+  try {
+    const s = new Audio('gunshot.mp3');
+    s.volume = 1.0;
+    s.play().catch(()=>{});
+  } catch(e){}
 }
 
 // Agregar sonido a todos los botones del juego
@@ -1831,6 +1840,7 @@ function showMsg(txt, dur){
 function tryShoot(t){
   if(t - player.lastShot < player.fireRate) return;
   player.lastShot = t;
+  playGunshotSfx();
   const dx = Math.cos(player.facing), dy = Math.sin(player.facing);
   bullets.push({
     x: player.x + dx*player.r, y: player.y + dy*player.r,
