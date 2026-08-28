@@ -1483,7 +1483,7 @@ function playBtnSfx(){
   _lastBtnSfx = now;
   try {
     const s = new Audio(SFX_BTN_SRC);
-    s.volume = 0.9;
+    s.volume = 1.0;
     s.play().catch(()=>{});
   } catch(e){}
 }
