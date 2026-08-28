@@ -1666,7 +1666,7 @@ function spawnEnemy(type){
   if(type === 'boss'){
     const en = {
       x: WORLD_W/2, y: WORLD_H/2, r: 74, type:'boss',
-      hp: Math.round((650 + wave*55) * d.hpMult * pm), maxHp: 0,
+      hp: Math.round((650 + wave*55) * 10 * d.hpMult * pm), maxHp: 0,
       speed: 0.85 * d.speedMult, reward: Math.round((90 + wave*3)*d.moneyMult), rewardXp: 90*d.xpMult, rewardGems: 18*d.gemMult,
       dmg: Math.round(24*d.dmgMult * pm), flash:0, attackPulse:0,
       bossState:'intro', introT:2500, meteorT:0, meteorVolley:0, meteorCooldown:0,
