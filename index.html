@@ -1405,6 +1405,7 @@ let keys = {}, mouse = {x:W/2,y:H/2,down:false};
 let state = 'hub';
 let spawnQueue = 0, spawnTimer = 0, waveTargetKills = 0, killsThisWave = 0;
 let currentBoss = null, shake = 0;
+let bossIntroActive = false, bossIntroTarget = null, bossIntroZoom = 1.55;
 let runStats = {money:0, xp:0, gems:0};
 
 const costs0 = { dmg: 15, rate: 20, hp: 15, speed: 18 };
@@ -1594,17 +1595,20 @@ function spawnEnemy(type){
 
   if(type === 'boss'){
     const en = {
-      x, y, r: 74, type:'boss',
+      x: WORLD_W/2, y: WORLD_H/2, r: 74, type:'boss',
       hp: Math.round((650 + wave*55) * d.hpMult * pm), maxHp: 0,
       speed: 0.85 * d.speedMult, reward: Math.round((90 + wave*3)*d.moneyMult), rewardXp: 90*d.xpMult, rewardGems: 18*d.gemMult,
       dmg: Math.round(24*d.dmgMult * pm), flash:0, attackPulse:0,
-      bossState:'chase', atkCooldown: 2600, telegraphT:0, dashT:0, dashDirX:0, dashDirY:0,
+      bossState:'intro', introT:2500, meteorT:0, meteorVolley:0, meteorCooldown:0,
+      atkCooldown: 2600, telegraphT:0, dashT:0, dashDirX:0, dashDirY:0,
       animT: Math.random()*1000
     };
     en.maxHp = en.hp;
     enemies.push(en);
     currentBoss = en;
     document.getElementById('bossBar').style.display = 'flex';
+    showMsg('👑 ¡JEFE ESCARABAJO!', 2000);
+    shake = 300;
     return;
   }
   if(type === 'caterpillar'){
@@ -1641,6 +1645,7 @@ function spawnEnemy(type){
 function startWave(){
   state = 'playing';
   currentBoss = null;
+  bossIntroActive = false;
   document.getElementById('bossBar').style.display = 'none';
 
   if(isBossWave(wave)){
@@ -1684,7 +1689,7 @@ function killEnemy(en){
   addGems(gemR * (1 + meta.gemBonusLvl*0.1));
   killsThisWave++;
   spawnParticles(en.x, en.y, '#ffd76a', en.type==='boss' ? 34 : (en.type==='caterpillar'?16:10));
-  if(en.type === 'boss'){ currentBoss = null; document.getElementById('bossBar').style.display='none'; shake = 220; }
+  if(en.type === 'boss'){ currentBoss = null; bossIntroActive = false; document.getElementById('bossBar').style.display='none'; shake = 220; }
 }
 
 function update(dt, t){
@@ -1730,8 +1735,16 @@ function update(dt, t){
   // aimAngle sigue la dirección de movimiento
   player.aimAngle = player.facing;
 
-  camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
-  camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
+  // Cámara: si hay intro de boss, hacer zoom a él
+  if(bossIntroActive && bossIntroTarget){
+    bossIntroZoom = Math.max(2.2, bossIntroZoom - dt*0.0008);
+    camera.x = Math.max(W/(2*bossIntroZoom), Math.min(WORLD_W - W/(2*bossIntroZoom), bossIntroTarget.x));
+    camera.y = Math.max(H/(2*bossIntroZoom), Math.min(WORLD_H - H/(2*bossIntroZoom), bossIntroTarget.y));
+  } else {
+    bossIntroZoom = ZOOM;
+    camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
+    camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
+  }
 
   if(mouse.down || keys[' ']) tryShoot(t);
   if(player.hitFlash > 0) player.hitFlash -= dt;
@@ -1779,7 +1792,50 @@ function update(dt, t){
 
     if(en.type === 'boss'){
       en.atkCooldown -= dt;
-      if(en.bossState === 'chase'){
+      if(en.bossState === 'intro'){
+        // Animación de entrada: zoom a la cámara sobre el boss
+        en.introT -= dt;
+        bossIntroActive = true;
+        bossIntroTarget = { x: en.x, y: en.y };
+        // Efecto de pulsación visual
+        en.attackPulse = Math.min(1, (en.introT < 800 ? (800 - en.introT)/800 : 0));
+        if(en.introT <= 0){
+          bossIntroActive = false;
+          en.bossState = 'meteor'; en.meteorT = 0; en.meteorVolley = 0; en.meteorCooldown = 400;
+          en.attackPulse = 0;
+          showMsg('☄️ ¡LLUVIA DE METEORITOS!', 1200);
+          shake = 200;
+        }
+      } else if(en.bossState === 'meteor'){
+        // Ataque AOE: lanza proyectiles en todas direcciones
+        en.meteorT += dt;
+        en.meteorCooldown -= dt;
+        // Efecto visual pulsante
+        en.attackPulse = Math.sin(en.meteorT/200) * 0.5 + 0.5;
+        if(en.meteorCooldown <= 0 && en.meteorVolley < 6){
+          en.meteorVolley++;
+          en.meteorCooldown = 800;
+          // Lanzar proyectiles en un patrón radial
+          const numProj = 8 + en.meteorVolley * 2; // Cada vuelta más proyectiles
+          const baseAngle = (en.meteorVolley % 2 === 0) ? 0 : Math.PI/numProj;
+          for(let i = 0; i < numProj; i++){
+            const a = baseAngle + (Math.PI*2/numProj) * i;
+            const spd = 3.5 + Math.random() * 1.5;
+            enemyProjectiles.push({
+              x: en.x, y: en.y,
+              vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+              r: 10, dmg: Math.round(en.dmg * 0.8), poison: false, life: 4000,
+              isMeteor: true
+            });
+          }
+          shake = 80;
+          spawnParticles(en.x, en.y, '#ff6b3a', 20);
+        }
+        // Después de 6 vueltas, volver a chase
+        if(en.meteorVolley >= 6 && en.meteorCooldown <= 0){
+          en.bossState = 'chase'; en.atkCooldown = 4000; en.attackPulse = 0;
+        }
+      } else if(en.bossState === 'chase'){
         en.x += (edx/elen) * en.speed;
         en.y += (edy/elen) * en.speed;
         en.attackPulse = Math.max(0, (en.attackPulse||0) - dt/150);
@@ -1973,13 +2029,14 @@ function draw(){
   if(shake > 0){
     ctx.translate((Math.random()-0.5)*Math.min(shake,10)*0.4, (Math.random()-0.5)*Math.min(shake,10)*0.4);
   }
-  // camara: centra y aplica zoom
+  // camara: centra y aplica zoom (con zoom dinámico para intro del boss)
+  const activeZoom = bossIntroActive ? bossIntroZoom : ZOOM;
   ctx.translate(W/2, H/2);
-  ctx.scale(ZOOM, ZOOM);
+  ctx.scale(activeZoom, activeZoom);
   ctx.translate(-camera.x, -camera.y);
 
-  const viewL = camera.x - W/(2*ZOOM) - 40, viewT = camera.y - H/(2*ZOOM) - 40;
-  const viewW = W/ZOOM + 80, viewH = H/ZOOM + 80;
+  const viewL = camera.x - W/(2*activeZoom) - 40, viewT = camera.y - H/(2*activeZoom) - 40;
+  const viewW = W/activeZoom + 80, viewH = H/activeZoom + 80;
   if(floorPattern){
     ctx.fillStyle = floorPattern;
     ctx.fillRect(viewL, viewT, viewW, viewH);
@@ -1997,9 +2054,18 @@ function draw(){
   for(const p of particles){ ctx.fillStyle = p.color; ctx.fillRect(p.x-2, p.y-2, 4, 4); }
   ctx.fillStyle = '#ffe38a';
   for(const b of bullets){ ctx.fillRect(b.x-b.r, b.y-b.r, b.r*2, b.r*2); }
-  ctx.fillStyle = '#7be08a';
   for(const p of enemyProjectiles){
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    if(p.isMeteor){
+      // Meteoritos: rojo/naranja con glow
+      ctx.fillStyle = '#ff4a1a';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,180,50,0.3)';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*1.8,0,Math.PI*2); ctx.fill();
+    } else {
+      // Veneno normal: verde
+      ctx.fillStyle = '#7be08a';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    }
   }
 
   for(const en of enemies){
@@ -2038,6 +2104,24 @@ function draw(){
       if(en.bossState === 'telegraph'){
         ctx.strokeStyle = 'rgba(255,80,80,0.8)'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(en.x, en.y, en.r*1.25, 0, Math.PI*2); ctx.stroke();
+      }
+      // Efecto visual de intro: aura creciente
+      if(en.bossState === 'intro'){
+        const introProgress = 1 - (en.introT / 2500);
+        ctx.strokeStyle = `rgba(255,107,58,${introProgress * 0.6})`;
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (1.5 + introProgress * 1.5), 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = `rgba(255,60,20,${introProgress * 0.15})`;
+        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (2 + introProgress * 2), 0, Math.PI*2); ctx.fill();
+      }
+      // Efecto visual de meteor: aura roja pulsante
+      if(en.bossState === 'meteor'){
+        const pulse = en.attackPulse || 0;
+        ctx.strokeStyle = `rgba(255,80,30,${0.4 + pulse * 0.5})`;
+        ctx.lineWidth = 3 + pulse * 3;
+        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (1.2 + pulse * 0.8), 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = `rgba(255,50,0,${0.05 + pulse * 0.1})`;
+        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (2 + pulse * 1.5), 0, Math.PI*2); ctx.fill();
       }
     } else {
       ctx.fillStyle = '#000';
