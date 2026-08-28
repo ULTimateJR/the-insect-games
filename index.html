@@ -312,7 +312,7 @@
     border:3px solid rgba(255,80,80,0.6);
     z-index:60; pointer-events:auto;
     touch-action:none;
-    display:flex; align-items:center; justify-content:center;
+    align-items:center; justify-content:center;
     font-family:'Press Start 2P',monospace; font-size:10px; color:#ff6b6b;
   }
   #shootBtn:active, #shootBtn.active {
@@ -1031,6 +1031,22 @@ function handleHostData(data, hostId){
         showMobileControls(false);
       }
     }
+  } else if(data.type === 'takeDamage' && data.dmg){
+    // El host envia dano que el jugador recibio de enemigos
+    player.hp -= data.dmg;
+    player.hitFlash = 150;
+    if(player.hp <= 0){
+      player.hp = 0;
+      state = 'gameover';
+      document.getElementById('bossBar').style.display = 'none';
+      document.getElementById('gameOverWave').textContent = `Caiste en la oleada ${wave}`;
+      document.getElementById('goMoney').textContent = runStats.money;
+      document.getElementById('goXp').textContent = Math.round(runStats.xp);
+      document.getElementById('goGems').textContent = Math.round(runStats.gems);
+      refreshHubUI();
+      showScreen('gameOverPanel');
+      showMobileControls(false);
+    }
   }
 }
 
@@ -1075,6 +1091,12 @@ function broadcastGameState(){
     const conn = mpConnections[id].conn;
     if(conn && conn.open){ conn.send(msg); }
   }
+}
+
+// ---------- Enviar daño a guest ----------
+function sendDamageToGuest(peerId, dmg){
+  const conn = mpConnections[peerId]?.conn;
+  if(conn && conn.open){ conn.send({ type: 'takeDamage', dmg: Math.round(dmg) }); }
 }
 
 // ---------- Renderizar UI de sala ----------
@@ -1736,10 +1758,23 @@ function update(dt, t){
       }
     }
 
+  // Recopilar todos los jugadores vivos (host + guests)
+  const allPlayers = [{ x: player.x, y: player.y, r: player.r, isLocal: true, hp: player.hp }];
+  for(const pid in mpOtherPlayers){
+    const op = mpOtherPlayers[pid];
+    if(op && op.x) allPlayers.push({ x: op.x, y: op.y, r: 30, peerId: pid, hp: op.hp||100, isLocal: false });
+  }
+
   for(const en of enemies){
     if(en.flash > 0) en.flash -= dt;
     en.animT = (en.animT||0) + dt;
-    const edx = player.x - en.x, edy = player.y - en.y;
+    // Buscar al jugador más cercano para perseguir
+    let best = allPlayers[0], bestD = Infinity;
+    for(const pl of allPlayers){
+      const d = Math.hypot(pl.x - en.x, pl.y - en.y);
+      if(d < bestD){ bestD = d; best = pl; }
+    }
+    const edx = best.x - en.x, edy = best.y - en.y;
     const elen = Math.hypot(edx,edy) || 1;
 
     if(en.type === 'boss'){
@@ -1748,71 +1783,66 @@ function update(dt, t){
         en.x += (edx/elen) * en.speed;
         en.y += (edy/elen) * en.speed;
         en.attackPulse = Math.max(0, (en.attackPulse||0) - dt/150);
-        if(en.atkCooldown <= 0){
-          en.bossState = 'telegraph'; en.telegraphT = 500;
-        }
+        if(en.atkCooldown <= 0){ en.bossState = 'telegraph'; en.telegraphT = 500; }
       } else if(en.bossState === 'telegraph'){
         en.telegraphT -= dt;
         en.attackPulse = Math.min(1, (en.attackPulse||0) + dt/150);
-        if(en.telegraphT <= 0){
-          en.bossState = 'dash'; en.dashT = 420; en.dashHit = false;
-          en.dashDirX = edx/elen; en.dashDirY = edy/elen;
-        }
+        if(en.telegraphT <= 0){ en.bossState = 'dash'; en.dashT = 420; en.dashHitSet = new Set(); en.dashDirX = edx/elen; en.dashDirY = edy/elen; }
       } else if(en.bossState === 'dash'){
         en.dashT -= dt;
         en.x += en.dashDirX * 10.5 * (dt/16.6);
         en.y += en.dashDirY * 10.5 * (dt/16.6);
-        if(!en.dashHit && elen < player.r + en.r + 14){
-          player.hp -= en.dmg * 1.4;
-          player.hitFlash = 200;
-          player.x += en.dashDirX * 10; player.y += en.dashDirY * 10;
-          shake = 150;
-          en.dashHit = true;
+        for(const pl of allPlayers){
+          const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
+          if(!en.dashHitSet.has(pl.peerId||'local') && dd < pl.r + en.r + 14){
+            const dmg = en.dmg * 1.4;
+            if(pl.isLocal){ player.hp -= dmg; player.hitFlash = 200; player.x += en.dashDirX*10; player.y += en.dashDirY*10; }
+            else { sendDamageToGuest(pl.peerId, dmg); }
+            shake = 150; en.dashHitSet.add(pl.peerId||'local');
+          }
         }
         if(en.dashT <= 0){ en.bossState = 'chase'; en.atkCooldown = 5000; }
       }
     } else if(en.type === 'caterpillar'){
       en.atkCooldown -= dt;
       const preferred = 250;
-      if(elen > preferred + 20){
-        en.x += (edx/elen) * en.speed;
-        en.y += (edy/elen) * en.speed;
-      } else if(elen < preferred - 50){
-        en.x -= (edx/elen) * en.speed * 0.6;
-        en.y -= (edy/elen) * en.speed * 0.6;
-      }
+      if(elen > preferred + 20){ en.x += (edx/elen)*en.speed; en.y += (edy/elen)*en.speed; }
+      else if(elen < preferred - 50){ en.x -= (edx/elen)*en.speed*0.6; en.y -= (edy/elen)*en.speed*0.6; }
       if(en.atkCooldown <= 0 && elen < 420){
         const plen = elen || 1;
-        enemyProjectiles.push({
-          x: en.x, y: en.y, vx:(edx/plen)*3.4, vy:(edy/plen)*3.4,
-          r:8, dmg: en.dmg, poison:true, life:3500
-        });
+        enemyProjectiles.push({ x:en.x, y:en.y, vx:(edx/plen)*3.4, vy:(edy/plen)*3.4, r:8, dmg:en.dmg, poison:true, life:3500 });
         en.atkCooldown = 1400;
       }
     } else {
-      en.x += (edx/elen) * en.speed;
-      en.y += (edy/elen) * en.speed;
+      en.x += (edx/elen)*en.speed;
+      en.y += (edy/elen)*en.speed;
     }
 
-    if(elen < player.r + en.r && en.type !== 'boss'){
-      player.hp -= en.dmg * (dt/1000) * 4;
-      player.hitFlash = 150;
-      en.x -= (edx/elen) * 2;
-      en.y -= (edy/elen) * 2;
+    // Colisión enemigo -> todos los jugadores
+    if(en.type !== 'boss'){
+      for(const pl of allPlayers){
+        const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
+        if(dd < pl.r + en.r){
+          if(pl.isLocal){ player.hp -= en.dmg*(dt/1000)*4; player.hitFlash = 150; }
+          else { sendDamageToGuest(pl.peerId, en.dmg*(dt/1000)*4); }
+          en.x -= (edx/elen)*2; en.y -= (edy/elen)*2;
+        }
+      }
     }
   }
 
-  // proyectiles de veneno enemigos
+  // proyectiles de veneno enemigos -> todos los jugadores
   for(const p of enemyProjectiles){
-    p.x += p.vx * (dt/16.6); p.y += p.vy * (dt/16.6); p.life -= dt;
-    const d = Math.hypot(p.x-player.x, p.y-player.y);
-    if(d < player.r + p.r){
-      player.hp -= p.dmg;
-      player.hitFlash = 150;
-      player.poisonUntil = t + 3000;
-      player.poisonDps = 6;
-      p.dead = true;
-      spawnParticles(p.x,p.y,'#7be08a',10);
+    p.x += p.vx*(dt/16.6); p.y += p.vy*(dt/16.6); p.life -= dt;
+    for(const pl of allPlayers){
+      const d = Math.hypot(p.x-pl.x, p.y-pl.y);
+      if(d < pl.r + p.r){
+        if(pl.isLocal){ player.hp -= p.dmg; player.hitFlash = 150; player.poisonUntil = t+3000; player.poisonDps = 6; }
+        else { sendDamageToGuest(pl.peerId, p.dmg); }
+        p.dead = true;
+        spawnParticles(p.x,p.y,'#7be08a',10);
+        break;
+      }
     }
   }
   enemyProjectiles = enemyProjectiles.filter(p => !p.dead && p.life > 0);
