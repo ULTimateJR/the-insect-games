@@ -1476,7 +1476,7 @@ function stopBattleMusic(){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
-  if(id==='hub') { stopBattleMusic(); playLobbyMusic(); } else { pauseLobbyMusic(); }
+  if(id==='hub' || id==='difficultyScreen') { stopBattleMusic(); playLobbyMusic(); } else { pauseLobbyMusic(); }
 }
 function showMobileControls(show){
   const jc = document.getElementById('joystickArea');
