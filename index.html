@@ -1497,10 +1497,18 @@ function playFailureSfx(){
 }
 
 // ==================== GUNSHOT SFX ====================
+let _gunshotPool = [];
 function playGunshotSfx(){
   try {
-    const s = new Audio('gunshot.mp3');
-    s.volume = 1.0;
+    // Buscar un Audio libre o crear uno nuevo (pool de 3)
+    let s = _gunshotPool.find(a => a.ended || a.paused);
+    if(!s){
+      if(_gunshotPool.length >= 3) return; // max 3 simultáneos
+      s = new Audio('gunshot.mp3');
+      s.volume = 1.0;
+      _gunshotPool.push(s);
+    }
+    s.currentTime = 0;
     s.play().catch(()=>{});
   } catch(e){}
 }
