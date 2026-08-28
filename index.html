@@ -344,6 +344,7 @@
 </style>
 </head>
 <body>
+<audio id="lobbyMusic" src="jazz synth.mp3" loop preload="auto" volume="0.5"></audio>
 <div id="wrap">
   <canvas id="c" width="800" height="500"></canvas>
 
@@ -1417,6 +1418,8 @@ function refreshHubUI(){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
+  const lobbyMusic = document.getElementById('lobbyMusic');
+  if(id === 'hub' || !id){ lobbyMusic.play().catch(()=>{}); } else { lobbyMusic.pause(); }
 }
 function showMobileControls(show){
   const jc = document.getElementById('joystickArea');
@@ -2361,6 +2364,19 @@ document.getElementById('continueBtn').onclick = () => {
     updateNicknameUI();
     renderFriends();
   }
+})();
+
+// --- Lobby Music: autoplay on first click ---
+(function(){
+  const music = document.getElementById('lobbyMusic');
+  let started = false;
+  function tryPlay(){
+    if(!started && music){ music.volume = 0.5; music.play().catch(()=>{}); started = true; }
+    document.removeEventListener('click', tryPlay);
+    document.removeEventListener('touchstart', tryPlay);
+  }
+  document.addEventListener('click', tryPlay);
+  document.addEventListener('touchstart', tryPlay);
 })();
 </script>
 </body>
