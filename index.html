@@ -1418,7 +1418,7 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
   if(typeof playLobbyMusic==='function' && typeof pauseLobbyMusic==='function'){
-    if(id==='hub' || !id) playLobbyMusic(); else pauseLobbyMusic();
+    if(id==='hub') playLobbyMusic(); else pauseLobbyMusic();
   }
 }
 function showMobileControls(show){
@@ -2367,30 +2367,14 @@ document.getElementById('continueBtn').onclick = () => {
 })();
 
 // ==================== LOBBY MUSIC ====================
-const lobbyAudio = new Audio();
-lobbyAudio.src = 'jazz-synth.mp3';
-lobbyAudio.loop = true;
-lobbyAudio.volume = 0.5;
-lobbyAudio.preload = 'auto';
-
-function playLobbyMusic(){
-  lobbyAudio.play().then(()=>{ console.log('[Music] Playing lobby music'); }).catch(e=>{ console.log('[Music] Play blocked:', e.message); });
-}
-function pauseLobbyMusic(){
-  lobbyAudio.pause();
-  console.log('[Music] Paused');
-}
+let lobbyAudio = null;
+try { lobbyAudio = new Audio('jazz-synth.mp3'); lobbyAudio.loop = true; lobbyAudio.volume = 0.5; lobbyAudio.preload = 'auto'; } catch(e){}
+function playLobbyMusic(){ if(lobbyAudio) lobbyAudio.play().catch(()=>{}); }
+function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} }
 
 // Auto-start on first user interaction
-document.addEventListener('click', function(){
-  console.log('[Music] Click detected, attempting play...');
-  playLobbyMusic();
-}, { once: true });
-
-document.addEventListener('touchstart', function(){
-  console.log('[Music] Touch detected, attempting play...');
-  playLobbyMusic();
-}, { once: true });
+document.addEventListener('click', function(){ playLobbyMusic(); }, { once: true });
+document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once: true });
 </script>
 </body>
 </html>
