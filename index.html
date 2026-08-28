@@ -1418,8 +1418,7 @@ function refreshHubUI(){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
-  const lobbyMusic = document.getElementById('lobbyMusic');
-  if(id === 'hub' || !id){ lobbyMusic.play().catch(()=>{}); } else { lobbyMusic.pause(); }
+  if(id === 'hub' || !id){ playLobbyMusic(); } else { pauseLobbyMusic(); }
 }
 function showMobileControls(show){
   const jc = document.getElementById('joystickArea');
@@ -2366,20 +2365,30 @@ document.getElementById('continueBtn').onclick = () => {
   }
 })();
 
-// --- Lobby Music: autoplay on first click ---
-(function(){
-  const music = document.getElementById('lobbyMusic');
-  music.volume = 0.5;
-  music.load();
-  let started = false;
-  function tryPlay(){
-    if(!started && music){ music.volume = 0.5; music.currentTime = 0; music.play().catch(e => console.log('Audio error:', e)); started = true; }
-    document.removeEventListener('click', tryPlay);
-    document.removeEventListener('touchstart', tryPlay);
-  }
-  document.addEventListener('click', tryPlay);
-  document.addEventListener('touchstart', tryPlay);
-})();
+// --- Lobby Music ---
+const lobbyMusic = document.getElementById('lobbyMusic');
+lobbyMusic.volume = 0.5;
+lobbyMusic.load();
+let musicStarted = false;
+
+function playLobbyMusic(){
+  if(!lobbyMusic) return;
+  lobbyMusic.volume = 0.5;
+  lobbyMusic.play().then(() => { musicStarted = true; }).catch(e => console.log('Audio blocked:', e.message));
+}
+function pauseLobbyMusic(){
+  if(lobbyMusic) lobbyMusic.pause();
+}
+
+// Start on first user interaction (browser requirement)
+document.addEventListener('click', function firstClick(){
+  if(!musicStarted) playLobbyMusic();
+  document.removeEventListener('click', firstClick);
+}, { once: true });
+document.addEventListener('touchstart', function firstTouch(){
+  if(!musicStarted) playLobbyMusic();
+  document.removeEventListener('touchstart', firstTouch);
+}, { once: true });
 </script>
 </body>
 </html>
