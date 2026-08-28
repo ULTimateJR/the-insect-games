@@ -69,6 +69,7 @@
     animation: driftBg 6s ease-in-out infinite alternate;
   }
   @keyframes driftBg { from{ transform:scale(1) translate(0,0);} to{ transform:scale(1.15) translate(-10px,10px);} }
+  @keyframes fadeIn { from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
   #loading img { height:180px; image-rendering:pixelated; filter:drop-shadow(0 8px 12px rgba(0,0,0,0.5));
     animation: bob 1.4s ease-in-out infinite; z-index:1; }
   @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-10px);} }
@@ -152,10 +153,32 @@
   }
   #crateResultCard {
     background:#20202e; border:3px solid #ffd76a; border-radius:12px; padding:26px 34px; text-align:center;
-    box-shadow:0 0 30px rgba(255,215,106,0.4);
+    box-shadow:0 0 30px rgba(255,215,106,0.4); min-width:260px;
   }
   #crateResultCard .rarityName { font-size:12px; margin:8px 0; }
   #crateResultCard .itemName { font-size:9px; color:#ddd; margin-bottom:14px; }
+  #rouletteContainer {
+    position:relative; width:220px; height:180px; margin:10px auto;
+    overflow:hidden; border:2px solid #ffd76a; border-radius:8px; background:#111;
+  }
+  #roulettePointer {
+    position:absolute; top:50%; left:0; right:0; height:4px; background:#ffd76a;
+    z-index:5; transform:translateY(-50%); box-shadow:0 0 10px rgba(255,215,106,0.8);
+  }
+  #roulettePointer::before, #roulettePointer::after {
+    content:''; position:absolute; top:50%; width:0; height:0; transform:translateY(-50%);
+    border:8px solid transparent;
+  }
+  #roulettePointer::before { left:-2px; border-right-color:#ffd76a; }
+  #roulettePointer::after { right:-2px; border-left-color:#ffd76a; }
+  #rouletteStrip {
+    position:absolute; left:0; right:0; transition:none;
+  }
+  .rouletteItem {
+    width:100%; height:40px; display:flex; align-items:center; justify-content:center;
+    font-family:'Press Start 2P',monospace; font-size:8px; color:#fff;
+    text-shadow:1px 1px 0 #000; border-bottom:1px solid rgba(255,255,255,0.1);
+  }
 
   #authBar {
     position:relative; z-index:2; display:flex; align-items:center; gap:10px;
@@ -516,10 +539,16 @@
 
   <div id="crateResult">
     <div id="crateResultCard">
-      <div>🎁</div>
-      <div class="rarityName" id="crResRarity">Común</div>
-      <div class="itemName" id="crResItem">+5% Vida máxima</div>
-      <button class="smallBtn" id="crResClose">Cerrar</button>
+      <div style="font-size:28px;margin-bottom:8px;">🎁</div>
+      <div id="rouletteContainer">
+        <div id="roulettePointer"></div>
+        <div id="rouletteStrip"></div>
+      </div>
+      <div id="rouletteResult" style="display:none;">
+        <div class="rarityName" id="crResRarity">Común</div>
+        <div class="itemName" id="crResItem">+5% Vida máxima</div>
+      </div>
+      <button class="smallBtn" id="crResClose" style="display:none;">Cerrar</button>
     </div>
   </div>
 
@@ -1259,10 +1288,51 @@ function openCrate(kind){
   const item = makeItem(pool);
   if(kind === 'passive') meta.passiveInv.push(item); else meta.weaponInv.push(item);
   const rarity = RARITIES[item.rarityIdx];
-  document.getElementById('crResRarity').textContent = rarity.name;
-  document.getElementById('crResRarity').style.color = rarity.color;
-  document.getElementById('crResItem').textContent = `${item.label}: +${item.value}${item.unit}`;
+  // Roulette animation
+  const strip = document.getElementById('rouletteStrip');
+  const resultDiv = document.getElementById('rouletteResult');
+  const closeBtn = document.getElementById('crResClose');
+  resultDiv.style.display = 'none';
+  closeBtn.style.display = 'none';
+  // Generate 40 random items for the strip, with the won item near the end
+  const allItems = [];
+  const totalItems = 40;
+  const winIdx = totalItems - 5; // stop 5 items from end
+  for(let i = 0; i < totalItems; i++){
+    let rIdx, r, label;
+    if(i === winIdx){
+      rIdx = item.rarityIdx; r = RARITIES[rIdx]; label = `${item.label}: +${item.value}${item.unit}`;
+    } else {
+      rIdx = rollRarityIdx(); r = RARITIES[rIdx];
+      const fakeType = pool[Math.floor(Math.random()*pool.length)];
+      label = fakeType.label;
+    }
+    allItems.push({ color: r.color, label: r.name + ' - ' + label });
+  }
+  strip.innerHTML = allItems.map(it =>
+    `<div class="rouletteItem" style="background:${it.color}22;border-left:3px solid ${it.color};">${it.label}</div>`
+  ).join('');
+  strip.style.transition = 'none';
+  strip.style.top = '0px';
   document.getElementById('crateResult').style.display = 'flex';
+  // Force reflow then animate
+  void strip.offsetHeight;
+  const itemH = 40;
+  const targetY = -(winIdx * itemH) + 90 - itemH/2; // center on pointer
+  strip.style.transition = 'top 3s cubic-bezier(0.15, 0.8, 0.25, 1)';
+  strip.style.top = targetY + 'px';
+  // Show result after animation
+  setTimeout(() => {
+    resultDiv.style.display = 'block';
+    closeBtn.style.display = 'inline-block';
+    document.getElementById('crResRarity').textContent = rarity.name;
+    document.getElementById('crResRarity').style.color = rarity.color;
+    document.getElementById('crResItem').textContent = `${item.label}: +${item.value}${item.unit}`;
+    // Flash effect on result
+    resultDiv.style.animation = 'none';
+    void resultDiv.offsetHeight;
+    resultDiv.style.animation = 'fadeIn 0.4s ease';
+  }, 3200);
   renderInventory();
 }
 document.getElementById('crResClose').onclick = () => { document.getElementById('crateResult').style.display = 'none'; };
