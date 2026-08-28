@@ -116,7 +116,7 @@
     mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
   }
-  #hubSky #hubLogo {
+  #hubLogo {
     position: absolute;
     top: 10px;
     left: 50%;
@@ -404,9 +404,8 @@
 
   <!-- HUB PRINCIPAL -->
   <div id="hub" class="screen">
-    <div id="hubSky">
-      <img id="hubLogo" src="" alt="The Insect Games">
-    </div>
+    <div id="hubSky"></div>
+    <img id="hubLogo" src="" alt="The Insect Games">
     <div id="authBar">
       <span id="authStatus">👤 Invitado (progreso solo en esta partida)</span>
       <button class="smallBtn" id="openLoginBtn">Iniciar sesión con correo</button>
@@ -1498,18 +1497,19 @@ function playFailureSfx(){
 
 // ==================== GUNSHOT SFX ====================
 let _gunshotPool = [];
+let _gunshotIdx = 0;
 function playGunshotSfx(){
   try {
-    // Buscar un Audio libre o crear uno nuevo (pool de 3)
-    let s = _gunshotPool.find(a => a.ended || a.paused);
-    if(!s){
-      if(_gunshotPool.length >= 3) return; // max 3 simultáneos
-      s = new Audio('gunshot.mp3');
+    // Pool de 5 audios para disparos continuos
+    if(_gunshotPool.length < 5){
+      const s = new Audio('gunshot.mp3');
       s.volume = 1.0;
       _gunshotPool.push(s);
     }
+    const s = _gunshotPool[_gunshotIdx % _gunshotPool.length];
     s.currentTime = 0;
     s.play().catch(()=>{});
+    _gunshotIdx++;
   } catch(e){}
 }
 
@@ -1774,7 +1774,7 @@ function spawnEnemy(type){
   if(type === 'boss'){
     const en = {
       x: WORLD_W/2, y: WORLD_H/2, r: 74, type:'boss',
-      hp: Math.round((650 + wave*55) * 10 * d.hpMult * pm), maxHp: 0,
+      hp: Math.round((650 + wave*55) * 5 * d.hpMult * pm), maxHp: 0,
       speed: 0.85 * d.speedMult, reward: Math.round((90 + wave*3)*d.moneyMult), rewardXp: 90*d.xpMult, rewardGems: 18*d.gemMult,
       dmg: Math.round(24*d.dmgMult * pm), flash:0, attackPulse:0,
       bossState:'intro', introT:2500, meteorT:0, meteorVolley:0, meteorCooldown:0,
