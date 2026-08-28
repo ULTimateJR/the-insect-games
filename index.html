@@ -1084,6 +1084,7 @@ function handleHostData(data, hostId){
         openShop();
       } else if(data.gameState === 'gameover' && state !== 'gameover'){
         state = 'gameover';
+        playFailureSfx();
         document.getElementById('bossBar').style.display = 'none';
         document.getElementById('gameOverWave').textContent = data.gameOverMsg || `Caíste en la oleada ${wave}`;
         document.getElementById('goMoney').textContent = data.goMoney || 0;
@@ -1101,6 +1102,7 @@ function handleHostData(data, hostId){
     if(player.hp <= 0){
       player.hp = 0;
       state = 'gameover';
+      playFailureSfx();
       document.getElementById('bossBar').style.display = 'none';
       document.getElementById('gameOverWave').textContent = `Caiste en la oleada ${wave}`;
       document.getElementById('goMoney').textContent = runStats.money;
@@ -1474,11 +1476,17 @@ function stopBattleMusic(){
 
 // ==================== BUTTON SFX ====================
 let btnSfx = null;
-try { btnSfx = new Audio('button-sfx.mp3'); btnSfx.volume = 0.6; btnSfx.preload = 'auto'; } catch(e){}
+try { btnSfx = new Audio('button-fxs.mp3'); btnSfx.volume = 0.9; btnSfx.preload = 'auto'; } catch(e){}
 function playBtnSfx(){ if(btnSfx){ btnSfx.currentTime = 0; btnSfx.play().catch(()=>{}); } }
+
+// ==================== FAILURE SFX ====================
+let failureSfx = null;
+try { failureSfx = new Audio('failure.mp3'); failureSfx.volume = 0.7; failureSfx.preload = 'auto'; } catch(e){}
+function playFailureSfx(){ if(failureSfx){ failureSfx.currentTime = 0; failureSfx.play().catch(()=>{}); } }
+
 // Agregar sonido a todos los botones del juego
 document.addEventListener('click', function(e){
-  const btn = e.target.closest('.bigBtn, .smallBtn, .diffCard, .crateCard, #hubTabs button, .tabBtn, #continueBtn, #goDifficulty, #backToHubFromDiff, #goToHubBtn, #retryBtn, #createRoomBtn, #joinRoomBtn, #searchFriendBtn, #setNicknameBtn, #changeNicknameBtn, #buyPassiveCrate, #buyWeaponCrate, #buyPassiveSlot, #buyWeaponSlot, #buyMoneyBonus, #buyGemBonus, .invCard, .friendCard, #readyBtn, #startGameBtn');
+  const btn = e.target.closest('.bigBtn, .smallBtn, .diffCard, .crateCard, .card, #hubTabs button, .tabBtn, #continueBtn, #goDifficulty, #backToHubFromDiff, #goToHubBtn, #retryBtn, #createRoomBtn, #joinRoomBtn, #searchFriendBtn, #setNicknameBtn, #changeNicknameBtn, #buyPassiveCrate, #buyWeaponCrate, #buyPassiveSlot, #buyWeaponSlot, #buyMoneyBonus, #buyGemBonus, .invCard, .friendCard, #readyBtn, #startGameBtn');
   if(btn) playBtnSfx();
 });
 
@@ -2111,6 +2119,7 @@ function update(dt, t){
 
   if(player.hp <= 0){
     state = 'gameover';
+    playFailureSfx();
     document.getElementById('bossBar').style.display = 'none';
     document.getElementById('gameOverWave').textContent = `Caíste en la oleada ${wave} (dificultad: ${currentDiff.name})`;
     document.getElementById('goMoney').textContent = runStats.money;
