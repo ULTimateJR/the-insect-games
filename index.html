@@ -406,6 +406,7 @@
       <div>Nivel <span id="hubLevel">1</span></div>
       <div>💎 <span id="hubGems">0</span></div>
       <div>🔓 Puntos de nivel: <span id="hubPoints">0</span></div>
+      <div>🍀 Suerte: <span id="hubLuck">+0</span></div>
     </div>
     <div id="hubXpTrack"><div id="hubXpFill"></div></div>
     <div id="hubTabs">
@@ -422,7 +423,7 @@
     </div>
 
     <div class="hubPanel" id="tabShop">
-      <p style="color:#9ab;font-size:11px;">Las cajas se compran con gemas 💎 (se ganan matando enemigos)</p>
+      <p style="color:#9ab;font-size:11px;">Las cajas se compran con gemas 💎 (se ganan matando enemigos) · 🍀 Suerte: <span id="shopLuck">+0</span> (min: Común)</p>
       <div class="crateGrid">
         <div class="crateCard" id="buyPassiveCrate">
           <div class="icon">🧪</div>
@@ -1275,14 +1276,17 @@ const RARITIES = [
   {key:'divine', name:'Divino', color:'#7fffd4', weight:1},
   {key:'supreme', name:'Supremo', color:'#ffd700', weight:0.5},
 ];
+function getLuckBonus(){ return Math.min(25, Math.floor(meta.level / 10) * 5); }
+function getMinRarityIdx(){ return Math.min(5, Math.floor(getLuckBonus() / 5)); }
 function rollRarityIdx(){
-  const total = RARITIES.reduce((s,r)=>s+r.weight,0);
-  let roll = Math.random()*total;
-  for(let i=0;i<RARITIES.length;i++){
+  const minIdx = getMinRarityIdx();
+  const total = RARITIES.reduce((s,r,i) => i >= minIdx ? s + r.weight : s, 0);
+  let roll = Math.random() * total;
+  for(let i = minIdx; i < RARITIES.length; i++){
     roll -= RARITIES[i].weight;
     if(roll <= 0) return i;
   }
-  return 0;
+  return RARITIES.length - 1;
 }
 
 const PASSIVE_TYPES = [
@@ -1423,6 +1427,9 @@ function refreshHubUI(){
   document.getElementById('hubLevel').textContent = meta.level;
   document.getElementById('hubGems').textContent = meta.gems;
   document.getElementById('hubPoints').textContent = meta.points;
+  document.getElementById('hubLuck').textContent = '+' + getLuckBonus() + ' (min: ' + RARITIES[getMinRarityIdx()].name + ')';
+  const shopLuckEl = document.getElementById('shopLuck');
+  if(shopLuckEl) shopLuckEl.textContent = '+' + getLuckBonus() + ' (min: ' + RARITIES[getMinRarityIdx()].name + ')';
   document.getElementById('hubXpFill').style.width = Math.round(meta.xp/xpToNext(meta.level)*100) + '%';
   document.getElementById('passiveSlotsTxt').textContent = meta.passiveSlotsMax;
   document.getElementById('weaponSlotsTxt').textContent = meta.weaponSlotsMax;
