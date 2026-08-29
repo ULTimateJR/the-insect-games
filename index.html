@@ -143,8 +143,8 @@
   #hubXpTrack { width:280px; height:10px; background:#000; border:1px solid #555; border-radius:6px; overflow:hidden; }
   #hubXpFill { height:100%; background:linear-gradient(90deg,#6ad0ff,#a0f0a0); width:0%; }
   #hubTabs { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
-  #hubTabs button { background:#2a2a3a; border:2px solid #444; color:#ccc; padding:10px 22px; font-family:inherit; cursor:pointer; border-radius:6px; font-size:9px; }
-  #hubTabs button.active { border-color:#ffd76a; color:#ffd76a; }
+  #hubTabs button { background:#2a2a3a; border:2px solid #444; color:#ccc; padding:10px 22px; font-family:inherit; cursor:pointer; border-radius:6px; font-size:9px; transition: transform 0.25s ease, border-color 0.25s ease, color 0.25s ease; }
+  #hubTabs button.active { border-color:#ffd76a; color:#ffd76a; transform: translateY(12px); }
   .hubPanel { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; padding:8px 0; }
   .hubPanel.active { display:flex; }
 
