@@ -36,7 +36,7 @@
   }
   #hud {
     position:absolute; top:8px; left:8px; right:8px;
-    display:flex; justify-content:space-between;
+    display:none; justify-content:space-between;
     font-size:9px; text-shadow:1px 1px 0 #000;
     pointer-events:none;
   }
@@ -89,7 +89,7 @@
     background: url('fondo.png') center top / cover no-repeat;
     justify-content: flex-start;
     align-items: center;
-    padding-top: 10px;
+    padding-top: 20px;
     padding-bottom: 30px;
     gap: 6px;
     overflow-y: auto;
@@ -107,7 +107,7 @@
     width: auto;
     height: auto;
     max-width: min(60vw, 400px);
-    max-height: 180px;
+    max-height: 140px;
     margin: 0 auto;
     align-self: center;
     image-rendering: pixelated;
@@ -120,6 +120,7 @@
     background-position: center center;
     background-repeat: no-repeat;
   }
+  #hubSpacer { flex: 1; min-height: 80px; }
   #hub > *:not(#hubGrassTop):not(#hubLogo) { position:relative; z-index:1; }
   .screen h1 { font-size:18px; color:#ffd76a; text-shadow:3px 3px 0 #000; letter-spacing:1px; }
   .screen h2 { font-size:10px; color:#9fd; }
@@ -144,7 +145,7 @@
   #hubXpFill { height:100%; background:linear-gradient(90deg,#6ad0ff,#a0f0a0); width:0%; }
   #hubTabs { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
   #hubTabs button { background:#2a2a3a; border:2px solid #444; color:#ccc; padding:10px 22px; font-family:inherit; cursor:pointer; border-radius:6px; font-size:9px; transition: transform 0.25s ease, border-color 0.25s ease, color 0.25s ease; }
-  #hubTabs button.active { border-color:#ffd76a; color:#ffd76a; transform: translateY(12px); }
+  #hubTabs button.active { border-color:#ffd76a; color:#ffd76a; }
   .hubPanel { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; padding:8px 0; }
   .hubPanel.active { display:flex; }
 
@@ -400,6 +401,7 @@
       <button class="smallBtn" id="openLoginBtn">Iniciar sesión con correo</button>
       <button class="smallBtn" id="logoutBtn" style="display:none; background:#8b3a3a;">Cerrar sesión</button>
     </div>
+    <div id="hubSpacer"></div>
     <div id="hubTop">
       <div>Nivel <span id="hubLevel">1</span></div>
       <div>💎 <span id="hubGems">0</span></div>
@@ -1512,7 +1514,8 @@ document.addEventListener('click', function(e){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
-  if(id==='hub' || id==='difficultyScreen') { stopBattleMusic(); playLobbyMusic(); } else { pauseLobbyMusic(); }
+  const hudEl = document.getElementById('hud');
+  if(id==='hub' || id==='difficultyScreen') { stopBattleMusic(); playLobbyMusic(); if(hudEl) hudEl.style.display='none'; } else { pauseLobbyMusic(); if(hudEl) hudEl.style.display='flex'; }
 }
 function showMobileControls(show){
   const jc = document.getElementById('joystickArea');
