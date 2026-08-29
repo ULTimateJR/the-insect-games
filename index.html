@@ -1703,11 +1703,20 @@ window.addEventListener('mouseup', () => mouse.down = false);
     let dx = cx - jsOrigin.x;
     let dy = cy - jsOrigin.y;
     const dist = Math.hypot(dx,dy);
+    const deadzone = 15; // px muertos en el centro
+    if(dist < deadzone){ mobileDx = 0; mobileDy = 0; jsKnob.style.transform = 'translate(-50%,-50%)'; return; }
     const maxDist = R - KR;
-    if(dist > maxDist){ dx = dx/dist*maxDist; dy = dy/dist*maxDist; }
-    jsKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    mobileDx = dx / maxDist;
-    mobileDy = dy / maxDist;
+    // Angulo y snapping a 8 direcciones (cada 45 grados)
+    const angle = Math.atan2(dy, dx);
+    const snap = Math.round(angle / (Math.PI/4)) * (Math.PI/4);
+    // Calcular posicion visual del knob (limitada al radio)
+    const visualDist = Math.min(dist, maxDist);
+    const visX = Math.cos(snap) * visualDist;
+    const visY = Math.sin(snap) * visualDist;
+    jsKnob.style.transform = `translate(calc(-50% + ${visX}px), calc(-50% + ${visY}px))`;
+    // Output discreto: -1, 0, o 1 en cada eje
+    mobileDx = Math.round(Math.cos(snap));
+    mobileDy = Math.round(Math.sin(snap));
   }
 
   function resetJoystick(){
