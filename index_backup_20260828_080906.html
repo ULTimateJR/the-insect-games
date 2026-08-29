@@ -36,7 +36,7 @@
   }
   #hud {
     position:absolute; top:8px; left:8px; right:8px;
-    display:none; justify-content:space-between;
+    display:flex; justify-content:space-between;
     font-size:9px; text-shadow:1px 1px 0 #000;
     pointer-events:none;
   }
@@ -69,7 +69,6 @@
     animation: driftBg 6s ease-in-out infinite alternate;
   }
   @keyframes driftBg { from{ transform:scale(1) translate(0,0);} to{ transform:scale(1.15) translate(-10px,10px);} }
-  @keyframes fadeIn { from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
   #loading img { height:180px; image-rendering:pixelated; filter:drop-shadow(0 8px 12px rgba(0,0,0,0.5));
     animation: bob 1.4s ease-in-out infinite; z-index:1; }
   @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-10px);} }
@@ -86,42 +85,20 @@
     padding:20px; overflow-y:auto;
   }
   #hub {
-    background: url('fondo.png') center top / cover no-repeat;
-    justify-content: flex-start;
-    align-items: center;
-    padding-top: 20px;
+    background-image: url('fondo.png');
+    background-size: cover;
+    background-position: center 30%;
+    background-repeat: no-repeat;
+    justify-content: flex-end;
     padding-bottom: 30px;
-    gap: 6px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: #ffd76a #1a1a2e;
-  }
-  #hub::-webkit-scrollbar { width: 8px; }
-  #hub::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
-  #hub::-webkit-scrollbar-thumb { background: #ffd76a; border-radius: 4px; }
-  #hub::-webkit-scrollbar-thumb:hover { background: #ffe38a; }
-  #hubSky { display: none; }
-  #hubLogo {
-    display: block;
-    width: auto;
-    height: auto;
-    max-width: min(60vw, 400px);
-    max-height: 140px;
-    margin: 0 auto;
-    align-self: center;
-    image-rendering: pixelated;
-    z-index: 2;
-    pointer-events: none;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+    gap: 10px;
   }
   #difficultyScreen {
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
   }
-  #hubSpacer { flex: 1; min-height: 80px; }
-  #hub > *:not(#hubGrassTop):not(#hubLogo) { position:relative; z-index:1; }
+  #hub > *:not(#hubGrassTop) { position:relative; z-index:1; }
   .screen h1 { font-size:18px; color:#ffd76a; text-shadow:3px 3px 0 #000; letter-spacing:1px; }
   .screen h2 { font-size:10px; color:#9fd; }
   .bigBtn {
@@ -144,9 +121,9 @@
   #hubXpTrack { width:280px; height:10px; background:#000; border:1px solid #555; border-radius:6px; overflow:hidden; }
   #hubXpFill { height:100%; background:linear-gradient(90deg,#6ad0ff,#a0f0a0); width:0%; }
   #hubTabs { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
-  #hubTabs button { background:#2a2a3a; border:2px solid #444; color:#ccc; padding:10px 22px; font-family:inherit; cursor:pointer; border-radius:6px; font-size:9px; transition: transform 0.25s ease, border-color 0.25s ease, color 0.25s ease; }
+  #hubTabs button { background:#2a2a3a; border:2px solid #444; color:#ccc; padding:10px 22px; font-family:inherit; cursor:pointer; border-radius:6px; font-size:9px; }
   #hubTabs button.active { border-color:#ffd76a; color:#ffd76a; }
-  .hubPanel { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; padding:8px 0; }
+  .hubPanel { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; }
   .hubPanel.active { display:flex; }
 
   .diffGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:560px; }
@@ -175,32 +152,10 @@
   }
   #crateResultCard {
     background:#20202e; border:3px solid #ffd76a; border-radius:12px; padding:26px 34px; text-align:center;
-    box-shadow:0 0 30px rgba(255,215,106,0.4); min-width:260px;
+    box-shadow:0 0 30px rgba(255,215,106,0.4);
   }
   #crateResultCard .rarityName { font-size:12px; margin:8px 0; }
   #crateResultCard .itemName { font-size:9px; color:#ddd; margin-bottom:14px; }
-  #rouletteContainer {
-    position:relative; width:220px; height:180px; margin:10px auto;
-    overflow:hidden; border:2px solid #ffd76a; border-radius:8px; background:#111;
-  }
-  #roulettePointer {
-    position:absolute; top:50%; left:0; right:0; height:4px; background:#ffd76a;
-    z-index:5; transform:translateY(-50%); box-shadow:0 0 10px rgba(255,215,106,0.8);
-  }
-  #roulettePointer::before, #roulettePointer::after {
-    content:''; position:absolute; top:50%; width:0; height:0; transform:translateY(-50%);
-    border:8px solid transparent;
-  }
-  #roulettePointer::before { left:-2px; border-right-color:#ffd76a; }
-  #roulettePointer::after { right:-2px; border-left-color:#ffd76a; }
-  #rouletteStrip {
-    position:absolute; left:0; right:0; transition:none;
-  }
-  .rouletteItem {
-    width:100%; height:40px; display:flex; align-items:center; justify-content:center;
-    font-family:'Press Start 2P',monospace; font-size:8px; color:#fff;
-    text-shadow:1px 1px 0 #000; border-bottom:1px solid rgba(255,255,255,0.1);
-  }
 
   #authBar {
     position:relative; z-index:2; display:flex; align-items:center; gap:10px;
@@ -265,15 +220,15 @@
 
   /* ---- RESPONSIVE ---- */
   @media (min-width:900px) {
-    #hubLogo { max-width: min(50vw, 400px) !important; max-height: 160px !important; }
-    #hub { padding-bottom:40px; gap:8px; }
+    #hubLogo { height:180px !important; }
+    #hub { padding-bottom:40px; gap:12px; }
     #hubTabs button { padding:12px 26px; font-size:10px; }
     .bigBtn { font-size:13px; padding:16px 48px; }
     #hubTop { font-size:10px; }
   }
   @media (min-width:1200px) {
-    #hubLogo { max-width: min(45vw, 380px) !important; max-height: 150px !important; }
-    #hub { padding-bottom:50px; gap:10px; }
+    #hubLogo { height:200px !important; }
+    #hub { padding-bottom:50px; gap:14px; }
     #hubTabs button { padding:16px 34px; font-size:12px; }
     .bigBtn { font-size:15px; padding:18px 56px; }
     #hubTop { font-size:12px; }
@@ -283,8 +238,8 @@
     .hubPanel p { font-size:10px; }
   }
   @media (max-width:600px) {
-    #hubLogo { max-width: 70vw !important; max-height: 60px !important; }
-    #hub { padding-bottom:10px; gap:4px; }
+    #hubLogo { height:70px !important; top:5px !important; }
+    #hub { padding-bottom:10px; gap:5px; background-position: center 25%; }
     #hubTabs button { padding:6px 10px; font-size:7px; }
     .bigBtn { padding:10px 24px; font-size:9px; }
     .screen h1 { font-size:14px; }
@@ -337,7 +292,7 @@
     .noMobile { display:none !important; }
   }
   #joystickArea {
-    position:absolute; bottom:20px; left:20px; width:120px; height:120px;
+    position:absolute; bottom:20px; right:20px; width:120px; height:120px;
     border-radius:50%; background:rgba(255,255,255,0.08);
     border:2px solid rgba(255,255,255,0.2);
     z-index:60; pointer-events:auto;
@@ -352,7 +307,7 @@
     transition:none;
   }
   #shootBtn {
-    position:absolute; bottom:30px; right:20px; width:80px; height:80px;
+    position:absolute; bottom:30px; left:20px; width:80px; height:80px;
     border-radius:50%; background:rgba(255,80,80,0.25);
     border:3px solid rgba(255,80,80,0.6);
     z-index:60; pointer-events:auto;
@@ -394,19 +349,16 @@
 
   <!-- HUB PRINCIPAL -->
   <div id="hub" class="screen">
-    <div id="hubSky"></div>
-    <img id="hubLogo" src="" alt="The Insect Games">
     <div id="authBar">
       <span id="authStatus">👤 Invitado (progreso solo en esta partida)</span>
       <button class="smallBtn" id="openLoginBtn">Iniciar sesión con correo</button>
       <button class="smallBtn" id="logoutBtn" style="display:none; background:#8b3a3a;">Cerrar sesión</button>
     </div>
-    <div id="hubSpacer"></div>
+    <img id="hubLogo" src="" alt="The Insect Games" style="position:absolute; top:10px; left:50%; transform:translateX(-50%); height:220px; image-rendering:pixelated; z-index:2; pointer-events:none;">
     <div id="hubTop">
       <div>Nivel <span id="hubLevel">1</span></div>
       <div>💎 <span id="hubGems">0</span></div>
       <div>🔓 Puntos de nivel: <span id="hubPoints">0</span></div>
-      <div>🍀 Suerte: <span id="hubLuck">+0</span></div>
     </div>
     <div id="hubXpTrack"><div id="hubXpFill"></div></div>
     <div id="hubTabs">
@@ -423,7 +375,7 @@
     </div>
 
     <div class="hubPanel" id="tabShop">
-      <p style="color:#9ab;font-size:11px;">Las cajas se compran con gemas 💎 (se ganan matando enemigos) · 🍀 Suerte: <span id="shopLuck">+0</span> (min: Común)</p>
+      <p style="color:#9ab;font-size:11px;">Las cajas se compran con gemas 💎 (se ganan matando enemigos)</p>
       <div class="crateGrid">
         <div class="crateCard" id="buyPassiveCrate">
           <div class="icon">🧪</div>
@@ -564,16 +516,10 @@
 
   <div id="crateResult">
     <div id="crateResultCard">
-      <div style="font-size:28px;margin-bottom:8px;">🎁</div>
-      <div id="rouletteContainer">
-        <div id="roulettePointer"></div>
-        <div id="rouletteStrip"></div>
-      </div>
-      <div id="rouletteResult" style="display:none;">
-        <div class="rarityName" id="crResRarity">Común</div>
-        <div class="itemName" id="crResItem">+5% Vida máxima</div>
-      </div>
-      <button class="smallBtn" id="crResClose" style="display:none;">Cerrar</button>
+      <div>🎁</div>
+      <div class="rarityName" id="crResRarity">Común</div>
+      <div class="itemName" id="crResItem">+5% Vida máxima</div>
+      <button class="smallBtn" id="crResClose">Cerrar</button>
     </div>
   </div>
 
@@ -728,16 +674,6 @@ function loadProfile(email){
   } catch(e){ console.warn('No se pudo cargar el progreso', e); }
   return false;
 }
-const CHEAT_EMAIL = 'jorgito19pera@gmail.com';
-function isCheatEmail(email){ return email && email.trim().toLowerCase() === CHEAT_EMAIL; }
-function applyCheatProfile(){
-  meta.level = 1000; meta.xp = 0; meta.points = 100;
-  meta.gems = 100000000;
-  meta.passiveSlotsMax = 5; meta.weaponSlotsMax = 3;
-  meta.moneyBonusLvl = 10; meta.gemBonusLvl = 10;
-  meta.passiveCrateCost = 0; meta.weaponCrateCost = 0;
-  saveProfile();
-}
 
 document.getElementById('openLoginBtn').onclick = () => {
   if(!storageAvailable){
@@ -753,7 +689,6 @@ document.getElementById('loginConfirmBtn').onclick = () => {
   currentEmail = email;
   localStorage.setItem('insectgames_lastEmail', email);
   const had = loadProfile(email);
-  if(isCheatEmail(email)) applyCheatProfile();
   document.getElementById('authStatus').textContent = `✅ ${email}`;
   document.getElementById('openLoginBtn').style.display = 'none';
   document.getElementById('logoutBtn').style.display = 'inline-block';
@@ -1086,7 +1021,6 @@ function handleHostData(data, hostId){
         openShop();
       } else if(data.gameState === 'gameover' && state !== 'gameover'){
         state = 'gameover';
-        playFailureSfx();
         document.getElementById('bossBar').style.display = 'none';
         document.getElementById('gameOverWave').textContent = data.gameOverMsg || `Caíste en la oleada ${wave}`;
         document.getElementById('goMoney').textContent = data.goMoney || 0;
@@ -1104,7 +1038,6 @@ function handleHostData(data, hostId){
     if(player.hp <= 0){
       player.hp = 0;
       state = 'gameover';
-      playFailureSfx();
       document.getElementById('bossBar').style.display = 'none';
       document.getElementById('gameOverWave').textContent = `Caiste en la oleada ${wave}`;
       document.getElementById('goMoney').textContent = runStats.money;
@@ -1287,17 +1220,14 @@ const RARITIES = [
   {key:'divine', name:'Divino', color:'#7fffd4', weight:1},
   {key:'supreme', name:'Supremo', color:'#ffd700', weight:0.5},
 ];
-function getLuckBonus(){ return Math.min(25, Math.floor(meta.level / 10) * 5); }
-function getMinRarityIdx(){ return Math.min(5, Math.floor(getLuckBonus() / 5)); }
 function rollRarityIdx(){
-  const minIdx = getMinRarityIdx();
-  const total = RARITIES.reduce((s,r,i) => i >= minIdx ? s + r.weight : s, 0);
-  let roll = Math.random() * total;
-  for(let i = minIdx; i < RARITIES.length; i++){
+  const total = RARITIES.reduce((s,r)=>s+r.weight,0);
+  let roll = Math.random()*total;
+  for(let i=0;i<RARITIES.length;i++){
     roll -= RARITIES[i].weight;
     if(roll <= 0) return i;
   }
-  return RARITIES.length - 1;
+  return 0;
 }
 
 const PASSIVE_TYPES = [
@@ -1329,51 +1259,10 @@ function openCrate(kind){
   const item = makeItem(pool);
   if(kind === 'passive') meta.passiveInv.push(item); else meta.weaponInv.push(item);
   const rarity = RARITIES[item.rarityIdx];
-  // Roulette animation
-  const strip = document.getElementById('rouletteStrip');
-  const resultDiv = document.getElementById('rouletteResult');
-  const closeBtn = document.getElementById('crResClose');
-  resultDiv.style.display = 'none';
-  closeBtn.style.display = 'none';
-  // Generate 40 random items for the strip, with the won item near the end
-  const allItems = [];
-  const totalItems = 40;
-  const winIdx = totalItems - 5; // stop 5 items from end
-  for(let i = 0; i < totalItems; i++){
-    let rIdx, r, label;
-    if(i === winIdx){
-      rIdx = item.rarityIdx; r = RARITIES[rIdx]; label = `${item.label}: +${item.value}${item.unit}`;
-    } else {
-      rIdx = rollRarityIdx(); r = RARITIES[rIdx];
-      const fakeType = pool[Math.floor(Math.random()*pool.length)];
-      label = fakeType.label;
-    }
-    allItems.push({ color: r.color, label: r.name + ' - ' + label });
-  }
-  strip.innerHTML = allItems.map(it =>
-    `<div class="rouletteItem" style="background:${it.color}22;border-left:3px solid ${it.color};">${it.label}</div>`
-  ).join('');
-  strip.style.transition = 'none';
-  strip.style.top = '0px';
+  document.getElementById('crResRarity').textContent = rarity.name;
+  document.getElementById('crResRarity').style.color = rarity.color;
+  document.getElementById('crResItem').textContent = `${item.label}: +${item.value}${item.unit}`;
   document.getElementById('crateResult').style.display = 'flex';
-  // Force reflow then animate
-  void strip.offsetHeight;
-  const itemH = 40;
-  const targetY = -(winIdx * itemH) + 90 - itemH/2; // center on pointer
-  strip.style.transition = 'top 3s cubic-bezier(0.15, 0.8, 0.25, 1)';
-  strip.style.top = targetY + 'px';
-  // Show result after animation
-  setTimeout(() => {
-    resultDiv.style.display = 'block';
-    closeBtn.style.display = 'inline-block';
-    document.getElementById('crResRarity').textContent = rarity.name;
-    document.getElementById('crResRarity').style.color = rarity.color;
-    document.getElementById('crResItem').textContent = `${item.label}: +${item.value}${item.unit}`;
-    // Flash effect on result
-    resultDiv.style.animation = 'none';
-    void resultDiv.offsetHeight;
-    resultDiv.style.animation = 'fadeIn 0.4s ease';
-  }, 3200);
   renderInventory();
 }
 document.getElementById('crResClose').onclick = () => { document.getElementById('crateResult').style.display = 'none'; };
@@ -1438,9 +1327,6 @@ function refreshHubUI(){
   document.getElementById('hubLevel').textContent = meta.level;
   document.getElementById('hubGems').textContent = meta.gems;
   document.getElementById('hubPoints').textContent = meta.points;
-  document.getElementById('hubLuck').textContent = '+' + getLuckBonus() + ' (min: ' + RARITIES[getMinRarityIdx()].name + ')';
-  const shopLuckEl = document.getElementById('shopLuck');
-  if(shopLuckEl) shopLuckEl.textContent = '+' + getLuckBonus() + ' (min: ' + RARITIES[getMinRarityIdx()].name + ')';
   document.getElementById('hubXpFill').style.width = Math.round(meta.xp/xpToNext(meta.level)*100) + '%';
   document.getElementById('passiveSlotsTxt').textContent = meta.passiveSlotsMax;
   document.getElementById('weaponSlotsTxt').textContent = meta.weaponSlotsMax;
@@ -1457,83 +1343,10 @@ function refreshHubUI(){
   renderFriends();
 }
 
-// ==================== LOBBY MUSIC ====================
-let lobbyAudio = null;
-try { lobbyAudio = new Audio('jazz-synth.mp3'); lobbyAudio.loop = true; lobbyAudio.volume = 0.5; lobbyAudio.preload = 'auto'; } catch(e){}
-function playLobbyMusic(){ if(lobbyAudio) lobbyAudio.play().catch(()=>{}); }
-function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} }
-document.addEventListener('click', function(){ playLobbyMusic(); }, { once: true });
-document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once: true });
-
-// ==================== BATTLE MUSIC ====================
-let battleAudio = null;
-let pesadillaAudio = null;
-try { battleAudio = new Audio('batalla-tig.mp3'); battleAudio.loop = true; battleAudio.volume = 0.5; battleAudio.preload = 'auto'; } catch(e){}
-try { pesadillaAudio = new Audio('pesadilla.mp3'); pesadillaAudio.loop = true; pesadillaAudio.volume = 0.5; pesadillaAudio.preload = 'auto'; } catch(e){}
-function playBattleMusic(diffId){
-  pauseLobbyMusic();
-  stopBattleMusic();
-  const isPesadilla = (diffId === 'infinito' || diffId === 'pesadilla');
-  const track = isPesadilla ? pesadillaAudio : battleAudio;
-  if(track){ track.currentTime = 0; track.play().catch(()=>{}); }
-}
-function stopBattleMusic(){
-  if(battleAudio) try{ battleAudio.pause(); battleAudio.currentTime = 0; }catch(e){}
-  if(pesadillaAudio) try{ pesadillaAudio.pause(); pesadillaAudio.currentTime = 0; }catch(e){}
-}
-
-// ==================== BUTTON SFX ====================
-const SFX_BTN_SRC = 'button-fxs.mp3';
-let _lastBtnSfx = 0;
-function playBtnSfx(){
-  const now = Date.now();
-  if(now - _lastBtnSfx < 80) return; // anti-spam 80ms
-  _lastBtnSfx = now;
-  try {
-    const s = new Audio(SFX_BTN_SRC);
-    s.volume = 1.0;
-    s.play().catch(()=>{});
-  } catch(e){}
-}
-
-// ==================== FAILURE SFX ====================
-let failureSfx = null;
-try { failureSfx = new Audio('failure.mp3'); failureSfx.volume = 0.7; failureSfx.preload = 'auto'; } catch(e){}
-function playFailureSfx(){
-  stopBattleMusic();
-  if(failureSfx){ failureSfx.currentTime = 0; failureSfx.play().catch(()=>{}); }
-}
-
-// ==================== GUNSHOT SFX ====================
-let _gunshotPool = [];
-let _gunshotIdx = 0;
-function playGunshotSfx(){
-  try {
-    // Pool de 5 audios para disparos continuos
-    if(_gunshotPool.length < 5){
-      const s = new Audio('gunshot.mp3');
-      s.volume = 1.0;
-      _gunshotPool.push(s);
-    }
-    const s = _gunshotPool[_gunshotIdx % _gunshotPool.length];
-    s.currentTime = 0;
-    s.play().catch(()=>{});
-    _gunshotIdx++;
-  } catch(e){}
-}
-
-// Agregar sonido a todos los botones del juego
-document.addEventListener('click', function(e){
-  const btn = e.target.closest('.bigBtn, .smallBtn, .diffCard, .crateCard, .card, #hubTabs button, .tabBtn, #continueBtn, #goDifficulty, #backToHubFromDiff, #goToHubBtn, #retryBtn, #createRoomBtn, #joinRoomBtn, #searchFriendBtn, #setNicknameBtn, #changeNicknameBtn, #buyPassiveCrate, #buyWeaponCrate, #buyPassiveSlot, #buyWeaponSlot, #buyMoneyBonus, #buyGemBonus, .invCard, .friendCard, #readyBtn, #startGameBtn');
-  if(btn) playBtnSfx();
-});
-
 // ---------- Navegacion de pantallas ----------
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.style.display='none');
   if(id) document.getElementById(id).style.display = 'flex';
-  const hudEl = document.getElementById('hud');
-  if(id==='hub' || id==='difficultyScreen') { stopBattleMusic(); playLobbyMusic(); if(hudEl) hudEl.style.display='none'; } else { pauseLobbyMusic(); if(hudEl) hudEl.style.display='flex'; }
 }
 function showMobileControls(show){
   const jc = document.getElementById('joystickArea');
@@ -1592,7 +1405,6 @@ let keys = {}, mouse = {x:W/2,y:H/2,down:false};
 let state = 'hub';
 let spawnQueue = 0, spawnTimer = 0, waveTargetKills = 0, killsThisWave = 0;
 let currentBoss = null, shake = 0;
-let bossIntroActive = false, bossIntroTarget = null, bossIntroZoom = 1.55, bossIntroPhase = 'player'; // 'player' -> 'pan'
 let runStats = {money:0, xp:0, gems:0};
 
 const costs0 = { dmg: 15, rate: 20, hp: 15, speed: 18 };
@@ -1672,7 +1484,6 @@ function startRun(){
   runStats = {money:0, xp:0, gems:0};
   showScreen(null);
   showMobileControls(true);
-  playBattleMusic(currentDiff.id);
   openShop();
 }
 
@@ -1721,20 +1532,11 @@ window.addEventListener('mouseup', () => mouse.down = false);
     let dx = cx - jsOrigin.x;
     let dy = cy - jsOrigin.y;
     const dist = Math.hypot(dx,dy);
-    const deadzone = 15; // px muertos en el centro
-    if(dist < deadzone){ mobileDx = 0; mobileDy = 0; jsKnob.style.transform = 'translate(-50%,-50%)'; return; }
     const maxDist = R - KR;
-    // Angulo y snapping a 8 direcciones (cada 45 grados)
-    const angle = Math.atan2(dy, dx);
-    const snap = Math.round(angle / (Math.PI/4)) * (Math.PI/4);
-    // Calcular posicion visual del knob (limitada al radio)
-    const visualDist = Math.min(dist, maxDist);
-    const visX = Math.cos(snap) * visualDist;
-    const visY = Math.sin(snap) * visualDist;
-    jsKnob.style.transform = `translate(calc(-50% + ${visX}px), calc(-50% + ${visY}px))`;
-    // Output discreto: -1, 0, o 1 en cada eje
-    mobileDx = Math.round(Math.cos(snap));
-    mobileDy = Math.round(Math.sin(snap));
+    if(dist > maxDist){ dx = dx/dist*maxDist; dy = dy/dist*maxDist; }
+    jsKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    mobileDx = dx / maxDist;
+    mobileDy = dy / maxDist;
   }
 
   function resetJoystick(){
@@ -1792,19 +1594,17 @@ function spawnEnemy(type){
 
   if(type === 'boss'){
     const en = {
-      x: WORLD_W/2, y: WORLD_H/2, r: 74, type:'boss',
-      hp: Math.round((650 + wave*55) * 5 * d.hpMult * pm), maxHp: 0,
+      x, y, r: 74, type:'boss',
+      hp: Math.round((650 + wave*55) * d.hpMult * pm), maxHp: 0,
       speed: 0.85 * d.speedMult, reward: Math.round((90 + wave*3)*d.moneyMult), rewardXp: 90*d.xpMult, rewardGems: 18*d.gemMult,
       dmg: Math.round(24*d.dmgMult * pm), flash:0, attackPulse:0,
-      bossState:'intro', introT:2500, meteorT:0, meteorVolley:0, meteorCooldown:0,
-      atkCooldown: 2600, telegraphT:0, dashT:0, dashDirX:0, dashDirY:0,
+      bossState:'chase', atkCooldown: 2600, telegraphT:0, dashT:0, dashDirX:0, dashDirY:0,
       animT: Math.random()*1000
     };
     en.maxHp = en.hp;
     enemies.push(en);
     currentBoss = en;
-    document.getElementById('bossBar').style.display = 'none';
-    showMsg('👑 ¡JEFE ESCARABAJO!', 2000);
+    document.getElementById('bossBar').style.display = 'flex';
     return;
   }
   if(type === 'caterpillar'){
@@ -1812,7 +1612,7 @@ function spawnEnemy(type){
       x, y, r: 40, type:'caterpillar',
       hp: Math.round((90 + wave*7)*d.hpMult * pm), maxHp: 0,
       speed: 0.8*d.speedMult, reward: Math.round(18*d.moneyMult), rewardXp: 12*d.xpMult, rewardGems: 3*d.gemMult,
-      dmg: Math.round(10*d.dmgMult * pm), flash:0, atkCooldown: 900, animT: Math.random()*1000, atkTimer: 0
+      dmg: Math.round(10*d.dmgMult * pm), flash:0, atkCooldown: 900, animT: Math.random()*1000
     });
     enemies[enemies.length-1].maxHp = enemies[enemies.length-1].hp;
     return;
@@ -1824,7 +1624,7 @@ function spawnEnemy(type){
       x, y, r: 24, type:'wasp',
       hp: Math.round((40 + wave*4)*d.hpMult * pm), maxHp:0,
       speed: (1.5 + Math.random()*0.5)*d.speedMult, reward: Math.round(8*d.moneyMult), rewardXp: 5*d.xpMult, rewardGems: 1*d.gemMult,
-      dmg: Math.round(14*d.dmgMult * pm), flash: 0, animT: Math.random()*1000, atkTimer: 0
+      dmg: Math.round(14*d.dmgMult * pm), flash: 0, animT: Math.random()*1000
     });
     enemies[enemies.length-1].maxHp = enemies[enemies.length-1].hp;
   } else {
@@ -1832,7 +1632,7 @@ function spawnEnemy(type){
       x, y, r: 13, type:'fly',
       hp: Math.round((14 + wave*2)*d.hpMult * pm), maxHp:0,
       speed: (1.1 + Math.random()*0.5)*d.speedMult, reward: Math.round(3*d.moneyMult), rewardXp: 2*d.xpMult, rewardGems: 0,
-      dmg: Math.round(7*d.dmgMult * pm), flash: 0, animT: Math.random()*1000, atkTimer: 0
+      dmg: Math.round(7*d.dmgMult * pm), flash: 0, animT: Math.random()*1000
     });
     enemies[enemies.length-1].maxHp = enemies[enemies.length-1].hp;
   }
@@ -1841,7 +1641,6 @@ function spawnEnemy(type){
 function startWave(){
   state = 'playing';
   currentBoss = null;
-  bossIntroActive = false;
   document.getElementById('bossBar').style.display = 'none';
 
   if(isBossWave(wave)){
@@ -1867,7 +1666,6 @@ function showMsg(txt, dur){
 function tryShoot(t){
   if(t - player.lastShot < player.fireRate) return;
   player.lastShot = t;
-  playGunshotSfx();
   const dx = Math.cos(player.facing), dy = Math.sin(player.facing);
   bullets.push({
     x: player.x + dx*player.r, y: player.y + dy*player.r,
@@ -1886,7 +1684,7 @@ function killEnemy(en){
   addGems(gemR * (1 + meta.gemBonusLvl*0.1));
   killsThisWave++;
   spawnParticles(en.x, en.y, '#ffd76a', en.type==='boss' ? 34 : (en.type==='caterpillar'?16:10));
-  if(en.type === 'boss'){ currentBoss = null; bossIntroActive = false; document.getElementById('bossBar').style.display='none'; shake = 220; }
+  if(en.type === 'boss'){ currentBoss = null; document.getElementById('bossBar').style.display='none'; shake = 220; }
 }
 
 function update(dt, t){
@@ -1932,25 +1730,8 @@ function update(dt, t){
   // aimAngle sigue la dirección de movimiento
   player.aimAngle = player.facing;
 
-  // Cámara: si hay intro de boss,Animación cinematográfica
-  if(bossIntroActive && bossIntroTarget){
-    if(bossIntroPhase === 'player'){
-      // Fase 1: cámara enfocada en el personaje (1 segundo)
-      bossIntroZoom = ZOOM;
-      camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
-      camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
-    } else {
-      // Fase 2: pan lento hacia el boss
-      bossIntroZoom = Math.max(2.0, bossIntroZoom - dt*0.0006);
-      camera.x += (bossIntroTarget.x - camera.x) * 0.02;
-      camera.y += (bossIntroTarget.y - camera.y) * 0.02;
-    }
-  } else {
-    bossIntroZoom = ZOOM;
-    bossIntroPhase = 'player';
-    camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
-    camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
-  }
+  camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
+  camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
 
   if(mouse.down || keys[' ']) tryShoot(t);
   if(player.hitFlash > 0) player.hitFlash -= dt;
@@ -1998,50 +1779,7 @@ function update(dt, t){
 
     if(en.type === 'boss'){
       en.atkCooldown -= dt;
-      if(en.bossState === 'intro'){
-        en.introT -= dt;
-        bossIntroActive = true;
-        bossIntroTarget = { x: en.x, y: en.y };
-        // Fase 1: 1s enfocado en personaje, luego pan al boss
-        if(en.introT < 1500) bossIntroPhase = 'pan';
-        else bossIntroPhase = 'player';
-        // Efecto visual creciente
-        en.attackPulse = Math.min(1, (en.introT < 800 ? (800 - en.introT)/800 : 0));
-        if(en.introT <= 0){
-          bossIntroActive = false;
-          en.bossState = 'meteor'; en.meteorT = 0; en.meteorVolley = 0; en.meteorCooldown = 400;
-          en.attackPulse = 0;
-          document.getElementById('bossBar').style.display = 'flex';
-        }
-      } else if(en.bossState === 'meteor'){
-        // Ataque AOE: lanza proyectiles en todas direcciones
-        en.meteorT += dt;
-        en.meteorCooldown -= dt;
-        // Efecto visual pulsante
-        en.attackPulse = Math.sin(en.meteorT/200) * 0.5 + 0.5;
-        if(en.meteorCooldown <= 0 && en.meteorVolley < 6){
-          en.meteorVolley++;
-          en.meteorCooldown = 800;
-          // Lanzar proyectiles en un patrón radial
-          const numProj = 8 + en.meteorVolley * 2; // Cada vuelta más proyectiles
-          const baseAngle = (en.meteorVolley % 2 === 0) ? 0 : Math.PI/numProj;
-          for(let i = 0; i < numProj; i++){
-            const a = baseAngle + (Math.PI*2/numProj) * i;
-            const spd = 3.5 + Math.random() * 1.5;
-            enemyProjectiles.push({
-              x: en.x, y: en.y,
-              vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
-              r: 10, dmg: Math.round(en.dmg * 0.8), poison: false, life: 4000,
-              isMeteor: true
-            });
-          }
-          spawnParticles(en.x, en.y, '#3a9aff', 20);
-        }
-        // Después de 6 vueltas, volver a chase
-        if(en.meteorVolley >= 6 && en.meteorCooldown <= 0){
-          en.bossState = 'chase'; en.atkCooldown = 4000; en.attackPulse = 0;
-        }
-      } else if(en.bossState === 'chase'){
+      if(en.bossState === 'chase'){
         en.x += (edx/elen) * en.speed;
         en.y += (edy/elen) * en.speed;
         en.attackPulse = Math.max(0, (en.attackPulse||0) - dt/150);
@@ -2060,7 +1798,7 @@ function update(dt, t){
             const dmg = en.dmg * 1.4;
             if(pl.isLocal){ player.hp -= dmg; player.hitFlash = 200; player.x += en.dashDirX*10; player.y += en.dashDirY*10; }
             else { sendDamageToGuest(pl.peerId, dmg); }
-            en.dashHitSet.add(pl.peerId||'local');
+            shake = 150; en.dashHitSet.add(pl.peerId||'local');
           }
         }
         if(en.dashT <= 0){ en.bossState = 'chase'; en.atkCooldown = 5000; }
@@ -2082,16 +1820,12 @@ function update(dt, t){
 
     // Colisión enemigo -> todos los jugadores
     if(en.type !== 'boss'){
-      // Decrementar cooldown cada frame
-      if(en.atkTimer > 0) en.atkTimer -= dt;
       for(const pl of allPlayers){
         const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
-        if(dd < pl.r + en.r && en.atkTimer <= 0){
-          const atkCD = en.type==='wasp' ? 500 : 1000;
+        if(dd < pl.r + en.r){
           if(pl.isLocal){ player.hp -= en.dmg*(dt/1000)*4; player.hitFlash = 150; }
           else { sendDamageToGuest(pl.peerId, en.dmg*(dt/1000)*4); }
           en.x -= (edx/elen)*2; en.y -= (edy/elen)*2;
-          en.atkTimer = atkCD;
         }
       }
     }
@@ -2134,7 +1868,7 @@ function update(dt, t){
         en.x += (kdx/klen)*kb; en.y += (kdy/klen)*kb;
         spawnParticles(b.x,b.y,'#ffd76a',5);
         dmgNumbers.push({x:en.x,y:en.y-en.r,text:Math.round(dmg)+(isCrit?'!':''),life:600,vy:-0.6,crit:isCrit});
-        // shake removed for smoother gameplay
+        if(en.type==='boss') shake = 60;
         if(en.hp <= 0 && !en.dead) killEnemy(en);
         if(b.hitsLeft <= 0) break;
       }
@@ -2172,7 +1906,6 @@ function update(dt, t){
 
   if(player.hp <= 0){
     state = 'gameover';
-    playFailureSfx();
     document.getElementById('bossBar').style.display = 'none';
     document.getElementById('gameOverWave').textContent = `Caíste en la oleada ${wave} (dificultad: ${currentDiff.name})`;
     document.getElementById('goMoney').textContent = runStats.money;
@@ -2240,14 +1973,13 @@ function draw(){
   if(shake > 0){
     ctx.translate((Math.random()-0.5)*Math.min(shake,10)*0.4, (Math.random()-0.5)*Math.min(shake,10)*0.4);
   }
-  // camara: centra y aplica zoom (con zoom dinámico para intro del boss)
-  const activeZoom = bossIntroActive ? bossIntroZoom : ZOOM;
+  // camara: centra y aplica zoom
   ctx.translate(W/2, H/2);
-  ctx.scale(activeZoom, activeZoom);
+  ctx.scale(ZOOM, ZOOM);
   ctx.translate(-camera.x, -camera.y);
 
-  const viewL = camera.x - W/(2*activeZoom) - 40, viewT = camera.y - H/(2*activeZoom) - 40;
-  const viewW = W/activeZoom + 80, viewH = H/activeZoom + 80;
+  const viewL = camera.x - W/(2*ZOOM) - 40, viewT = camera.y - H/(2*ZOOM) - 40;
+  const viewW = W/ZOOM + 80, viewH = H/ZOOM + 80;
   if(floorPattern){
     ctx.fillStyle = floorPattern;
     ctx.fillRect(viewL, viewT, viewW, viewH);
@@ -2265,18 +1997,9 @@ function draw(){
   for(const p of particles){ ctx.fillStyle = p.color; ctx.fillRect(p.x-2, p.y-2, 4, 4); }
   ctx.fillStyle = '#ffe38a';
   for(const b of bullets){ ctx.fillRect(b.x-b.r, b.y-b.r, b.r*2, b.r*2); }
+  ctx.fillStyle = '#7be08a';
   for(const p of enemyProjectiles){
-    if(p.isMeteor){
-      // Proyectiles del boss: azul con glow
-      ctx.fillStyle = '#3a9aff';
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle = 'rgba(100,180,255,0.3)';
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*1.8,0,Math.PI*2); ctx.fill();
-    } else {
-      // Veneno normal: verde
-      ctx.fillStyle = '#7be08a';
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    }
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
   }
 
   for(const en of enemies){
@@ -2316,24 +2039,6 @@ function draw(){
         ctx.strokeStyle = 'rgba(255,80,80,0.8)'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(en.x, en.y, en.r*1.25, 0, Math.PI*2); ctx.stroke();
       }
-      // Efecto visual de intro: aura creciente
-      if(en.bossState === 'intro'){
-        const introProgress = 1 - (en.introT / 2500);
-        ctx.strokeStyle = `rgba(58,154,255,${introProgress * 0.6})`;
-        ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (1.5 + introProgress * 1.5), 0, Math.PI*2); ctx.stroke();
-        ctx.fillStyle = `rgba(30,100,255,${introProgress * 0.15})`;
-        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (2 + introProgress * 2), 0, Math.PI*2); ctx.fill();
-      }
-      // Efecto visual de meteor: aura azul pulsante
-      if(en.bossState === 'meteor'){
-        const pulse = en.attackPulse || 0;
-        ctx.strokeStyle = `rgba(58,154,255,${0.4 + pulse * 0.5})`;
-        ctx.lineWidth = 3 + pulse * 3;
-        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (1.2 + pulse * 0.8), 0, Math.PI*2); ctx.stroke();
-        ctx.fillStyle = `rgba(30,100,255,${0.05 + pulse * 0.1})`;
-        ctx.beginPath(); ctx.arc(en.x, en.y, en.r * (2 + pulse * 1.5), 0, Math.PI*2); ctx.fill();
-      }
     } else {
       ctx.fillStyle = '#000';
       ctx.fillRect(en.x-en.r, en.y-en.r*1.15-8, en.r*2, 4);
@@ -2342,15 +2047,24 @@ function draw(){
     }
   }
 
-  // personaje con animación de caminata por sprites individuales por dirección
+  // Animación de caminata realista
+  const walkPhase = player.moving ? player.animT / 85 : 0;
+  const walkBob = player.moving ? Math.sin(walkPhase * Math.PI * 2) * 4 : 0;
+  const walkLean = player.moving ? Math.sin(walkPhase * Math.PI * 2) * 0.06 : 0;
+  const legSwing = player.moving ? Math.sin(walkPhase * Math.PI * 2) * 0.3 : 0;
+  const facing = player.facing;
+  const facingLeft = Math.cos(facing) < 0;
+
   // sombra del jugador
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.beginPath();
-  ctx.ellipse(player.x, player.y + player.r * 0.85, player.r * 0.55, player.r * 0.18, 0, 0, Math.PI*2);
+  ctx.ellipse(player.x, player.y + player.r + 2, player.r * 0.9, player.r * 0.35, 0, 0, Math.PI*2);
   ctx.fill();
 
+  // personaje con animación de caminata por sprites individuales por dirección
   ctx.save();
-  ctx.translate(player.x, player.y);
+  ctx.translate(player.x, player.y + walkBob);
+  ctx.rotate(walkLean);
   let playerSprite;
   const walkFrames = {
     up: [sprites.walkUp0, sprites.walkUp1, sprites.walkUp2],
@@ -2461,7 +2175,6 @@ function openShop(){
   state = 'shop';
   shopEl.classList.add('open');
   refreshShopUI();
-  showMobileControls(false);
 }
 document.getElementById('buyDmg').onclick = () => {
   if(money >= costs.dmg){ money -= costs.dmg; player.damage += 4; player.dmgUpgrades++; costs.dmg = Math.round(costs.dmg*1.4); refreshShopUI(); }
@@ -2477,7 +2190,6 @@ document.getElementById('buySpeed').onclick = () => {
 };
 document.getElementById('continueBtn').onclick = () => {
   shopEl.classList.remove('open');
-  showMobileControls(true);
   startWave();
 };
 
@@ -2488,16 +2200,15 @@ document.getElementById('continueBtn').onclick = () => {
   if(saved && saved.includes('@')){
     currentEmail = saved;
     loadProfile(saved);
-    if(isCheatEmail(saved)) applyCheatProfile();
     document.getElementById('authStatus').textContent = `✅ ${saved}`;
     document.getElementById('openLoginBtn').style.display = 'none';
     document.getElementById('logoutBtn').style.display = 'inline-block';
     refreshHubUI();
+    goOnline();
     updateNicknameUI();
     renderFriends();
   }
 })();
-
 </script>
 </body>
 </html>
