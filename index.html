@@ -2434,6 +2434,7 @@ function openShop(){
   state = 'shop';
   shopEl.classList.add('open');
   refreshShopUI();
+  showMobileControls(false);
 }
 document.getElementById('buyDmg').onclick = () => {
   if(money >= costs.dmg){ money -= costs.dmg; player.damage += 4; player.dmgUpgrades++; costs.dmg = Math.round(costs.dmg*1.4); refreshShopUI(); }
@@ -2449,6 +2450,7 @@ document.getElementById('buySpeed').onclick = () => {
 };
 document.getElementById('continueBtn').onclick = () => {
   shopEl.classList.remove('open');
+  showMobileControls(true);
   startWave();
 };
 
