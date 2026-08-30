@@ -553,8 +553,9 @@
     <div id="loginCard">
       <h3>👤 Guardar tu progreso</h3>
       <p>Escribe tu correo para crear un perfil local. La próxima vez que abras este archivo en <b>este mismo navegador</b>, usa el mismo correo para recuperar tu nivel, gemas e inventario.<br><br>
-      <span style="color:#f0a;">Nota: esto se guarda solo en este dispositivo/navegador, no en la nube.</span></p>
-      <input type="email" id="loginEmailInput" placeholder="tu@correo.com">
+      <span style="color:#6fd06f;font-size:11px;">✅ Aceptados: Gmail, Hotmail, Outlook, Yahoo, iCloud, ProtonMail, AOL, Zoho, etc.</span><br>
+      <span style="color:#f0a;font-size:11px;">❌ No se aceptan correos educativos (.edu).</span></p>
+      <input type="email" id="loginEmailInput" placeholder="ej: tu@gmail.com, tu@hotmail.com">
       <div class="btnRow">
         <button class="smallBtn" id="loginCancelBtn">Cancelar</button>
         <button class="bigBtn" id="loginConfirmBtn" style="padding:8px 20px;font-size:13px;">Entrar</button>
@@ -747,9 +748,30 @@ document.getElementById('openLoginBtn').onclick = () => {
   document.getElementById('loginModal').style.display = 'flex';
 };
 document.getElementById('loginCancelBtn').onclick = () => { document.getElementById('loginModal').style.display = 'none'; };
+const VALID_EMAIL_PROVIDERS = [
+  'gmail.com','hotmail.com','hotmail.es','outlook.com','outlook.es','live.com','live.com.mx','live.es',
+  'msn.com','yahoo.com','yahoo.com.mx','yahoo.es','ymail.com','rocketmail.com',
+  'icloud.com','me.com','mac.com',
+  'protonmail.com','proton.me','zoho.com','zohomail.com',
+  'aol.com','aim.com','mail.com','email.com',
+  'gmx.com','gmx.de','tutanota.com','tutamail.com',
+  'fastmail.com','hey.com',
+  'yahoo.co.uk','yahoo.co.jp','yahoo.ca','yahoo.com.ar','yahoo.com.br','yahoo.com.co',
+  'hotmail.co.uk','hotmail.fr','hotmail.de','hotmail.it','hotmail.nl',
+  'outlook.co.uk','outlook.fr','outlook.de','outlook.it','outlook.nl',
+  'gmail.fr','gmail.de','gmail.it','gmail.es','gmail.co.uk','gmail.com.mx','gmail.com.ar','gmail.com.br',
+];
+function isValidEmail(email){
+  if(!email || !email.includes('@') || !email.includes('.')) return false;
+  const domain = email.split('@')[1];
+  if(!domain) return false;
+  const dl = domain.toLowerCase();
+  if(dl.endsWith('.edu') || dl.endsWith('.edu.') || dl.endsWith('.ac.')) return false;
+  return VALID_EMAIL_PROVIDERS.includes(dl);
+}
 document.getElementById('loginConfirmBtn').onclick = () => {
   const email = document.getElementById('loginEmailInput').value.trim();
-  if(!email || !email.includes('@') || !email.includes('.')){ alert('Escribe un correo válido'); return; }
+  if(!isValidEmail(email)){ alert('❌ Correo no válido.\n\nSolo se aceptan correos personales:\nGmail, Hotmail, Outlook, Yahoo, iCloud, ProtonMail, etc.\n\nNo se aceptan correos educativos (.edu).'); return; }
   currentEmail = email;
   localStorage.setItem('insectgames_lastEmail', email);
   const had = loadProfile(email);
