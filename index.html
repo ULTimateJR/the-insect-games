@@ -1328,6 +1328,7 @@ function openCrate(kind){
   const pool = kind === 'passive' ? PASSIVE_TYPES : WEAPON_MOD_TYPES;
   const item = makeItem(pool);
   if(kind === 'passive') meta.passiveInv.push(item); else meta.weaponInv.push(item);
+  saveProfile();
   const rarity = RARITIES[item.rarityIdx];
   // Roulette animation
   const strip = document.getElementById('rouletteStrip');
@@ -1455,6 +1456,7 @@ function refreshHubUI(){
   renderInventory();
   updateNicknameUI();
   renderFriends();
+  saveProfile();
 }
 
 // ==================== LOBBY MUSIC ====================
@@ -2191,8 +2193,8 @@ function spawnParticles(x,y,color,n){
   }
 }
 
-document.getElementById('goToHubBtn').onclick = () => { showScreen('hub'); showMobileControls(false); mpOtherPlayers = {}; refreshHubUI(); };
-document.getElementById('retryBtn').onclick = () => { startRun(); };
+document.getElementById('goToHubBtn').onclick = () => { showScreen('hub'); showMobileControls(false); mpOtherPlayers = {}; refreshHubUI(); saveProfile(); };
+document.getElementById('retryBtn').onclick = () => { saveProfile(); startRun(); };
 
 // ---------- Dibujo ----------
 function drawSprite(img, x, y, boxSize, flashActive, flipX, extraRotate){
@@ -2478,8 +2480,12 @@ document.getElementById('buySpeed').onclick = () => {
 document.getElementById('continueBtn').onclick = () => {
   shopEl.classList.remove('open');
   showMobileControls(true);
+  saveProfile();
   startWave();
 };
+
+// --- AUTO-SAVE: guardar progreso al cerrar/recargar página ---
+window.addEventListener('beforeunload', () => { saveProfile(); });
 
 // --- AUTO-LOGIN: recuperar sesión guardada al cargar la página ---
 (function autoLogin(){
