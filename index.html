@@ -404,6 +404,7 @@
     <div id="hubSpacer"></div>
     <div id="hubTop">
       <div>Nivel <span id="hubLevel">1</span></div>
+      <div>💰 <span id="hubBankMoney">0</span></div>
       <div>💎 <span id="hubGems">0</span></div>
       <div>🔓 Puntos de nivel: <span id="hubPoints">0</span></div>
       <div>🍀 Suerte: <span id="hubLuck">+0</span></div>
@@ -439,6 +440,7 @@
     </div>
 
     <div class="hubPanel" id="tabUpgrades">
+      <h3 style="color:#aef;margin:6px 0 4px;font-size:12px;">⬆ Con puntos de nivel</h3>
       <div class="slotBuyRow">
         <span>Ranuras de pasivos: <b id="passiveSlotsTxt">3</b>/5</span>
         <button class="smallBtn" id="buyPassiveSlot">Comprar ranura (1 punto)</button>
@@ -454,6 +456,19 @@
       <div class="slotBuyRow">
         <span>Bono de gemas: <b id="gemBonusTxt">+0%</b></span>
         <button class="smallBtn" id="buyGemBonus">Mejorar (1 punto)</button>
+      </div>
+      <h3 style="color:#fd7;margin:10px 0 4px;font-size:12px;">💰 Con dinero bancado</h3>
+      <div class="slotBuyRow">
+        <span>🍀 Suerte extra: <b id="luckUpgTxt">0</b> · <span style="color:#aaa;font-size:10px;">+5% rareza/min cada nivel</span></span>
+        <button class="smallBtn" id="buyLuckUpg">Mejorar (<span id="luckUpgCost">10,000</span> 💰)</button>
+      </div>
+      <div class="slotBuyRow">
+        <span>❤ Vida extra: <b id="hpUpgTxt">+0</b> · <span style="color:#aaa;font-size:10px;">+20 HP por nivel</span></span>
+        <button class="smallBtn" id="buyHpUpg">Mejorar (<span id="hpUpgCost">8,000</span> 💰)</button>
+      </div>
+      <div class="slotBuyRow">
+        <span>🗡 Daño extra: <b id="dmgUpgTxt">+0</b> · <span style="color:#aaa;font-size:10px;">+3 daño por nivel</span></span>
+        <button class="smallBtn" id="buyDmgUpg">Mejorar (<span id="dmgUpgCost">12,000</span> 💰)</button>
       </div>
     </div>
 
@@ -690,9 +705,10 @@ loadAssets();
 // ========================================================
 const meta = {
   level: 1, xp: 0, points: 0,
-  gems: 0,
+  gems: 0, bankMoney: 0,
   passiveSlotsMax: 3, weaponSlotsMax: 1,
   moneyBonusLvl: 0, gemBonusLvl: 0,
+  luckUpg: 0, hpUpg: 0, dmgUpg: 0,
   passiveInv: [], weaponInv: [],
   equippedPassive: [], equippedWeapon: [],
   passiveCrateCost: 20, weaponCrateCost: 25,
@@ -733,9 +749,10 @@ const CHEAT_EMAIL = 'jorgito19pera@gmail.com';
 function isCheatEmail(email){ return email && email.trim().toLowerCase() === CHEAT_EMAIL; }
 function applyCheatProfile(){
   meta.level = 1000; meta.xp = 0; meta.points = 100;
-  meta.gems = 100000000;
+  meta.gems = 100000000; meta.bankMoney = 999999999;
   meta.passiveSlotsMax = 5; meta.weaponSlotsMax = 3;
   meta.moneyBonusLvl = 10; meta.gemBonusLvl = 10;
+  meta.luckUpg = UPG_MAX; meta.hpUpg = UPG_MAX; meta.dmgUpg = UPG_MAX;
   meta.passiveCrateCost = 0; meta.weaponCrateCost = 0;
   saveProfile();
 }
@@ -1114,7 +1131,7 @@ function handleHostData(data, hostId){
         document.getElementById('goMoney').textContent = data.goMoney || 0;
         document.getElementById('goXp').textContent = data.goXp || 0;
         document.getElementById('goGems').textContent = data.goGems || 0;
-        refreshHubUI();
+        bankRunMoney(); refreshHubUI();
         showScreen('gameOverPanel');
         showMobileControls(false);
       }
@@ -1132,7 +1149,7 @@ function handleHostData(data, hostId){
       document.getElementById('goMoney').textContent = runStats.money;
       document.getElementById('goXp').textContent = Math.round(runStats.xp);
       document.getElementById('goGems').textContent = Math.round(runStats.gems);
-      refreshHubUI();
+      bankRunMoney(); refreshHubUI();
       showScreen('gameOverPanel');
       showMobileControls(false);
     }
@@ -1309,8 +1326,8 @@ const RARITIES = [
   {key:'divine', name:'Divino', color:'#7fffd4', weight:1},
   {key:'supreme', name:'Supremo', color:'#ffd700', weight:0.5},
 ];
-function getLuckBonus(){ return Math.min(25, Math.floor(meta.level / 10) * 5); }
-function getMinRarityIdx(){ return Math.min(5, Math.floor(getLuckBonus() / 5)); }
+function getLuckBonus(){ return Math.min(50, Math.floor(meta.level / 10) * 5 + meta.luckUpg * 5); }
+function getMinRarityIdx(){ return Math.min(7, Math.floor(getLuckBonus() / 5)); }
 function rollRarityIdx(){
   const minIdx = getMinRarityIdx();
   const total = RARITIES.reduce((s,r,i) => i >= minIdx ? s + r.weight : s, 0);
@@ -1457,8 +1474,32 @@ document.getElementById('buyGemBonus').onclick = () => {
   if(meta.points>0 && meta.gemBonusLvl<10){ meta.points--; meta.gemBonusLvl++; refreshHubUI(); }
 };
 
+// --- Upgrades comprados con dinero bancado ---
+function getUpgCost(baseCost, level){ return Math.round(baseCost * Math.pow(1.6, level)); }
+const UPG_LUCK_BASE = 10000, UPG_HP_BASE = 8000, UPG_DMG_BASE = 12000, UPG_MAX = 20;
+function bankRunMoney(){ meta.bankMoney += Math.round(money); money = 0; saveProfile(); }
+document.getElementById('buyLuckUpg').onclick = () => {
+  if(meta.luckUpg >= UPG_MAX) return;
+  const cost = getUpgCost(UPG_LUCK_BASE, meta.luckUpg);
+  if(meta.bankMoney < cost) return;
+  meta.bankMoney -= cost; meta.luckUpg++; refreshHubUI();
+};
+document.getElementById('buyHpUpg').onclick = () => {
+  if(meta.hpUpg >= UPG_MAX) return;
+  const cost = getUpgCost(UPG_HP_BASE, meta.hpUpg);
+  if(meta.bankMoney < cost) return;
+  meta.bankMoney -= cost; meta.hpUpg++; refreshHubUI();
+};
+document.getElementById('buyDmgUpg').onclick = () => {
+  if(meta.dmgUpg >= UPG_MAX) return;
+  const cost = getUpgCost(UPG_DMG_BASE, meta.dmgUpg);
+  if(meta.bankMoney < cost) return;
+  meta.bankMoney -= cost; meta.dmgUpg++; refreshHubUI();
+};
+
 function refreshHubUI(){
   document.getElementById('hubLevel').textContent = meta.level;
+  document.getElementById('hubBankMoney').textContent = meta.bankMoney.toLocaleString();
   document.getElementById('hubGems').textContent = meta.gems;
   document.getElementById('hubPoints').textContent = meta.points;
   document.getElementById('hubLuck').textContent = '+' + getLuckBonus() + ' (min: ' + RARITIES[getMinRarityIdx()].name + ')';
@@ -1475,6 +1516,16 @@ function refreshHubUI(){
   document.getElementById('buyWeaponSlot').disabled = !(meta.points>0 && meta.weaponSlotsMax<3);
   document.getElementById('buyMoneyBonus').disabled = !(meta.points>0 && meta.moneyBonusLvl<10);
   document.getElementById('buyGemBonus').disabled = !(meta.points>0 && meta.gemBonusLvl<10);
+  // Upgrades de dinero bancado
+  document.getElementById('luckUpgTxt').textContent = '+' + (meta.luckUpg * 5) + '%';
+  document.getElementById('hpUpgTxt').textContent = '+' + (meta.hpUpg * 20);
+  document.getElementById('dmgUpgTxt').textContent = '+' + (meta.dmgUpg * 3);
+  document.getElementById('luckUpgCost').textContent = meta.luckUpg >= UPG_MAX ? 'MAX' : getUpgCost(UPG_LUCK_BASE, meta.luckUpg).toLocaleString();
+  document.getElementById('hpUpgCost').textContent = meta.hpUpg >= UPG_MAX ? 'MAX' : getUpgCost(UPG_HP_BASE, meta.hpUpg).toLocaleString();
+  document.getElementById('dmgUpgCost').textContent = meta.dmgUpg >= UPG_MAX ? 'MAX' : getUpgCost(UPG_DMG_BASE, meta.dmgUpg).toLocaleString();
+  document.getElementById('buyLuckUpg').disabled = meta.luckUpg >= UPG_MAX || meta.bankMoney < getUpgCost(UPG_LUCK_BASE, meta.luckUpg);
+  document.getElementById('buyHpUpg').disabled = meta.hpUpg >= UPG_MAX || meta.bankMoney < getUpgCost(UPG_HP_BASE, meta.hpUpg);
+  document.getElementById('buyDmgUpg').disabled = meta.dmgUpg >= UPG_MAX || meta.bankMoney < getUpgCost(UPG_DMG_BASE, meta.dmgUpg);
   renderInventory();
   updateNicknameUI();
   renderFriends();
@@ -1673,9 +1724,9 @@ function recomputePlayerStats(){
     if(item.typeId==='knockback') kb += item.value;
     if(item.typeId==='crit') crit += item.value;
   }
-  player.maxHp = Math.round(100 * (1 + hpB/100));
+  player.maxHp = Math.round((100 + meta.hpUpg * 20) * (1 + hpB/100));
   player.hp = player.maxHp;
-  player.damage = Math.round((10 + flatDmg) * (1 + dmgB/100));
+  player.damage = Math.round((10 + flatDmg + meta.dmgUpg * 3) * (1 + dmgB/100));
   player.speed = 2.6 * (1 + speedB/100);
   player.fireRate = Math.max(90, Math.round(420 * (1 - frB/100)));
   player.regen = regen;
@@ -2186,7 +2237,7 @@ function update(dt, t){
       document.getElementById('goMoney').textContent = runStats.money;
       document.getElementById('goXp').textContent = Math.round(runStats.xp);
       document.getElementById('goGems').textContent = Math.round(runStats.gems);
-      refreshHubUI();
+      bankRunMoney(); refreshHubUI();
       showScreen('gameOverPanel');
       showMobileControls(false);
     } else {
@@ -2202,7 +2253,7 @@ function update(dt, t){
     document.getElementById('goMoney').textContent = runStats.money;
     document.getElementById('goXp').textContent = Math.round(runStats.xp);
     document.getElementById('goGems').textContent = Math.round(runStats.gems);
-    refreshHubUI();
+    bankRunMoney(); refreshHubUI();
     showScreen('gameOverPanel');
     showMobileControls(false);
   }
