@@ -463,11 +463,11 @@
         <button class="smallBtn" id="buyLuckUpg">Mejorar (<span id="luckUpgCost">10,000</span> 💰)</button>
       </div>
       <div class="slotBuyRow">
-        <span>❤ Vida extra: <b id="hpUpgTxt">+0</b> · <span style="color:#aaa;font-size:10px;">+10 HP por nivel</span></span>
+        <span>❤ Vida extra: <b id="hpUpgTxt">+0</b> · <span style="color:#aaa;font-size:10px;">+5 HP por nivel</span></span>
         <button class="smallBtn" id="buyHpUpg">Mejorar (<span id="hpUpgCost">8,000</span> 💰)</button>
       </div>
       <div class="slotBuyRow">
-        <span>🗡 Daño extra: <b id="dmgUpgTxt">+0</b> · <span style="color:#aaa;font-size:10px;">+2 daño por nivel</span></span>
+        <span>🗡 Daño extra: <b id="dmgUpgTxt">+0</b> · <span style="color:#aaa;font-size:10px;">+1 daño por nivel</span></span>
         <button class="smallBtn" id="buyDmgUpg">Mejorar (<span id="dmgUpgCost">12,000</span> 💰)</button>
       </div>
     </div>
@@ -1518,8 +1518,8 @@ function refreshHubUI(){
   document.getElementById('buyGemBonus').disabled = !(meta.points>0 && meta.gemBonusLvl<10);
   // Upgrades de dinero bancado
   document.getElementById('luckUpgTxt').textContent = '+' + (meta.luckUpg * 5) + '%';
-  document.getElementById('hpUpgTxt').textContent = '+' + (meta.hpUpg * 10);
-  document.getElementById('dmgUpgTxt').textContent = '+' + (meta.dmgUpg * 2);
+  document.getElementById('hpUpgTxt').textContent = '+' + (meta.hpUpg * 5);
+  document.getElementById('dmgUpgTxt').textContent = '+' + (meta.dmgUpg * 1);
   document.getElementById('luckUpgCost').textContent = meta.luckUpg >= UPG_MAX ? 'MAX' : getUpgCost(UPG_LUCK_BASE, meta.luckUpg).toLocaleString();
   document.getElementById('hpUpgCost').textContent = meta.hpUpg >= UPG_MAX ? 'MAX' : getUpgCost(UPG_HP_BASE, meta.hpUpg).toLocaleString();
   document.getElementById('dmgUpgCost').textContent = meta.dmgUpg >= UPG_MAX ? 'MAX' : getUpgCost(UPG_DMG_BASE, meta.dmgUpg).toLocaleString();
@@ -1724,9 +1724,9 @@ function recomputePlayerStats(){
     if(item.typeId==='knockback') kb += item.value;
     if(item.typeId==='crit') crit += item.value;
   }
-  player.maxHp = Math.round((100 + meta.hpUpg * 10) * (1 + hpB/100));
+  player.maxHp = Math.round((100 + meta.hpUpg * 5) * (1 + hpB/100));
   player.hp = player.maxHp;
-  player.damage = Math.round((10 + flatDmg + meta.dmgUpg * 2) * (1 + dmgB/100));
+  player.damage = Math.round((10 + flatDmg + meta.dmgUpg * 1) * (1 + dmgB/100));
   player.speed = 2.6 * (1 + speedB/100);
   player.fireRate = Math.max(90, Math.round(420 * (1 - frB/100)));
   player.regen = regen;
