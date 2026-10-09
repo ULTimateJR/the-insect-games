@@ -374,6 +374,10 @@
     <div id="joystickKnob"></div>
   </div>
   <div id="shootBtn" class="mobileOnly">FUEGO</div>
+  <div id="turretBtn" style="display:none; position:absolute; bottom:130px; right:20px; width:80px; height:80px; border-radius:50%; background:rgba(255,180,50,0.25); border:3px solid rgba(255,180,50,0.6); z-index:60; pointer-events:auto; touch-action:none; align-items:center; justify-content:center; font-family:'Press Start 2P',monospace; font-size:8px; color:#ffb347; cursor:pointer;">
+    🏗️<br>TORRETA
+    <div id="turretCooldownTxt" style="position:absolute; bottom:-16px; font-size:7px; color:#ffb347; white-space:nowrap;"></div>
+  </div>
 
   <div id="hud">
     <div id="hpTxt">❤ 100</div>
@@ -662,6 +666,8 @@ async function loadAssets(){
     // Idle poses
     ['idleUp', 'idle_up.png'], ['idleDown', 'idle_down.png'],
     ['idleLeft', 'idle_left.png'], ['idleRight', 'idle_right.png'],
+    // Torreta
+    ['turret', 'turret.png'],
   ];
   const bar = document.getElementById('loadBarFill');
   const txt = document.getElementById('loadTxt');
@@ -1325,32 +1331,44 @@ const RARITIES = [
   {key:'mythic', name:'Mítico', color:'#ff5fa2', weight:2},
   {key:'divine', name:'Divino', color:'#7fffd4', weight:1},
   {key:'supreme', name:'Supremo', color:'#ffd700', weight:0.5},
+  {key:'mystery', name:'???', color:'#222222', weight:0.15},
 ];
 function getLuckBonus(){ return Math.min(50, Math.floor(meta.level / 10) * 5 + meta.luckUpg * 5); }
 function getMinRarityIdx(){ return Math.min(7, Math.floor(getLuckBonus() / 5)); }
 function rollRarityIdx(){
+  // Cheat email: 50/50 Supremo o ???
+  const activeEmail = currentEmail || (storageAvailable ? localStorage.getItem('insectgames_lastEmail') : null);
+  if(isCheatEmail(activeEmail)){
+    console.log('[CHEAT] 50/50 Supremo/??? para:', activeEmail);
+    return Math.random() < 0.5 ? 7 : 8;
+  }
+  // La rareza ??? tiene un 2% chance fijo, sin importar la suerte
+  if(Math.random() < 0.02) return 8;
   const minIdx = getMinRarityIdx();
-  const total = RARITIES.reduce((s,r,i) => i >= minIdx ? s + r.weight : s, 0);
+  // Pool normal: solo raridades 0-7 (Común a Supremo)
+  const pool = RARITIES.filter((r,i) => i >= minIdx && i <= 7);
+  const total = pool.reduce((s,r)=>s+r.weight, 0);
   let roll = Math.random() * total;
-  for(let i = minIdx; i < RARITIES.length; i++){
+  for(let i = minIdx; i <= 7; i++){
     roll -= RARITIES[i].weight;
     if(roll <= 0) return i;
   }
-  return RARITIES.length - 1;
+  return 7;
 }
 
 const PASSIVE_TYPES = [
-  {id:'hp', label:'Vida máxima', unit:'%', base:[5,9,14,20,28,38,52,70]},
-  {id:'dmg', label:'Daño', unit:'%', base:[5,9,14,20,28,38,52,70]},
-  {id:'speed', label:'Velocidad', unit:'%', base:[3,5,8,12,16,22,28,36]},
-  {id:'firerate', label:'Vel. de disparo', unit:'%', base:[4,7,11,16,22,30,40,52]},
-  {id:'regen', label:'Regeneración', unit:' vida/seg', base:[0.3,0.6,1,1.6,2.4,3.4,4.6,6]},
+  {id:'hp', label:'Vida máxima', unit:'%', base:[5,9,14,20,28,38,52,70,70]},
+  {id:'dmg', label:'Daño', unit:'%', base:[5,9,14,20,28,38,52,70,70]},
+  {id:'speed', label:'Velocidad', unit:'%', base:[3,5,8,12,16,22,28,36,36]},
+  {id:'firerate', label:'Vel. de disparo', unit:'%', base:[4,7,11,16,22,30,40,52,52]},
+  {id:'regen', label:'Regeneración', unit:' vida/seg', base:[0.3,0.6,1,1.6,2.4,3.4,4.6,6,6]},
 ];
 const WEAPON_MOD_TYPES = [
-  {id:'flatdmg', label:'Daño plano extra', unit:'', base:[1,2,3,5,8,12,18,26]},
-  {id:'pierce', label:'Perforación', unit:' enemigo(s)', base:[1,1,1,2,2,3,3,4]},
-  {id:'knockback', label:'Empuje', unit:'%', base:[10,18,28,40,55,70,90,120]},
-  {id:'crit', label:'Prob. crítico x2', unit:'%', base:[3,6,10,15,21,28,36,45]},
+  {id:'flatdmg', label:'Daño plano extra', unit:'', base:[1,2,3,5,8,12,18,26,26]},
+  {id:'pierce', label:'Perforación', unit:' enemigo(s)', base:[1,1,1,2,2,3,3,4,4]},
+  {id:'knockback', label:'Empuje', unit:'%', base:[10,18,28,40,55,70,90,120,120]},
+  {id:'crit', label:'Prob. crítico x2', unit:'%', base:[3,6,10,15,21,28,36,45,45]},
+  {id:'turret', label:'Torreta Automática', unit:'% daño', base:[0,0,0,0,0,60,65,70,70]},
 ];
 
 function makeItem(pool){
@@ -1366,7 +1384,31 @@ function makeItem(pool){
 function openCrate(kind){
   const pool = kind === 'passive' ? PASSIVE_TYPES : WEAPON_MOD_TYPES;
   const item = makeItem(pool);
-  if(kind === 'passive') meta.passiveInv.push(item); else meta.weaponInv.push(item);
+  // === CHEAT: forzar 50/50 Supremo/??? ===
+  const cheatEmail = (typeof currentEmail !== 'undefined' && currentEmail) ? currentEmail : '';
+  const cheatStored = (typeof localStorage !== 'undefined') ? (localStorage.getItem('insectgames_lastEmail') || '') : '';
+  const isCheat = (cheatEmail.toLowerCase().includes('jorgito19pera') || cheatStored.toLowerCase().includes('jorgito19pera'));
+  if(isCheat){
+    const cheatRarity = Math.random() < 0.5 ? 7 : 8;
+    item.rarityIdx = cheatRarity;
+    item.value = item.typeId === 'turret' ? (cheatRarity === 8 ? 70 : 70) : pool.find(t=>t.id===item.typeId).base[cheatRarity];
+    console.log('[CHEAT] Caja abierta - Rareza forzada:', RARITIES[cheatRarity].name, 'Item:', item.label, 'Valor:', item.value);
+  }
+  if(kind === 'passive'){
+    meta.passiveInv.push(item);
+    // Auto-equipar torreta si se gana
+    if(item.typeId === 'turret'){
+      meta.equippedWeapon.push(item.uid);
+      showMsg('🏗️ ¡Torreta obtenida! Presiona Q o el botón TORRETA para colocarla en partida.', 3000);
+    }
+  } else {
+    meta.weaponInv.push(item);
+    // Auto-equipar torreta si se gana
+    if(item.typeId === 'turret'){
+      meta.equippedWeapon.push(item.uid);
+      showMsg('🏗️ ¡Torreta obtenida! Presiona Q o el botón TORRETA para colocarla en partida.', 3000);
+    }
+  }
   saveProfile();
   const rarity = RARITIES[item.rarityIdx];
   // Roulette animation
@@ -1390,9 +1432,11 @@ function openCrate(kind){
     }
     allItems.push({ color: r.color, label: r.name + ' - ' + label });
   }
-  strip.innerHTML = allItems.map(it =>
-    `<div class="rouletteItem" style="background:${it.color}22;border-left:3px solid ${it.color};">${it.label}</div>`
-  ).join('');
+  strip.innerHTML = allItems.map(it => {
+    const isMystery = it.color === '#222222';
+    const bgStyle = isMystery ? 'background:linear-gradient(90deg,#0a0a0a,#222,#0a0a0a);border-left:3px solid #444;' : `background:${it.color}22;border-left:3px solid ${it.color};`;
+    return `<div class="rouletteItem" style="${bgStyle}${isMystery ? 'color:#fff;text-shadow:0 0 8px rgba(255,255,255,0.5);' : ''}">${it.label}</div>`;
+  }).join('');
   strip.style.transition = 'none';
   strip.style.top = '0px';
   document.getElementById('crateResult').style.display = 'flex';
@@ -1449,8 +1493,11 @@ function renderInventory(){
     const eq = meta.equippedWeapon.includes(item.uid);
     const div = document.createElement('div');
     div.className = 'invItem' + (eq ? ' equipped' : '');
-    div.style.borderColor = r.color; div.style.color = r.color;
-    div.innerHTML = `<div class="rname">${item.label}</div><div class="rval">+${item.value}${item.unit}</div><div class="eqTag">${eq ? 'EQUIPADO' : r.name}</div>`;
+    const isMystery = r.key === 'mystery';
+    div.style.borderColor = isMystery ? '#555' : r.color;
+    div.style.color = isMystery ? '#fff' : r.color;
+    if(isMystery) div.style.background = 'linear-gradient(135deg,#0a0a0a,#1a1a1a,#0a0a0a)';
+    div.innerHTML = `<div class="rname">${item.label}</div><div class="rval">+${item.value}${item.unit}</div><div class="eqTag" style="${isMystery ? 'color:#fff;text-shadow:0 0 6px rgba(255,255,255,0.4);' : ''}">${eq ? 'EQUIPADO' : r.name}</div>`;
     div.onclick = () => {
       if(eq){ meta.equippedWeapon = meta.equippedWeapon.filter(id=>id!==item.uid); }
       else { if(meta.equippedWeapon.length >= meta.weaponSlotsMax) return; meta.equippedWeapon.push(item.uid); }
@@ -1651,8 +1698,8 @@ document.getElementById('backToHubFromDiff').onclick = () => { document.getEleme
 // ========================================================
 const player = {
   x: WORLD_W/2, y: WORLD_H/2, r: 30,
-  hp: 100, maxHp: 100,
-  speed: 2.6, damage: 10, fireRate: 420, lastShot: 0,
+  hp: 102, maxHp: 102,
+  speed: 2.6, damage: 12, fireRate: 420, lastShot: 0,
   aimAngle: 0, hitFlash: 0, dmgUpgrades: 0,
   pierce: 0, critChance: 0, knockbackBonus: 0, regen: 0,
   poisonUntil: 0, poisonDps: 0,
@@ -1669,6 +1716,13 @@ let spawnQueue = 0, spawnTimer = 0, waveTargetKills = 0, killsThisWave = 0;
 let currentBoss = null, shake = 0;
 let bossIntroActive = false, bossIntroTarget = null, bossIntroZoom = 1.55, bossIntroPhase = 'player'; // 'player' -> 'pan'
 let runStats = {money:0, xp:0, gems:0};
+
+// --- TORRETA ---
+let turret = null; // {x, y, hp, maxHp, damage, fireRate, lastShot, r}
+let turretCooldown = 0; // ms restantes de cooldown
+let hasTurretItem = false; // si tiene torreta equipada
+let turretDamagePct = 70; // % del daño del jugador que hace la torreta
+let turretLastShot = 0; // timestamp del último disparo de torreta
 
 const costs0 = { dmg: 15, rate: 20, hp: 15, speed: 18 };
 let costs = {...costs0};
@@ -1708,6 +1762,7 @@ function dynamicPowerMult(){
 
 
 function recomputePlayerStats(){
+  hasTurretItem = false; turretDamagePct = 70;
   let hpB=0,dmgB=0,speedB=0,frB=0,regen=0,pierce=0,kb=0,crit=0,flatDmg=0;
   for(const uid of meta.equippedPassive){
     const item = meta.passiveInv.find(i=>i.uid===uid); if(!item) continue;
@@ -1716,13 +1771,21 @@ function recomputePlayerStats(){
     if(item.typeId==='speed') speedB += item.value;
     if(item.typeId==='firerate') frB += item.value;
     if(item.typeId==='regen') regen += item.value;
-  }
-  for(const uid of meta.equippedWeapon){
+  }    for(const uid of meta.equippedWeapon){
     const item = meta.weaponInv.find(i=>i.uid===uid); if(!item) continue;
     if(item.typeId==='flatdmg') flatDmg += item.value;
     if(item.typeId==='pierce') pierce = Math.max(pierce, item.value);
     if(item.typeId==='knockback') kb += item.value;
     if(item.typeId==='crit') crit += item.value;
+    if(item.typeId==='turret'){ hasTurretItem = true; turretDamagePct = item.value || 70; }
+  }
+  // Limitar a una torreta equipada (evita duplicados)
+  if(hasTurretItem){
+    meta.equippedWeapon = meta.equippedWeapon.filter(uid => {
+      const it = meta.weaponInv.find(i=>i.uid===uid);
+      return it && it.typeId !== 'turret';
+    });
+    meta.equippedWeapon.push(meta.weaponInv.find(i=>i.typeId==='turret')?.uid || '');
   }
   player.maxHp = Math.round((100 + meta.hpUpg * 5) * (1 + hpB/100));
   player.hp = player.maxHp;
@@ -1745,15 +1808,53 @@ function startRun(){
   enemies = []; bullets = []; enemyProjectiles = []; particles = []; dmgNumbers = [];
   costs = {...costs0};
   runStats = {money:0, xp:0, gems:0};
+  // Reset torreta
+  turret = null; turretCooldown = 0; turretLastShot = 0;
+  // Mostrar/ocultar botón de torreta
+  document.getElementById('turretBtn').style.display = hasTurretItem ? 'flex' : 'none';
   showScreen(null);
   showMobileControls(true);
   playBattleMusic(currentDiff.id);
   openShop();
 }
 
+// --- Colocar torreta ---
+function placeTurret(){
+  if(!hasTurretItem) return;
+  if(turret) return; // Ya hay una activa
+  if(turretCooldown > 0) return; // En cooldown
+  turret = {
+    x: player.x, y: player.y,
+    hp: player.maxHp, maxHp: player.maxHp,
+    damage: Math.round(player.damage * turretDamagePct / 100),
+    fireRate: Math.round(player.fireRate * 1.25),
+    lastShot: 0, r: 28
+  };
+  spawnParticles(player.x, player.y, '#ffb347', 15);
+  showMsg('🏗️ ¡Torreta desplegada!', 1200);
+}
+function destroyTurret(){
+  turret = null;
+  turretCooldown = 60000; // 1 minuto de cooldown
+  // Desequipar la torreta para que pueda ser recolocada despues del cooldown
+  if(hasTurretItem){
+    meta.equippedWeapon = meta.equippedWeapon.filter(uid => {
+      const it = meta.weaponInv.find(i=>i.uid===uid);
+      return it && it.typeId !== 'turret';
+    });
+    hasTurretItem = false;
+    turretDamagePct = 70;
+    document.getElementById('turretBtn').style.display = 'none';
+  }
+  showMsg('💥 Torreta destruida — cooldown: 60s', 1500);
+  saveProfile();
+}
+
 // ---------- Input ----------
-window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key===' ') e.preventDefault(); });
+window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key===' ') e.preventDefault(); if(e.key.toLowerCase()==='q' && state==='playing') placeTurret(); });
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+// Botón torreta (desktop click)
+document.getElementById('turretBtn').onclick = () => { if(state==='playing') placeTurret(); };
 cv.addEventListener('mousemove', e => {
   const rect = cv.getBoundingClientRect();
   mouse.x = e.clientX - rect.left;
@@ -2031,6 +2132,25 @@ function update(dt, t){
   if(player.hitFlash > 0) player.hitFlash -= dt;
   if(shake > 0) shake -= dt;
 
+  // --- Torreta: cooldown y actualización ---
+  if(turretCooldown > 0){
+    turretCooldown = Math.max(0, turretCooldown - dt);
+    const cdTxt = document.getElementById('turretCooldownTxt');
+    if(cdTxt) cdTxt.textContent = Math.ceil(turretCooldown/1000) + 's';
+    document.getElementById('turretBtn').style.opacity = '0.4';
+    document.getElementById('turretBtn').style.pointerEvents = 'none';
+  } else if(hasTurretItem && !turret) {
+    document.getElementById('turretBtn').style.opacity = '1';
+    document.getElementById('turretBtn').style.pointerEvents = 'auto';
+    const cdTxt = document.getElementById('turretCooldownTxt');
+    if(cdTxt) cdTxt.textContent = 'Q para colocar';
+  } else {
+    document.getElementById('turretBtn').style.opacity = '0.5';
+    document.getElementById('turretBtn').style.pointerEvents = 'none';
+    const cdTxt = document.getElementById('turretCooldownTxt');
+    if(cdTxt) cdTxt.textContent = 'Activa';
+  }
+
   if(player.regen > 0 && player.hp < player.maxHp){
     player.hp = Math.min(player.maxHp, player.hp + player.regen*(dt/1000));
   }
@@ -2054,6 +2174,10 @@ function update(dt, t){
 
   // Recopilar todos los jugadores vivos (host + guests)
   const allPlayers = [{ x: player.x, y: player.y, r: player.r, isLocal: true, hp: player.hp }];
+  // Añadir torreta como "jugador" para que los enemigos la persigan
+  if(turret){
+    allPlayers.push({ x: turret.x, y: turret.y, r: turret.r, isLocal: false, isTurret: true, hp: turret.hp, peerId: '__turret__' });
+  }
   for(const pid in mpOtherPlayers){
     const op = mpOtherPlayers[pid];
     if(op && op.x) allPlayers.push({ x: op.x, y: op.y, r: 30, peerId: pid, hp: op.hp||100, isLocal: false });
@@ -2133,7 +2257,9 @@ function update(dt, t){
           const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
           if(!en.dashHitSet.has(pl.peerId||'local') && dd < pl.r + en.r + 14){
             const dmg = en.dmg * 1.4;
-            if(pl.isLocal){ player.hp -= dmg; player.hitFlash = 200; player.x += en.dashDirX*10; player.y += en.dashDirY*10; }
+            if(pl.isTurret){
+              if(turret){ turret.hp -= dmg; if(turret.hp <= 0) destroyTurret(); }
+            } else if(pl.isLocal){ player.hp -= dmg; player.hitFlash = 200; player.x += en.dashDirX*10; player.y += en.dashDirY*10; }
             else { sendDamageToGuest(pl.peerId, dmg); }
             en.dashHitSet.add(pl.peerId||'local');
           }
@@ -2160,25 +2286,30 @@ function update(dt, t){
       // Decrementar cooldown cada frame
       if(en.atkTimer > 0) en.atkTimer -= dt;
       for(const pl of allPlayers){
-        const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
-        if(dd < pl.r + en.r && en.atkTimer <= 0){
-          const atkCD = en.type==='wasp' ? 500 : 1000;
-          if(pl.isLocal){ player.hp -= en.dmg*(dt/1000)*4; player.hitFlash = 150; }
-          else { sendDamageToGuest(pl.peerId, en.dmg*(dt/1000)*4); }
-          en.x -= (edx/elen)*2; en.y -= (edy/elen)*2;
-          en.atkTimer = atkCD;
+          const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
+          if(dd < pl.r + en.r && en.atkTimer <= 0){
+            const atkCD = en.type==='wasp' ? 500 : 1000;
+            const dmgAmount = en.dmg*(dt/1000)*4;
+            if(pl.isTurret){
+              if(turret){ turret.hp -= dmgAmount; if(turret.hp <= 0){ destroyTurret(); } }
+            } else if(pl.isLocal){ player.hp -= dmgAmount; player.hitFlash = 150; }
+            else { sendDamageToGuest(pl.peerId, dmgAmount); }
+            en.x -= (edx/elen)*2; en.y -= (edy/elen)*2;
+            en.atkTimer = atkCD;
+          }
         }
-      }
     }
   }
 
-  // proyectiles de veneno enemigos -> todos los jugadores
+  // proyectiles de veneno enemigos -> todos los jugadores y torreta
   for(const p of enemyProjectiles){
     p.x += p.vx*(dt/16.6); p.y += p.vy*(dt/16.6); p.life -= dt;
     for(const pl of allPlayers){
       const d = Math.hypot(p.x-pl.x, p.y-pl.y);
       if(d < pl.r + p.r){
-        if(pl.isLocal){ player.hp -= p.dmg; player.hitFlash = 150; player.poisonUntil = t+3000; player.poisonDps = 6; }
+        if(pl.isTurret){
+          if(turret){ turret.hp -= p.dmg; if(turret.hp <= 0) destroyTurret(); }
+        } else if(pl.isLocal){ player.hp -= p.dmg; player.hitFlash = 150; player.poisonUntil = t+3000; player.poisonDps = 6; }
         else { sendDamageToGuest(pl.peerId, p.dmg); }
         p.dead = true;
         spawnParticles(p.x,p.y,'#7be08a',10);
@@ -2187,6 +2318,33 @@ function update(dt, t){
     }
   }
   enemyProjectiles = enemyProjectiles.filter(p => !p.dead && p.life > 0);
+
+  // --- Torreta: disparo automático ---
+  if(turret){
+    turretLastShot += dt;
+    if(turretLastShot >= turret.fireRate){
+      turretLastShot = 0;
+      // Disparar al enemigo más cercano
+      let closest = null, closestD = Infinity;
+      for(const en of enemies){
+        if(en.dead) continue;
+        const d = Math.hypot(en.x - turret.x, en.y - turret.y);
+        if(d < 500 && d < closestD){ closestD = d; closest = en; }
+      }
+      if(closest){
+        const a = Math.atan2(closest.y - turret.y, closest.x - turret.x);
+        bullets.push({
+          x: turret.x, y: turret.y,
+          vx: Math.cos(a) * 7, vy: Math.sin(a) * 7,
+          r: 5, dmg: turret.damage, hitsLeft: 1,
+          hitSet: new Set(), source: 'turret'
+        });
+        spawnParticles(turret.x + Math.cos(a)*20, turret.y + Math.sin(a)*20, '#ffb347', 3);
+      }
+    }
+  }
+
+
 
   for(const b of bullets){ b.x += b.vx * (dt/16.6); b.y += b.vy * (dt/16.6); }
   bullets = bullets.filter(b => b.x>-30 && b.x<WORLD_W+30 && b.y>-30 && b.y<WORLD_H+30);
@@ -2494,6 +2652,48 @@ function draw(){
     ctx.fillRect(op.x - 15, op.y - 50, 30 * Math.max(0, (op.hp||100)/100), 3);
   }
 
+
+
+  // --- Dibujar torreta ---
+  if(turret){
+    // Sombra
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(turret.x, turret.y + turret.r * 0.85, turret.r * 0.55, turret.r * 0.18, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Círculo de alcance (sutil)
+    ctx.strokeStyle = 'rgba(255,180,50,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(turret.x, turret.y, 500, 0, Math.PI*2);
+    ctx.stroke();
+    // Sprite (o círculo dorado si no cargó la imagen)
+    if(sprites.turret && sprites.turret.width){
+      drawSprite(sprites.turret, turret.x, turret.y, turret.r, false, false, 0);
+    } else {
+      ctx.fillStyle = '#ffb347';
+      ctx.beginPath();
+      ctx.arc(turret.x, turret.y, turret.r, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffd76a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(turret.x, turret.y, turret.r, 0, Math.PI*2);
+      ctx.stroke();
+    }
+    // Barra de vida
+    ctx.fillStyle = '#000';
+    ctx.fillRect(turret.x - turret.r, turret.y - turret.r - 10, turret.r*2, 5);
+    const hpPct = Math.max(0, turret.hp / turret.maxHp);
+    const barColor = hpPct > 0.5 ? '#5fd65f' : hpPct > 0.25 ? '#ffd76a' : '#ff4444';
+    ctx.fillStyle = barColor;
+    ctx.fillRect(turret.x - turret.r, turret.y - turret.r - 10, turret.r*2*hpPct, 5);
+    // Etiqueta
+    ctx.fillStyle = '#ffb347';
+    ctx.font = '7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏗️ TORRETA', turret.x, turret.y - turret.r - 14);
+  }
 
 
   for(const d of dmgNumbers){
