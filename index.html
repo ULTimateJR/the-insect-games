@@ -338,30 +338,30 @@
   }
   #joystickArea {
     position:absolute; bottom:20px; left:20px; width:120px; height:120px;
-    border-radius:50%; background:rgba(255,255,255,0.08);
-    border:2px solid rgba(255,255,255,0.2);
-    z-index:60; pointer-events:auto;
-    touch-action:none;
+    border-radius:12px; background:linear-gradient(135deg,#1a1a2e,#2a1a3e);
+    border:3px solid #ffd76a; z-index:60; pointer-events:auto; touch-action:none;
+    box-shadow: 0 0 15px rgba(255,215,106,0.3), inset 0 0 10px rgba(0,0,0,0.5);
   }
   #joystickKnob {
     position:absolute; width:50px; height:50px;
-    border-radius:50%; background:rgba(255,215,106,0.45);
-    border:2px solid rgba(255,215,106,0.7);
-    top:50%; left:50%; transform:translate(-50%,-50%);
-    pointer-events:none;
-    transition:none;
+    border-radius:8px; background:linear-gradient(135deg,#ffd76a,#b8860b);
+    border:2px solid #fff; top:50%; left:50%; transform:translate(-50%,-50%);
+    pointer-events:none; transition:none;
+    box-shadow: 0 0 8px rgba(255,215,106,0.6), inset 0 2px 4px rgba(0,0,0,0.3);
   }
   #shootBtn {
     position:absolute; bottom:30px; right:20px; width:80px; height:80px;
-    border-radius:50%; background:rgba(255,80,80,0.25);
-    border:3px solid rgba(255,80,80,0.6);
-    z-index:60; pointer-events:auto;
-    touch-action:none;
+    border-radius:10px; background:linear-gradient(135deg,#ff4444,#cc0000);
+    border:3px solid #ff6b6b; z-index:60; pointer-events:auto; touch-action:none;
     align-items:center; justify-content:center;
-    font-family:'Press Start 2P',monospace; font-size:10px; color:#ff6b6b;
+    font-family:'Press Start 2P',monospace; font-size:9px; color:#fff;
+    text-shadow: 1px 1px 0 #000;
+    box-shadow: 0 0 15px rgba(255,80,80,0.4), inset 0 -3px 6px rgba(0,0,0,0.4);
   }
   #shootBtn:active, #shootBtn.active {
-    background:rgba(255,80,80,0.5);
+    background:linear-gradient(135deg,#cc0000,#880000);
+    transform: translateY(2px);
+    box-shadow: 0 0 10px rgba(255,80,80,0.3);
   }
 </style>
 </head>
@@ -374,9 +374,10 @@
     <div id="joystickKnob"></div>
   </div>
   <div id="shootBtn" class="mobileOnly">FUEGO</div>
-  <div id="turretBtn" style="display:none; position:absolute; bottom:130px; right:20px; width:80px; height:80px; border-radius:50%; background:rgba(255,180,50,0.25); border:3px solid rgba(255,180,50,0.6); z-index:60; pointer-events:auto; touch-action:none; align-items:center; justify-content:center; font-family:'Press Start 2P',monospace; font-size:8px; color:#ffb347; cursor:pointer;">
-    🏗️<br>TORRETA
-    <div id="turretCooldownTxt" style="position:absolute; bottom:-16px; font-size:7px; color:#ffb347; white-space:nowrap;"></div>
+  <div id="turretBtn" style="display:none; position:absolute; bottom:130px; right:20px; width:80px; height:80px; border-radius:10px; background:linear-gradient(135deg,#ffb347,#cc8800); border:3px solid #ffd700; z-index:60; pointer-events:auto; touch-action:none; align-items:center; justify-content:center; font-family:'Press Start 2P',monospace; font-size:8px; color:#fff; text-shadow:1px 1px 0 #000; cursor:pointer; box-shadow:0 0 15px rgba(255,180,50,0.4), inset 0 -3px 6px rgba(0,0,0,0.4);">
+    🏗️
+    <div style="font-size:7px;color:#fff;text-shadow:1px 1px 0 #000;">TORRETA</div>
+    <div id="turretCooldownTxt" style="position:absolute; bottom:-16px; font-size:7px; color:#ffb347; white-space:nowrap; text-shadow:1px 1px 0 #000;"></div>
   </div>
 
   <div id="hud">
@@ -666,8 +667,11 @@ async function loadAssets(){
     // Idle poses
     ['idleUp', 'idle_up.png'], ['idleDown', 'idle_down.png'],
     ['idleLeft', 'idle_left.png'], ['idleRight', 'idle_right.png'],
-    // Torreta
-    ['turret', 'turret.png'],
+    // Torreta (4 orientaciones para rotación)
+    ['turretFront', 'turret_front.png'],
+    ['turretRight', 'turret_right.png'],
+    ['turretTop', 'turret_top.png'],
+    ['turretLeft', 'turret_left.png'],
   ];
   const bar = document.getElementById('loadBarFill');
   const txt = document.getElementById('loadTxt');
@@ -2669,9 +2673,46 @@ function draw(){
     ctx.beginPath();
     ctx.arc(turret.x, turret.y, 500, 0, Math.PI*2);
     ctx.stroke();
-    // Sprite (o círculo dorado si no cargó la imagen)
-    if(sprites.turret && sprites.turret.width){
-      drawSprite(sprites.turret, turret.x, turret.y, turret.r, false, false, 0);
+    // Determinar sprite según dirección del enemigo más cercano
+    let targetAngle = 0;
+    let closest = null, closestD = Infinity;
+    for(const en of enemies){
+      if(en.dead) continue;
+      const d = Math.hypot(en.x - turret.x, en.y - turret.y);
+      if(d < 500 && d < closestD){ closestD = d; closest = en; }
+    }
+    if(closest){
+      targetAngle = Math.atan2(closest.y - turret.y, closest.x - turret.x);
+    }
+    // Elegir sprite según ángulo (8 direcciones discretas)
+    const angle = targetAngle || 0;
+    let turretImg = sprites.turretFront;
+    let extraRotate = 0;
+    if(sprites.turretFront && sprites.turretFront.width){
+      // Normalizar ángulo a 0-2PI
+      let a = angle;
+      if(a < 0) a += Math.PI * 2;
+      // 8 direcciones: 0=E, PI/4=SE, PI=S, 3PI/4=SW, PI=W, 5PI/4=NW, 3PI/2=N, 7PI/4=NE
+      const dir = Math.round(a / (Math.PI / 4));
+      const dirs = [
+        {sprite: sprites.turretRight, rot: 0},      // 0: Este (derecho)
+        {sprite: sprites.turretTop, rot: Math.PI/4}, // 1: Sudeste
+        {sprite: sprites.turretFront, rot: Math.PI/2}, // 2: Sur (frente mirando abajo)
+        {sprite: sprites.turretTop, rot: 3*Math.PI/4}, // 3: Suroeste
+        {sprite: sprites.turretLeft, rot: Math.PI},  // 4: Oeste (izquierdo)
+        {sprite: sprites.turretTop, rot: 5*Math.PI/4}, // 5: Noroeste
+        {sprite: sprites.turretFront, rot: 3*Math.PI/2}, // 6: Norte (frente mirando arriba)
+        {sprite: sprites.turretTop, rot: 7*Math.PI/4},  // 7: Noreste
+      ];
+      // Ajustar para que 0 sea Este (derecha) y crecer en sentido antihorario
+      const idx = ((dir % 8) + 8) % 8;
+      const d = dirs[idx];
+      turretImg = d.sprite;
+      extraRotate = d.rot;
+    }
+    // Dibujar torreta con rotación
+    if(turretImg && turretImg.width){
+      drawSprite(turretImg, turret.x, turret.y, turret.r, false, false, extraRotate);
     } else {
       ctx.fillStyle = '#ffb347';
       ctx.beginPath();
