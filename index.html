@@ -766,6 +766,28 @@ function applyCheatProfile(){
   meta.moneyBonusLvl = 10; meta.gemBonusLvl = 10;
   meta.luckUpg = UPG_MAX; meta.hpUpg = UPG_MAX; meta.dmgUpg = UPG_MAX;
   meta.passiveCrateCost = 0; meta.weaponCrateCost = 0;
+  // Convertir items Supremos que son torreta a ???
+  for(const item of meta.weaponInv){
+    if(item.typeId === 'turret' && item.rarityIdx === 7){ // Supremo -> ???
+      item.rarityIdx = 8;
+      item.value = 70;
+      console.log('[CHEAT] Convertido item torreta Supremo -> ???');
+    }
+  }
+  // Si no tiene torreta, agregar una equipada
+  const hasTurret = meta.weaponInv.some(i => i.typeId === 'turret');
+  if(!hasTurret){
+    meta.weaponInv.push({
+      uid: 'i_cheat_turret',
+      typeId: 'turret',
+      label: 'Torreta Automática',
+      unit: '% daño',
+      value: 70,
+      rarityIdx: 8 // ???
+    });
+    meta.equippedWeapon.push('i_cheat_turret');
+    console.log('[CHEAT] Agregada torreta ??? al inventario de cuenta chetada');
+  }
   saveProfile();
 }
 
