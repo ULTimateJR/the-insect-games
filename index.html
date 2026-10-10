@@ -672,8 +672,11 @@ async function loadAssets(){
     ['turretRight', 'turret_right.png'],
     ['turretTop', 'turret_top.png'],
     ['turretLeft', 'turret_left.png'],
-    // Bala personalizada
-    ['bullet', 'bullet.png'],
+    // Bala personalizada (4 direcciones)
+    ['bulletRight', 'bullet.png'],
+    ['bulletDown', 'bullet_down.png'],
+    ['bulletUp', 'bullet_up.png'],
+    ['bulletLeft', 'bullet_left.png'],
   ];
   const bar = document.getElementById('loadBarFill');
   const txt = document.getElementById('loadTxt');
@@ -2089,7 +2092,8 @@ function tryShoot(t){
   bullets.push({
     x: player.x + dx*player.r, y: player.y + dy*player.r,
     vx: dx * 8.5, vy: dy * 8.5,
-    r: 10, dmg: player.damage, hitSet: new Set(), hitsLeft: 1 + player.pierce
+    r: 20, dmg: player.damage, hitSet: new Set(), hitsLeft: 1 + player.pierce,
+    _facing: player.facing // guardar dirección para dibujo correcto
   });
 }
 
@@ -2378,7 +2382,7 @@ function update(dt, t){
         bullets.push({
           x: turret.x, y: turret.y,
           vx: Math.cos(a) * 7, vy: Math.sin(a) * 7,
-          r: 10, dmg: turret.damage, hitsLeft: 1,
+          r: 20, dmg: turret.damage, hitsLeft: 1,
           hitSet: new Set(), source: 'turret'
         });
         spawnParticles(turret.x + Math.cos(a)*20, turret.y + Math.sin(a)*20, '#ffb347', 3);
@@ -2539,19 +2543,52 @@ function draw(){
 
   for(const p of particles){ ctx.fillStyle = p.color; ctx.fillRect(p.x-2, p.y-2, 4, 4); }
   // Dibujar balas con sprite personalizado (bullet.png)
-  if(sprites.bullet && sprites.bullet.width){
-    for(const b of bullets){
-      const bw = sprites.bullet.width, bh = sprites.bullet.height;
+  // Dibujar balas con sprite según dirección
+  const bulletSprites = {
+    right: sprites.bulletRight,
+    down: sprites.bulletDown,
+    up: sprites.bulletUp,
+    left: sprites.bulletLeft
+  };
+  for(const b of bullets){
+    // Determinar dirección basada en velocidad
+    let angle = Math.atan2(b.vy, b.vx);
+    // 4 direcciones cardinales: derecha(0), abajo(PI/2), izquierda(PI), arriba(-PI/2)
+    let sprite;
+    if(b.source === 'turret'){
+      // La torreta dispara hacia el enemigo más cercano, usar el ángulo del disparo
+      sprite = bulletSprites.right; // fallback
+      // Determinar dirección aproximada
+      const deg = angle * 180 / Math.PI;
+      if(deg > -45 && deg <= 45) sprite = bulletSprites.right;
+      else if(deg > 45 && deg <= 135) sprite = bulletSprites.down;
+      else if(deg < -45 && deg >= -135) sprite = bulletSprites.up;
+      else sprite = bulletSprites.left;
+    } else {
+      // Bala del player: usar facing del player
+      const facing = b._facing || player.facing;
+      const deg = facing * 180 / Math.PI;
+      if(deg > -45 && deg <= 45) sprite = bulletSprites.right;
+      else if(deg > 45 && deg <= 135) sprite = bulletSprites.down;
+      else if(deg < -45 && deg >= -135) sprite = bulletSprites.up;
+      else sprite = bulletSprites.left;
+    }
+    const s = sprite && sprite.width ? sprite : null;
+    if(s){
+      const bw = s.width, bh = s.height;
       const scale = b.r * 2 / Math.max(bw, bh);
       ctx.save();
       ctx.translate(b.x, b.y);
       ctx.scale(scale, scale);
-      ctx.drawImage(sprites.bullet, -bw/2, -bh/2);
+      // Rotar el sprite según la dirección
+      const rotation = angle;
+      ctx.rotate(rotation);
+      ctx.drawImage(s, -bw/2, -bh/2);
       ctx.restore();
+    } else {
+      ctx.fillStyle = '#ffe38a';
+      ctx.fillRect(b.x-b.r, b.y-b.r, b.r*2, b.r*2);
     }
-  } else {
-    ctx.fillStyle = '#ffe38a';
-    for(const b of bullets){ ctx.fillRect(b.x-b.r, b.y-b.r, b.r*2, b.r*2); }
   }
   for(const p of enemyProjectiles){
     if(p.isMeteor){
