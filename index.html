@@ -672,11 +672,15 @@ async function loadAssets(){
     ['turretRight', 'turret_right.png'],
     ['turretTop', 'turret_top.png'],
     ['turretLeft', 'turret_left.png'],
-    // Bala personalizada (4 direcciones)
-    ['bulletRight', 'bullet.png'],
-    ['bulletDown', 'bullet_down.png'],
-    ['bulletUp', 'bullet_up.png'],
-    ['bulletLeft', 'bullet_left.png'],
+    // Bala personalizada (8 direcciones: 4 cardinales + 4 diagonales)
+    ['bulletRight', 'bullet_right.png'],     // 0°: derecha
+    ['bulletDownRight', 'bullet_down_right.png'], // -45°: derecha-abajo
+    ['bulletDown', 'bullet_down.png'],       // 90°: abajo
+    ['bulletDownLeft', 'bullet_down_left.png'],   // 135°: izquierda-abajo
+    ['bulletLeft', 'bullet_left.png'],       // 180°: izquierda
+    ['bulletUpLeft', 'bullet_up_left.png'],  // -135°: izquierda-arriba
+    ['bulletUp', 'bullet_up.png'],           // -90°: arriba
+    ['bulletUpRight', 'bullet_up_right.png'],   // 45°: derecha-arriba
   ];
   const bar = document.getElementById('loadBarFill');
   const txt = document.getElementById('loadTxt');
@@ -2543,35 +2547,38 @@ function draw(){
 
   for(const p of particles){ ctx.fillStyle = p.color; ctx.fillRect(p.x-2, p.y-2, 4, 4); }
   // Dibujar balas con sprite personalizado (bullet.png)
-  // Dibujar balas con sprite según dirección
+  // Dibujar balas con sprite según dirección (8 direcciones)
   const bulletSprites = {
     right: sprites.bulletRight,
+    downRight: sprites.bulletDownRight,
     down: sprites.bulletDown,
+    downLeft: sprites.bulletDownLeft,
+    left: sprites.bulletLeft,
+    upLeft: sprites.bulletUpLeft,
     up: sprites.bulletUp,
-    left: sprites.bulletLeft
+    upRight: sprites.bulletUpRight
   };
   for(const b of bullets){
-    // Determinar dirección basada en velocidad
     let angle = Math.atan2(b.vy, b.vx);
-    // 4 direcciones cardinales: derecha(0), abajo(PI/2), izquierda(PI), arriba(-PI/2)
+    // Normalizar ángulo a 0-2PI
+    if(angle < 0) angle += Math.PI * 2;
+    // Determinar sprite según ángulo (8 direcciones de 45°)
+    // 0° = derecha, 45° = derecha-arriba, 90° = arriba, 135° = izquierda-arriba,
+    // 180° = izquierda, 225° = izquierda-abajo, 270° = abajo, 315° = derecha-abajo
     let sprite;
     if(b.source === 'turret'){
-      // La torreta dispara hacia el enemigo más cercano, usar el ángulo del disparo
-      sprite = bulletSprites.right; // fallback
-      // Determinar dirección aproximada
-      const deg = angle * 180 / Math.PI;
-      if(deg > -45 && deg <= 45) sprite = bulletSprites.right;
-      else if(deg > 45 && deg <= 135) sprite = bulletSprites.down;
-      else if(deg < -45 && deg >= -135) sprite = bulletSprites.up;
-      else sprite = bulletSprites.left;
+      // Usar el ángulo real del disparo de la torreta
+      const dirIdx = Math.round(angle / (Math.PI / 4)) % 8;
+      const dirs = ['right', 'upRight', 'up', 'upLeft', 'left', 'downLeft', 'down', 'downRight'];
+      sprite = bulletSprites[dirs[dirIdx]];
     } else {
       // Bala del player: usar facing del player
       const facing = b._facing || player.facing;
-      const deg = facing * 180 / Math.PI;
-      if(deg > -45 && deg <= 45) sprite = bulletSprites.right;
-      else if(deg > 45 && deg <= 135) sprite = bulletSprites.down;
-      else if(deg < -45 && deg >= -135) sprite = bulletSprites.up;
-      else sprite = bulletSprites.left;
+      let deg = facing;
+      if(deg < 0) deg += Math.PI * 2;
+      const dirIdx = Math.round(deg / (Math.PI / 4)) % 8;
+      const dirs = ['right', 'upRight', 'up', 'upLeft', 'left', 'downLeft', 'down', 'downRight'];
+      sprite = bulletSprites[dirs[dirIdx]];
     }
     const s = sprite && sprite.width ? sprite : null;
     if(s){
@@ -2580,9 +2587,7 @@ function draw(){
       ctx.save();
       ctx.translate(b.x, b.y);
       ctx.scale(scale, scale);
-      // Rotar el sprite según la dirección
-      const rotation = angle;
-      ctx.rotate(rotation);
+      // No rotar el sprite aquí porque los sprites ya vienen orientados correctamente
       ctx.drawImage(s, -bw/2, -bh/2);
       ctx.restore();
     } else {
