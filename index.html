@@ -227,6 +227,37 @@
   #gameOverPanel .statRow div { background:rgba(255,255,255,0.06); padding:8px 16px; border-radius:6px; }
   #gameOverPanel .btnRow { display:flex; gap:12px; margin-top:10px; }
 
+  /* ---- MENU PAUSADO ---- */
+  #pauseMenu {
+    position:absolute; inset:0; z-index:60;
+    background:rgba(0,0,0,0.75);
+    display:none; align-items:center; justify-content:center;
+  }
+  #pauseMenu .pm-title {
+    font-size:20px; color:#ffd76a; text-shadow:3px 3px 0 #000;
+    margin-bottom:20px; text-align:center; letter-spacing:2px;
+  }
+  #pauseMenu .pm-btn {
+    background:linear-gradient(180deg,#8B6914 0%,#6B4F12 50%,#4a3510 100%);
+    border:4px solid #2a1a08; border-radius:6px;
+    color:#ffe38a; font-family:'Press Start 2P',monospace; font-size:11px;
+    padding:14px 40px; cursor:pointer; text-shadow:2px 2px 0 #000;
+    box-shadow: 0 4px 0 #2a1a08, inset 0 2px 4px rgba(255,255,255,0.15);
+    margin:6px 0; text-align:center; width:300px; position:relative;
+  }
+  #pauseMenu .pm-btn::before {
+    content:''; position:absolute; inset:6px; border:2px solid rgba(0,0,0,0.3);
+    border-radius:3px; pointer-events:none;
+  }
+  #pauseMenu .pm-btn:hover { background:linear-gradient(180deg,#a07d1a 0%,#806018 50%,#5a4510 100%); }
+  #pauseMenu .pm-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #2a1a08; }
+  #pauseMenu .pm-btn.exit { background:linear-gradient(180deg,#8B1A1A 0%,#6B0F0F 50%,#4a0808 100%); border-color:#2a0808; }
+  #pauseMenu .pm-btn.exit:hover { background:linear-gradient(180deg,#a02020 0%,#801515 50%,#5a1010 100%); }
+  #pauseMenu .pm-hint {
+    margin-top:16px; font-size:8px; color:#888; text-align:center;
+    text-shadow:1px 1px 0 #000;
+  }
+
   /* ---- TIENDA EN PARTIDA (entre oleadas) ---- */
   #shop {
     position:absolute; left:0; right:0; bottom:0; height:0;
@@ -369,7 +400,17 @@
 <div id="wrap">
   <canvas id="c" width="800" height="500"></canvas>
 
+  <!-- Menu pausado (solo solitario) -->
+  <div id="pauseMenu" class="screen">
+    <div class="pm-title">⏸ PAUSA</div>
+    <button class="pm-btn" id="pmContinue">▶ CONTINUAR</button>
+    <button class="pm-btn" id="pmOptions">⚙ OPCIONES</button>
+    <button class="pm-btn exit" id="pmExit">🚪 SALIR</button>
+    <div class="pm-hint">Presioná ESC para volver al menú</div>
+  </div>
+
   <!-- Controles móviles -->
+  <button id="pauseBtnMobile" class="mobileOnly" style="position:absolute; top:10px; left:10px; width:50px; height:50px; border-radius:8px; background:linear-gradient(135deg,#5a4510,#3a2a08); border:3px solid #2a1a08; color:#ffe38a; font-family:'Press Start 2P',monospace; font-size:10px; cursor:pointer; z-index:59; touch-action:none; box-shadow:0 3px 0 #1a0f04; display:none;">⏸</button>
   <div id="joystickArea" class="mobileOnly">
     <div id="joystickKnob"></div>
   </div>
@@ -1898,9 +1939,68 @@ function destroyTurret(){
   saveProfile();
 }
 
+// ---------- Menu pausado (solo solitario) ----------
+let pauseMenuOpen = false;
+function togglePauseMenu(){
+  pauseMenuOpen = !pauseMenuOpen;
+  document.getElementById('pauseMenu').style.display = pauseMenuOpen ? 'flex' : 'none';
+  if(pauseMenuOpen){
+    // Para el loop de juego
+    last = performance.now();
+  } else {
+    // Reanudar loop
+    requestAnimationFrame(loop);
+  }
+}
+function closePauseMenu(){
+  pauseMenuOpen = false;
+  document.getElementById('pauseMenu').style.display = 'none';
+  requestAnimationFrame(loop);
+}
+
 // ---------- Input ----------
-window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key===' ') e.preventDefault(); if(e.key.toLowerCase()==='q' && state==='playing') placeTurret(); });
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if(e.key===' ') e.preventDefault();
+  if(e.key.toLowerCase()==='q' && state==='playing') placeTurret();
+  // Menu pausado con ESC (solo solitario)
+  if(e.key === 'Escape' && state === 'playing' && !mpRoomCode){
+    togglePauseMenu();
+  }
+});
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+document.getElementById('pauseBtnMobile').onclick = () => {
+  if(state === 'playing' && !mpRoomCode){
+    togglePauseMenu();
+  }
+};
+
+// Botones del menu pausado
+document.getElementById('pmContinue').onclick = () => {
+  if(pauseMenuOpen){ closePauseMenu(); }
+};
+document.getElementById('pmOptions').onclick = () => {
+  if(pauseMenuOpen){
+    // Opciones: por ahora solo cierra el menu (puedes agregar ajustes aquí)
+    showMsg('⚙ Ajustes: volumen, controles, etc.', 2000);
+    closePauseMenu();
+  }
+};
+document.getElementById('pmExit').onclick = () => {
+  if(pauseMenuOpen){
+    // Salir al hub
+    state = 'hub';
+    showScreen('hub');
+    showMobileControls(false);
+    mpOtherPlayers = {};
+    refreshHubUI();
+    saveProfile();
+    pauseMenuOpen = false;
+    document.getElementById('pauseMenu').style.display = 'none';
+  }
+};
+
 // Botón torreta (desktop click)
 document.getElementById('turretBtn').onclick = () => { if(state==='playing') placeTurret(); };
 cv.addEventListener('mousemove', e => {
