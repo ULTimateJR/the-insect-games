@@ -2082,9 +2082,10 @@ function update(dt, t){
   }
   const len = Math.hypot(dx,dy) || 1;
   player.moving = (dx!==0||dy!==0);
+  const frameScale = dt / 16.667; // escala de tiempo normalizada a 60fps
   if(player.moving){
-    player.x += (dx/len) * player.speed * (dt/16.6);
-    player.y += (dy/len) * player.speed * (dt/16.6);
+    player.x += (dx/len) * player.speed * frameScale;
+    player.y += (dy/len) * player.speed * frameScale;
     player.animT += dt * (player.speed/2.6);
     player.facing = Math.atan2(dy, dx);
     // Detectar dirección de movimiento para sprites
@@ -2135,7 +2136,7 @@ function update(dt, t){
 
   // --- Torreta: cooldown y actualización ---
   if(turretCooldown > 0){
-    turretCooldown = Math.max(0, turretCooldown - dt);
+    turretCooldown = Math.max(0, turretCooldown - dt); // cooldown en ms, no se escala
     const cdTxt = document.getElementById('turretCooldownTxt');
     if(cdTxt) cdTxt.textContent = Math.ceil(turretCooldown/1000) + 's';
     document.getElementById('turretBtn').style.opacity = '0.4';
@@ -2242,8 +2243,8 @@ function update(dt, t){
           en.bossState = 'chase'; en.atkCooldown = 4000; en.attackPulse = 0;
         }
       } else if(en.bossState === 'chase'){
-        en.x += (edx/elen) * en.speed;
-        en.y += (edy/elen) * en.speed;
+        en.x += (edx/elen) * en.speed * frameScale;
+        en.y += (edy/elen) * en.speed * frameScale;
         en.attackPulse = Math.max(0, (en.attackPulse||0) - dt/150);
         if(en.atkCooldown <= 0){ en.bossState = 'telegraph'; en.telegraphT = 500; }
       } else if(en.bossState === 'telegraph'){
@@ -2252,8 +2253,8 @@ function update(dt, t){
         if(en.telegraphT <= 0){ en.bossState = 'dash'; en.dashT = 420; en.dashHitSet = new Set(); en.dashDirX = edx/elen; en.dashDirY = edy/elen; }
       } else if(en.bossState === 'dash'){
         en.dashT -= dt;
-        en.x += en.dashDirX * 10.5 * (dt/16.6);
-        en.y += en.dashDirY * 10.5 * (dt/16.6);
+        en.x += en.dashDirX * 10.5 * frameScale;
+        en.y += en.dashDirY * 10.5 * frameScale;
         for(const pl of allPlayers){
           const dd = Math.hypot(pl.x-en.x, pl.y-en.y);
           if(!en.dashHitSet.has(pl.peerId||'local') && dd < pl.r + en.r + 14){
@@ -2270,16 +2271,16 @@ function update(dt, t){
     } else if(en.type === 'caterpillar'){
       en.atkCooldown -= dt;
       const preferred = 250;
-      if(elen > preferred + 20){ en.x += (edx/elen)*en.speed; en.y += (edy/elen)*en.speed; }
-      else if(elen < preferred - 50){ en.x -= (edx/elen)*en.speed*0.6; en.y -= (edy/elen)*en.speed*0.6; }
+      if(elen > preferred + 20){ en.x += (edx/elen)*en.speed * frameScale; en.y += (edy/elen)*en.speed * frameScale; }
+      else if(elen < preferred - 50){ en.x -= (edx/elen)*en.speed*0.6 * frameScale; en.y -= (edy/elen)*en.speed*0.6 * frameScale; }
       if(en.atkCooldown <= 0 && elen < 420){
         const plen = elen || 1;
         enemyProjectiles.push({ x:en.x, y:en.y, vx:(edx/plen)*3.4, vy:(edy/plen)*3.4, r:8, dmg:en.dmg, poison:true, life:3500 });
         en.atkCooldown = 1400;
       }
     } else {
-      en.x += (edx/elen)*en.speed;
-      en.y += (edy/elen)*en.speed;
+      en.x += (edx/elen)*en.speed * frameScale;
+      en.y += (edy/elen)*en.speed * frameScale;
     }
 
     // Colisión enemigo -> todos los jugadores
@@ -2304,7 +2305,7 @@ function update(dt, t){
 
   // proyectiles de veneno enemigos -> todos los jugadores y torreta
   for(const p of enemyProjectiles){
-    p.x += p.vx*(dt/16.6); p.y += p.vy*(dt/16.6); p.life -= dt;
+    p.x += p.vx*frameScale; p.y += p.vy*frameScale; p.life -= dt;
     for(const pl of allPlayers){
       const d = Math.hypot(p.x-pl.x, p.y-pl.y);
       if(d < pl.r + p.r){
@@ -2347,7 +2348,7 @@ function update(dt, t){
 
 
 
-  for(const b of bullets){ b.x += b.vx * (dt/16.6); b.y += b.vy * (dt/16.6); }
+  for(const b of bullets){ b.x += b.vx * frameScale; b.y += b.vy * frameScale; }
   bullets = bullets.filter(b => b.x>-30 && b.x<WORLD_W+30 && b.y>-30 && b.y<WORLD_H+30);
 
   for(const b of bullets){
