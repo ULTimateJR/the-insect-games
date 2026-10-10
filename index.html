@@ -1836,7 +1836,12 @@ function recomputePlayerStats(){
 }
 
 function startRun(){
-  recomputePlayerStats();
+  // Recalcular stats incluyendo hasTurretItem antes de mostrar botones
+  hasTurretItem = false; turretDamagePct = 70;
+  for(const uid of meta.equippedWeapon){
+    const item = meta.weaponInv.find(i=>i.uid===uid); if(!item) continue;
+    if(item.typeId==='turret'){ hasTurretItem = true; turretDamagePct = item.value || 70; }
+  }
   player.x = WORLD_W/2; player.y = WORLD_H/2;
   camera.x = player.x; camera.y = player.y;
   money = 0; moneyEarnedRun = 0;
@@ -1864,7 +1869,7 @@ function placeTurret(){
     hp: player.maxHp, maxHp: player.maxHp,
     damage: Math.round(player.damage * turretDamagePct / 100),
     fireRate: Math.round(player.fireRate * 1.25),
-    lastShot: 0, r: 28
+    lastShot: 0, r: 50
   };
   spawnParticles(player.x, player.y, '#ffb347', 15);
   showMsg('🏗️ ¡Torreta desplegada!', 1200);
@@ -2084,7 +2089,7 @@ function tryShoot(t){
   bullets.push({
     x: player.x + dx*player.r, y: player.y + dy*player.r,
     vx: dx * 8.5, vy: dy * 8.5,
-    r: 5, dmg: player.damage, hitSet: new Set(), hitsLeft: 1 + player.pierce
+    r: 10, dmg: player.damage, hitSet: new Set(), hitsLeft: 1 + player.pierce
   });
 }
 
@@ -2373,7 +2378,7 @@ function update(dt, t){
         bullets.push({
           x: turret.x, y: turret.y,
           vx: Math.cos(a) * 7, vy: Math.sin(a) * 7,
-          r: 5, dmg: turret.damage, hitsLeft: 1,
+          r: 10, dmg: turret.damage, hitsLeft: 1,
           hitSet: new Set(), source: 'turret'
         });
         spawnParticles(turret.x + Math.cos(a)*20, turret.y + Math.sin(a)*20, '#ffb347', 3);
