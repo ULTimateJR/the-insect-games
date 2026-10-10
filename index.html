@@ -1202,6 +1202,36 @@ function handleHostData(data, hostId){
         currentBoss = null;
         document.getElementById('bossBar').style.display = 'none';
       }
+      // Sincronizar balas
+      if(data.bullets){
+        // Reemplazar balas locales con las del host (para que se vea igual)
+        bullets = data.bullets.map(b => ({
+          x:b.x, y:b.y, vx:b.vx, vy:b.vy, r:b.r, dmg:b.dmg, hitsLeft:b.hitsLeft,
+          hitSet:new Set(), source:b.source || 'player'
+        }));
+      }
+      // Sincronizar proyectiles enemigos
+      if(data.enemyProjectiles){
+        enemyProjectiles = data.enemyProjectiles.map(p => ({
+          x:p.x, y:p.y, vx:p.vx, vy:p.vy, r:p.r, dmg:p.dmg, poison:p.poison,
+          life:p.life, isMeteor:p.isMeteor, dead:false
+        }));
+      }
+      // Sincronizar torretas
+      if(data.turrets && data.turrets.length > 0){
+        const t = data.turrets[0];
+        turret = {x:t.x, y:t.y, hp:t.hp, maxHp:t.maxHp, damage:t.damage, fireRate:t.fireRate, lastShot:0, r:t.r};
+      } else if(data.turrets && data.turrets.length === 0){
+        turret = null;
+      }
+      // Sincronizar partículas
+      if(data.particles){
+        particles = data.particles.map(p => ({x:p.x, y:p.y, vx:p.vx, vy:p.vy, life:p.life, color:p.color}));
+      }
+      // Sincronizar números de daño
+      if(data.dmgNumbers){
+        dmgNumbers = data.dmgNumbers.map(d => ({x:d.x, y:d.y, text:d.text, life:d.life, vy:d.vy||0.6, crit:!!d.crit}));
+      }
       // Sincronizar estado de juego (shop, gameover)
       if(data.gameState === 'shop' && state !== 'shop'){
         openShop();
@@ -1272,6 +1302,15 @@ function broadcastGameState(){
       msg.goMoney = runStats.money;
       msg.goXp = Math.round(runStats.xp);
       msg.goGems = Math.round(runStats.gems);
+    }
+    // Enviar balas y proyectiles para que guests los vean
+    msg.bullets = bullets.map(b => ({x:Math.round(b.x), y:Math.round(b.y), vx:b.vx, vy:b.vy, r:b.r, dmg:b.dmg, hitsLeft:b.hitsLeft, source:b.source || 'player'}));
+    msg.enemyProjectiles = enemyProjectiles.map(p => ({x:Math.round(p.x), y:Math.round(p.y), vx:p.vx, vy:p.vy, r:p.r, dmg:p.dmg, poison:p.poison, life:p.life, isMeteor:p.isMeteor}));
+    // Enviar torretas
+    msg.turrets = turret ? [{x:Math.round(turret.x), y:Math.round(turret.y), hp:Math.round(turret.hp), maxHp:Math.round(turret.maxHp), damage:turret.damage, fireRate:turret.fireRate, r:turret.r}] : [];
+    // Enviar partículas y números de daño (opcional, pueden ser costosos)
+    msg.particles = particles.map(p => ({x:Math.round(p.x), y:Math.round(p.y), vx:p.vx, vy:p.vy, life:p.life, color:p.color}));
+    msg.dmgNumbers = dmgNumbers.map(d => ({x:Math.round(d.x), y:Math.round(d.y), text:d.text, life:d.life, vy:d.vy, crit:d.crit}));
     }
   }
   // Enviar a todos los peers
