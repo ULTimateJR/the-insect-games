@@ -1336,15 +1336,26 @@ const RARITIES = [
 function getLuckBonus(){ return Math.min(50, Math.floor(meta.level / 10) * 5 + meta.luckUpg * 5); }
 function getMinRarityIdx(){ return Math.min(7, Math.floor(getLuckBonus() / 5)); }
 function rollRarityIdx(){
-  // Cheat email: 50/50 Supremo o ???
   const activeEmail = currentEmail || (storageAvailable ? localStorage.getItem('insectgames_lastEmail') : null);
+  // Cuenta cheteada: 5% de chance de ??? (torreta)
   if(isCheatEmail(activeEmail)){
-    console.log('[CHEAT] 50/50 Supremo/??? para:', activeEmail);
-    return Math.random() < 0.5 ? 7 : 8;
+    if(Math.random() < 0.05) return 8; // 5% torreta
+    console.log('[CHEAT] Caja abierta - rareza normal para:', activeEmail);
+    const minIdx = getMinRarityIdx();
+    const pool = RARITIES.filter((r,i) => i >= minIdx && i <= 7);
+    const total = pool.reduce((s,r)=>s+r.weight, 0);
+    let roll = Math.random() * total;
+    for(let i = minIdx; i <= 7; i++){
+      roll -= RARITIES[i].weight;
+      if(roll <= 0) return i;
+    }
+    return 7;
   }
   // La rareza ??? tiene un 2% chance fijo, sin importar la suerte
   if(Math.random() < 0.02) return 8;
   const minIdx = getMinRarityIdx();
+  // Si está en suerte máxima (nivel 1000 + luckUpg máximo = suerte 50), +1% extra de ???
+  if(minIdx >= 7 && Math.random() < 0.01) return 8;
   // Pool normal: solo raridades 0-7 (Común a Supremo)
   const pool = RARITIES.filter((r,i) => i >= minIdx && i <= 7);
   const total = pool.reduce((s,r)=>s+r.weight, 0);
@@ -1384,16 +1395,6 @@ function makeItem(pool){
 function openCrate(kind){
   const pool = kind === 'passive' ? PASSIVE_TYPES : WEAPON_MOD_TYPES;
   const item = makeItem(pool);
-  // === CHEAT: forzar 50/50 Supremo/??? ===
-  const cheatEmail = (typeof currentEmail !== 'undefined' && currentEmail) ? currentEmail : '';
-  const cheatStored = (typeof localStorage !== 'undefined') ? (localStorage.getItem('insectgames_lastEmail') || '') : '';
-  const isCheat = (cheatEmail.toLowerCase().includes('jorgito19pera') || cheatStored.toLowerCase().includes('jorgito19pera'));
-  if(isCheat){
-    const cheatRarity = Math.random() < 0.5 ? 7 : 8;
-    item.rarityIdx = cheatRarity;
-    item.value = item.typeId === 'turret' ? (cheatRarity === 8 ? 70 : 70) : pool.find(t=>t.id===item.typeId).base[cheatRarity];
-    console.log('[CHEAT] Caja abierta - Rareza forzada:', RARITIES[cheatRarity].name, 'Item:', item.label, 'Valor:', item.value);
-  }
   if(kind === 'passive'){
     meta.passiveInv.push(item);
     // Auto-equipar torreta si se gana
