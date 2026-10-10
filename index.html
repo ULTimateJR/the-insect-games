@@ -2780,6 +2780,8 @@ function openShop(){
   shopEl.classList.add('open');
   refreshShopUI();
   showMobileControls(false);
+  // Ocultar botón de torreta en tienda
+  document.getElementById('turretBtn').style.display = 'none';
 }
 document.getElementById('buyDmg').onclick = () => {
   if(money >= costs.dmg){ money -= costs.dmg; player.damage += 4; player.dmgUpgrades++; costs.dmg = Math.round(costs.dmg*1.4); refreshShopUI(); }
@@ -2797,6 +2799,11 @@ document.getElementById('continueBtn').onclick = () => {
   shopEl.classList.remove('open');
   showMobileControls(true);
   saveProfile();
+  // Mostrar botón de torreta si tiene equipada y no hay cooldown
+  const turretBtn = document.getElementById('turretBtn');
+  if(hasTurretItem && !turret && turretCooldown <= 0){
+    turretBtn.style.display = 'flex';
+  }
   startWave();
 };
 
