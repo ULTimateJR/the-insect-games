@@ -672,6 +672,8 @@ async function loadAssets(){
     ['turretRight', 'turret_right.png'],
     ['turretTop', 'turret_top.png'],
     ['turretLeft', 'turret_left.png'],
+    // Bala personalizada
+    ['bullet', 'bullet.png'],
   ];
   const bar = document.getElementById('loadBarFill');
   const txt = document.getElementById('loadTxt');
@@ -1341,9 +1343,10 @@ function getLuckBonus(){ return Math.min(50, Math.floor(meta.level / 10) * 5 + m
 function getMinRarityIdx(){ return Math.min(7, Math.floor(getLuckBonus() / 5)); }
 function rollRarityIdx(){
   const activeEmail = currentEmail || (storageAvailable ? localStorage.getItem('insectgames_lastEmail') : null);
-  // Cuenta cheteada: 5% de chance de ??? (torreta)
+  // Cuenta cheteada: torreta siempre ??? (no Supremo)
   if(isCheatEmail(activeEmail)){
-    if(Math.random() < 0.05) return 8; // 5% torreta
+    // Si es torreta, siempre ???. Si no, 5% ??? y resto Supremo
+    if(Math.random() < 0.05) return 8; // 5% ???
     console.log('[CHEAT] Caja abierta - rareza normal para:', activeEmail);
     const minIdx = getMinRarityIdx();
     const pool = RARITIES.filter((r,i) => i >= minIdx && i <= 7);
@@ -1386,9 +1389,14 @@ const WEAPON_MOD_TYPES = [
   {id:'turret', label:'Torreta Automática', unit:'% daño', base:[0,0,0,0,0,60,65,70,70]},
 ];
 
-function makeItem(pool){
-  const rarityIdx = rollRarityIdx();
+function makeItem(pool, isCheatAccount = false){
+  let rarityIdx = rollRarityIdx();
   const type = pool[Math.floor(Math.random()*pool.length)];
+  // En cuenta chetada, si el item es torreta, siempre ??? (no Supremo)
+  if(isCheatAccount && type.id === 'turret'){
+    rarityIdx = 8; // ??? siempre para torreta en cuenta chetada
+    console.log('[CHEAT] Torreta siempre ??? para cuenta chetada');
+  }
   return {
     uid: 'i' + Math.random().toString(36).slice(2,9),
     typeId: type.id, label: type.label, unit: type.unit,
@@ -1398,7 +1406,8 @@ function makeItem(pool){
 
 function openCrate(kind){
   const pool = kind === 'passive' ? PASSIVE_TYPES : WEAPON_MOD_TYPES;
-  const item = makeItem(pool);
+  const isCheat = currentEmail && isCheatEmail(currentEmail);
+  const item = makeItem(pool, isCheat);
   if(kind === 'passive'){
     meta.passiveInv.push(item);
     // Auto-equipar torreta si se gana
@@ -2502,8 +2511,21 @@ function draw(){
   ctx.strokeRect(0,0,WORLD_W,WORLD_H);
 
   for(const p of particles){ ctx.fillStyle = p.color; ctx.fillRect(p.x-2, p.y-2, 4, 4); }
-  ctx.fillStyle = '#ffe38a';
-  for(const b of bullets){ ctx.fillRect(b.x-b.r, b.y-b.r, b.r*2, b.r*2); }
+  // Dibujar balas con sprite personalizado (bullet.png)
+  if(sprites.bullet && sprites.bullet.width){
+    for(const b of bullets){
+      const bw = sprites.bullet.width, bh = sprites.bullet.height;
+      const scale = b.r * 2 / Math.max(bw, bh);
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.scale(scale, scale);
+      ctx.drawImage(sprites.bullet, -bw/2, -bh/2);
+      ctx.restore();
+    }
+  } else {
+    ctx.fillStyle = '#ffe38a';
+    for(const b of bullets){ ctx.fillRect(b.x-b.r, b.y-b.r, b.r*2, b.r*2); }
+  }
   for(const p of enemyProjectiles){
     if(p.isMeteor){
       // Proyectiles del boss: azul con glow
