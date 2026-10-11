@@ -1311,7 +1311,6 @@ function broadcastGameState(){
     // Enviar partículas y números de daño (opcional, pueden ser costosos)
     msg.particles = particles.map(p => ({x:Math.round(p.x), y:Math.round(p.y), vx:p.vx, vy:p.vy, life:p.life, color:p.color}));
     msg.dmgNumbers = dmgNumbers.map(d => ({x:Math.round(d.x), y:Math.round(d.y), text:d.text, life:d.life, vy:d.vy, crit:d.crit}));
-    }
   }
   // Enviar a todos los peers
   for(const id in mpConnections){
