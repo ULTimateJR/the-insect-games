@@ -24,6 +24,7 @@
   #wrap {
     position:relative;
     width:100vw; height:100vh;
+    height:100dvh;
     overflow:hidden;
     display:flex; align-items:center; justify-content:center;
     background:#0d0d14;
@@ -395,6 +396,60 @@
     transform: translateY(2px);
     box-shadow: 0 0 10px rgba(255,80,80,0.3);
   }
+
+  /* ---- LOBBY MULTIJUGADOR EN VIVO ---- */
+  #lobbyHud {
+    position:absolute; inset:0; z-index:45;
+    display:none; flex-direction:column; gap:6px;
+    padding:10px; pointer-events:none;
+  }
+  #lobbyTopBar { display:flex; align-items:center; gap:8px; font-size:8px; pointer-events:auto; }
+  #lobbyTopBar > div {
+    background:rgba(0,0,0,0.65); border:2px solid #3a3a55; border-radius:6px;
+    padding:6px 10px; color:#cfd6ff; text-shadow:1px 1px 0 #000;
+  }
+  #lobbyRoomTag b { color:#ffd76a; letter-spacing:2px; }
+  #lobbyTopBar #lobbyLeaveBtn { margin-left:auto; }
+  #lobbyPlayers { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .lobbyChip {
+    display:flex; align-items:center; gap:5px;
+    background:rgba(0,0,0,0.65); border:2px solid #3a3a55; border-radius:20px;
+    padding:4px 10px; font-size:7px; color:#dfe4ff; text-shadow:1px 1px 0 #000;
+  }
+  .lobbyChip.me { border-color:#ffd76a; color:#fff; }
+  .lobbyChip.empty { border-style:dashed; border-color:#33334a; color:#5b5b78; }
+  .lobbyChip .rdy { color:#9cff9c; }
+  #lobbyBottom { margin-top:auto; display:flex; flex-direction:column; gap:8px; align-items:center; }
+  #lobbyHint {
+    text-align:center; font-size:7px; color:#9ab;
+    text-shadow:1px 1px 0 #000; background:rgba(0,0,0,0.5);
+    padding:4px 10px; border-radius:6px;
+  }
+  #lobbyActions { display:flex; gap:10px; justify-content:center; pointer-events:auto; }
+  #lobbyActions .bigBtn { font-size:9px; padding:10px 22px; }
+  #lobbyReadyBtn.isReady { background:#2a6b2a; box-shadow:0 4px 0 #17401a; }
+
+  /* ---- PLAZA PÚBLICA ---- */
+  #plazaHud {
+    position:absolute; inset:0; z-index:45;
+    display:none; flex-direction:column; gap:6px;
+    padding:10px; pointer-events:none;
+  }
+  #plazaTopBar { display:flex; align-items:center; gap:8px; font-size:8px; pointer-events:auto; }
+  #plazaTopBar > div {
+    background:rgba(0,0,0,0.65); border:2px solid #3a3a55; border-radius:6px;
+    padding:6px 10px; color:#cfd6ff; text-shadow:1px 1px 0 #000;
+  }
+  #plazaTopBar #plazaLeaveBtn { margin-left:auto; }
+  #plazaBottom { margin-top:auto; display:flex; flex-direction:column; gap:8px; align-items:center; }
+  #plazaHint {
+    text-align:center; font-size:7px; color:#9ab;
+    text-shadow:1px 1px 0 #000; background:rgba(0,0,0,0.5);
+    padding:4px 10px; border-radius:6px;
+  }
+  /* ---- CONFIG DE SALA ---- */
+  .cfgRow { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .cfgBtn.sel { background:#2a6b2a; border-color:#5fd65f; color:#fff; }
 </style>
 </head>
 <body>
@@ -552,13 +607,63 @@
         </div>
 
         <h2 style="margin-top:10px;">🏠 Salas</h2>
-        <div style="display:flex;gap:8px;justify-content:center;">
-          <button class="bigBtn" id="createRoomBtn" style="font-size:9px;padding:10px 20px;">Crear sala</button>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <button class="bigBtn" id="createRoomBtn" style="font-size:9px;padding:10px 16px;">🔒 Crear sala privada</button>
+          <button class="bigBtn secondary" id="goPublicBtn" style="font-size:9px;padding:10px 16px;">🌐 Sala pública</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:6px;">
           <button class="smallBtn" id="joinRoomBtn">Unirse con código</button>
         </div>
       </div>
     </div>
     <div id="roomInfo"></div>
+  </div>
+
+  <!-- SALITA (sala pública o privada) -->
+  <div id="lobbyHud">
+    <div id="lobbyTopBar">
+      <div id="lobbyRoomTag"><b id="salaLabel">SALA</b> <span id="lobbyCode"></span></div>
+      <div id="lobbyCapacity">1/5</div>
+      <div id="salaInfo">🎯 Medio</div>
+      <button class="smallBtn" id="lobbyLeaveBtn">Salir</button>
+    </div>
+    <div id="lobbyBottom">
+      <div id="lobbyPlayers"></div>
+      <div id="lobbyHint">Movete con WASD / Flechas</div>
+      <div id="lobbyActions">
+        <button class="bigBtn secondary" id="salaConfigBtn" style="display:none;">⚙ Configurar</button>
+        <button class="bigBtn" id="lobbyStartNowBtn" style="display:none;">▶ Empezar ya</button>
+        <button class="bigBtn" id="lobbyStartBtn" style="display:none;">▶ Empezar</button>
+        <button class="bigBtn secondary" id="lobbyReadyBtn" style="display:none;">⏳ Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAZA PÚBLICA -->
+  <div id="plazaHud">
+    <div id="plazaTopBar">
+      <div>🌐 PLAZA PÚBLICA · <span id="plazaStatus">conectando…</span></div>
+      <div id="plazaCount">1 jugador</div>
+      <button class="smallBtn" id="plazaLeaveBtn">Salir</button>
+    </div>
+    <div id="plazaBottom">
+      <div id="plazaHint">Paráte en un cuadrito del piso (pegado a la pared) para entrar a esa sala · 4 salas · máx. 5 jugadores</div>
+    </div>
+  </div>
+
+  <!-- CONFIG DE SALA -->
+  <div id="salaConfigModal" class="nicknameModal">
+    <div class="nicknameCard">
+      <h3>⚙ Configurar sala</h3>
+      <p>Cupo de jugadores</p>
+      <div id="cfgCapacity" class="cfgRow"></div>
+      <p style="margin-top:10px;">Dificultad</p>
+      <div id="cfgDiff" class="cfgRow"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+        <button class="smallBtn" id="cfgCancelBtn">Cancelar</button>
+        <button class="bigBtn" id="cfgConfirmBtn" style="padding:8px 16px;font-size:9px;">Confirmar</button>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL DE APODO -->
@@ -651,7 +756,7 @@
       <div class="card" id="buyHp"><div class="icon">❤</div><div class="name">+Vida máx</div><div class="cost"></div></div>
       <div class="card" id="buySpeed"><div class="icon">🥾</div><div class="name">+Vel. movimiento</div><div class="cost"></div></div>
     </div>
-    <div id="tip">WASD/Flechas · Clic o Espacio para disparar hacia el mouse</div>
+    <div id="tip">WASD/Flechas · Clic o Espacio para disparar hacia el mouse · F pantalla completa</div>
     <button id="continueBtn">Siguiente oleada ▶</button>
   </div>
 </div>
@@ -674,9 +779,9 @@ const GRASS_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAACBCAYAAAB
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
 ctx.imageSmoothingEnabled = false;
-const W = cv.width, H = cv.height;
+let W = cv.width, H = cv.height;   // tamaño visible en px CSS (se adapta a la pestaña)
 const WORLD_W = 1700, WORLD_H = 1100;
-const ZOOM = 1.55;
+let ZOOM = 1.55;                   // zoom adaptativo: baja en pantallas grandes / fullscreen
 
 // ---------- Carga de imágenes ----------
 function loadImg(src){
@@ -1042,6 +1147,7 @@ document.getElementById('createRoomBtn').onclick = async () => {
     mpReady[mpMyId] = true;
     renderRoomUI();
     document.getElementById('roomInfo').style.display = 'block';
+    startPrivateRoomHost();
   } catch(e){
     alert('Error al crear sala: ' + e.message);
   }
@@ -1060,6 +1166,7 @@ document.getElementById('joinRoomConfirmBtn').onclick = async () => {
   const code = document.getElementById('roomCodeInput').value.trim().toLowerCase();
   if(!code){ alert('Ingresa un código'); return; }
   if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
+  pendingPrivateJoin = true;
   try {
     await initPeer(false);
     // Conectar al host usando el código como peerId
@@ -1098,9 +1205,19 @@ function handleIncomingConnection(conn){
     mpRoomPlayers.push({ peerId: conn.peer, nickname: nick, isHost: false });
     // Enviar bienvenida y lista de jugadores a todos
     broadcastRoomState();
+    if(conn.open){
+      // Si estoy en una salita privada, el que se conecta entra a la salita
+      if(state === 'lobby' && salaKind === 'private'){
+        conn.send({ type: 'enterLobby' });
+        if(privateRoom) conn.send({ type: 'salaState', room: privateRoom });
+      }
+      // Si la partida ya arrancó, entra directo al juego
+      if(state === 'playing' || state === 'shop') conn.send({ type: 'startGame', diffId: currentDiff.id });
+    }
     conn.on('data', (data) => { handleGuestData(data, conn.peer); });
     conn.on('close', () => {
       delete mpConnections[conn.peer];
+      delete mpOtherPlayers[conn.peer];
       mpRoomPlayers = mpRoomPlayers.filter(p => p.peerId !== conn.peer);
       broadcastRoomState();
     });
@@ -1137,6 +1254,13 @@ function handleGuestData(data, peerId){
     mpReady[peerId] = data.ready;
     broadcastToAll({ type: 'readyUpdate', peerId: peerId, ready: data.ready });
     renderRoomUI();
+  } else if(data.type === 'salaPos'){
+    mpOtherPlayers[peerId] = { x: data.x, y: data.y, moving: data.moving, facingDir: data.facingDir, walkFrame: data.walkFrame, nickname: (mpConnections[peerId] && mpConnections[peerId].nickname) || 'Jugador', hp: 100 };
+    for(const id in mpConnections){
+      if(id === peerId) continue;
+      const conn = mpConnections[id].conn;
+      if(conn && conn.open) conn.send(data);
+    }
   }
 }
 
@@ -1153,6 +1277,15 @@ function handleHostData(data, hostId){
     mpRoomPlayers = data.players;
     if(data.ready) mpReady = data.ready;
     renderRoomUI();
+    // Sólo entramos a la salita privada si nos unimos por código a una sala privada
+    if(pendingPrivateJoin){ pendingPrivateJoin = false; startPrivateRoomGuest(); }
+  } else if(data.type === 'salaState'){
+    if(data.room) privateRoom = data.room;
+    renderLobbyUI();
+  } else if(data.type === 'salaPos'){
+    mpOtherPlayers[data.peerId] = { x: data.x, y: data.y, moving: data.moving, facingDir: data.facingDir, walkFrame: data.walkFrame, nickname: data.nickname || 'Jugador', hp: 100 };
+  } else if(data.type === 'enterLobby'){
+    startPrivateRoomGuest();
   } else if(data.type === 'roomFull'){
     alert('La sala está llena (máx. 5 jugadores)');
     leaveRoom();
@@ -1168,6 +1301,7 @@ function handleHostData(data, hostId){
   } else if(data.type === 'showDifficulty'){
     document.getElementById('difficultyScreen').style.backgroundImage = "url('beetle-king.png')";
     document.getElementById('difficultyScreen').style.backgroundPosition = 'center center';
+    const lobbyEl = document.getElementById('lobbyHud'); if(lobbyEl) lobbyEl.style.display = 'none';
     showScreen('difficultyScreen');
   } else if(data.type === 'readyUpdate'){
     mpReady[data.peerId] = data.ready;
@@ -1233,9 +1367,14 @@ function handleHostData(data, hostId){
       if(data.dmgNumbers){
         dmgNumbers = data.dmgNumbers.map(d => ({x:d.x, y:d.y, text:d.text, life:d.life, vy:d.vy||0.6, crit:!!d.crit}));
       }
-      // Sincronizar estado de juego (shop, gameover)
+      // Sincronizar estado de juego (shop, playing, gameover)
       if(data.gameState === 'shop' && state !== 'shop'){
         openShop();
+      } else if(data.gameState === 'playing' && state !== 'playing'){
+        // El host arranca la oleada: el invitado también juega (si no, la cámara no sigue)
+        document.getElementById('shop').classList.remove('open');
+        state = 'playing';
+        showMobileControls(true);
       } else if(data.gameState === 'gameover' && state !== 'gameover'){
         state = 'gameover';
         playFailureSfx();
@@ -1282,6 +1421,7 @@ function broadcastRoomState(){
 // ---------- Broadcast: Enviar estado de juego ----------
 function broadcastGameState(){
   if(!mpRoomCode) return;
+  if(state === 'lobby' || state === 'plaza') return;   // en salas no se manda estado de partida
   const msg = { type: 'playerState', peerId: mpMyId, x: player.x, y: player.y, shooting: player.shooting, angle: player.angle, hp: player.hp, maxHp: player.maxHp, facingDir: player.facingDir, moving: player.moving, walkFrame: player.walkFrame, nickname: myNickname };
   if(mpIsHost){
     // Host envia el estado de TODOS los enemigos para que todos vean lo mismo
@@ -1387,12 +1527,14 @@ function renderRoomUI(){
     };
   }
   document.getElementById('leaveRoomBtn').onclick = leaveRoom;
+  renderLobbyUI();
 }
 
 // ---------- Iniciar partida multijugador ----------
 function startMultiplayerGame(){
   document.getElementById('difficultyScreen').style.backgroundImage = "url('beetle-king.png')";
   document.getElementById('difficultyScreen').style.backgroundPosition = 'center center';
+  const lobbyDiffEl = document.getElementById('lobbyHud'); if(lobbyDiffEl) lobbyDiffEl.style.display = 'none';
   showScreen('difficultyScreen');
   for(const id in mpConnections){
     const conn = mpConnections[id].conn;
@@ -1424,7 +1566,940 @@ function leaveRoom(){
   if(mpPeer){ mpPeer.destroy(); mpPeer = null; }
   document.getElementById('roomInfo').innerHTML = '';
   document.getElementById('roomInfo').style.display = 'none';
+  hideMpHuds();
+  privateRoom = null;
+  if(state === 'lobby') returnToHub();
 }
+
+// ========================================================
+// MULTIJUGADOR: PLAZA PÚBLICA (4 salitas) + SALA PRIVADA
+// ========================================================
+const SALA_W = 700, SALA_H = 420, SALA_WALL_H = 110;      // salita chica (sin cubículos)
+const PLAZA_W = 1500, PLAZA_H = 1000, PLAZA_WALL_H = 150; // plaza pública grande
+const PLAZA_SQUARE_W = 120, PLAZA_SQUARE_H = 100;         // cuadritos en el piso
+const MAX_LOBBY_PLAYERS = 5;
+const PLAZA_MAX_PLAYERS = 25;      // tope de gente en la plaza pública
+const PUBLIC_ROOMS = 4;
+const PLAZA_PEER_ID = 'insectgames-plaza-v1';
+const WAIT_SECONDS = 30, FULL_SECONDS = 5;
+let LOBBY_ZOOM = 1.1;                                     // zoom de la salita (se adapta a la pestaña)
+
+let plazaRole = 'offline';        // 'host' | 'guest' | 'offline'
+let plazaPeer = null, plazaConn = null, plazaMyId = null;
+let plazaClients = {};            // host: peerId -> {nickname, conn, x, y, room, moving, facingDir, walkFrame}
+let plazaRooms = [];              // estado de las 4 salas (host) o copia (cliente)
+let plazaOthers = {};             // jugadores que veo en mi sala/plaza
+let plazaYou = {};                // mi estado según el host
+let plazaTotal = 1, plazaEnterGuard = 0, plazaLastPos = 0, plazaNotice = '';
+let salaKind = 'public';          // 'public' | 'private'
+let mySalaRoom = 0;               // 0 = plaza, 1..4 = salita pública
+let privateRoom = null;           // sala privada (config + cuenta regresiva)
+let cfgMaxPlayers = 5, cfgDiffId = 'medio';
+let cfgAutoOpened = false;
+let pendingPrivateJoin = false;
+
+function newSala(id, ownerName){
+  return { id, players: [], ownerId: null, ownerName: ownerName || null, maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'idle', countdown: 0 };
+}
+function diffName(id){ const d = DIFFICULTIES.find(x => x.id === id); return d ? d.name : 'Medio'; }
+function salaSpawn(){ return { x: SALA_W / 2, y: SALA_H - 90 }; }
+function plazaSpawn(){ return { x: PLAZA_W / 2, y: PLAZA_WALL_H + 300 }; }
+function plazaSquareRect(i){
+  const gap = 44;
+  const total = PUBLIC_ROOMS * PLAZA_SQUARE_W + (PUBLIC_ROOMS - 1) * gap;
+  const x0 = (PLAZA_W - total) / 2;
+  return { x: x0 + i * (PLAZA_SQUARE_W + gap), y: PLAZA_WALL_H + 16, w: PLAZA_SQUARE_W, h: PLAZA_SQUARE_H };
+}
+function salaOthers(){ return (salaKind === 'public') ? plazaOthers : mpOtherPlayers; }
+function el(id){ return document.getElementById(id); }
+function showEl(id, on){ const e = el(id); if(e) e.style.display = on ? 'flex' : 'none'; }
+
+// ---------- Plaza pública: host (servidor de matchmaking) ----------
+function plazaHostSetup(peer){
+  plazaRole = 'host'; plazaMyId = peer.id;
+  plazaRooms = []; for(let i = 0; i < PUBLIC_ROOMS; i++) plazaRooms.push(newSala(i + 1));
+  plazaClients = {};
+  const sp = plazaSpawn();
+  plazaClients[plazaMyId] = { peerId: plazaMyId, nickname: myNickname || 'Jugador', conn: null, x: sp.x, y: sp.y, room: 0, moving: false, facingDir: 'down', walkFrame: 0 };
+  peer.on('connection', conn => {
+    conn.on('open', () => {
+      if(!plazaHasRoom()){
+        conn.send({ type: 'plazaFull' });
+        setTimeout(() => { try { conn.close(); } catch(e){} }, 200);
+        return;
+      }
+      const sp2 = plazaSpawn();
+      plazaClients[conn.peer] = { peerId: conn.peer, nickname: 'Jugador', conn, x: sp2.x, y: sp2.y, room: 0, moving: false, facingDir: 'down', walkFrame: 0 };
+      conn.on('data', msg => plazaHostMessage(conn.peer, msg));
+      conn.on('close', () => plazaHostDrop(conn.peer));
+      sendPlazaSnap(true);
+    });
+  });
+  plazaNotice = 'sos el anfitrión';
+  sendPlazaSnap(true);
+}
+function plazaHasRoom(){ return Object.keys(plazaClients).length < PLAZA_MAX_PLAYERS; }
+function plazaHostDrop(peerId){
+  if(!plazaClients[peerId]) return;
+  delete plazaClients[peerId];
+  for(const r of plazaRooms) r.players = r.players.filter(p => p.peerId !== peerId);
+  plazaRooms.forEach(r => {
+    if(r.players.length === 0){ r.ownerId = null; r.ownerName = null; r.phase = 'idle'; r.countdown = 0; }
+    else if(r.ownerId === peerId){
+      const nid = r.players[0].peerId;
+      const nc = plazaClients[nid];
+      r.ownerId = nid; r.ownerName = nc ? nc.nickname : null; r.phase = 'config'; r.countdown = 0;
+    }
+  });
+  sendPlazaSnap(true);
+}
+function plazaHostMessage(peerId, msg){
+  const c = plazaClients[peerId];
+  if(!c || !msg) return;
+  if(msg.type === 'plazaHello'){
+    c.nickname = String(msg.nickname || 'Jugador').slice(0, 16);
+    sendPlazaSnap(true);
+  } else if(msg.type === 'plazaPos'){
+    c.x = msg.x; c.y = msg.y; c.room = msg.room | 0;
+    c.moving = !!msg.moving; c.facingDir = msg.facingDir || 'down'; c.walkFrame = msg.walkFrame | 0;
+    sendPlazaSnap(false);
+  } else if(msg.type === 'plazaRoom'){
+    plazaHostSetRoom(peerId, msg.roomId | 0);
+  } else if(msg.type === 'plazaConfig'){
+    plazaHostConfigure(peerId, msg.roomId | 0, msg.maxPlayers | 0, msg.diffId);
+  } else if(msg.type === 'plazaStartNow'){
+    const r = plazaRooms[(msg.roomId | 0) - 1];
+    if(r && r.ownerId === peerId) plazaHostStartGame(r);
+  }
+}
+function plazaHostSetRoom(peerId, roomId){
+  const c = plazaClients[peerId];
+  if(!c) return;
+  for(const r of plazaRooms) r.players = r.players.filter(p => p.peerId !== peerId);
+  c.room = roomId;
+  c.x = roomId === 0 ? plazaSpawn().x : SALA_W / 2;
+  c.y = roomId === 0 ? plazaSpawn().y : SALA_H - 90;
+  if(roomId >= 1 && roomId <= PUBLIC_ROOMS){
+    const r = plazaRooms[roomId - 1];
+    r.players.push({ peerId, nickname: c.nickname });
+    if(!r.ownerId){ r.ownerId = peerId; r.ownerName = c.nickname; r.phase = 'config'; r.countdown = 0; }
+    if(r.phase === 'waiting' && r.players.length >= r.maxPlayers) r.countdown = Math.min(r.countdown, FULL_SECONDS);
+  }
+  plazaRooms.forEach(r => {
+    if(r.players.length === 0){ r.ownerId = null; r.ownerName = null; r.phase = 'idle'; r.countdown = 0; }
+    else if(!r.ownerId){ r.ownerId = r.players[0].peerId; r.ownerName = r.players[0].nickname; }
+  });
+  sendPlazaSnap(true);
+}
+function plazaHostConfigure(peerId, roomId, maxPlayers, diffId){
+  const r = plazaRooms[roomId - 1];
+  if(!r || r.ownerId !== peerId) return;
+  r.maxPlayers = Math.max(2, Math.min(MAX_LOBBY_PLAYERS, maxPlayers || MAX_LOBBY_PLAYERS));
+  if(DIFFICULTIES.some(d => d.id === diffId)) r.diffId = diffId;
+  r.phase = 'waiting';
+  r.countdown = (r.players.length >= r.maxPlayers) ? FULL_SECONDS : WAIT_SECONDS;
+  sendPlazaSnap(true);
+}
+function plazaHostStartGame(r){
+  if(!r || r.phase === 'starting' || r.players.length === 0) return;
+  r.phase = 'starting'; r.countdown = 0;
+  const code = generateRoomCode();
+  const payload = { type: 'plazaPrepareGame', roomId: r.id, code, diffId: r.diffId, ownerId: r.ownerId };
+  for(const p of r.players){
+    const c = plazaClients[p.peerId];
+    if(c && c.conn && c.conn.open) c.conn.send(payload);
+    else if(p.peerId === plazaMyId) plazaPrepareGameLocal(payload);
+  }
+  sendPlazaSnap(true);
+}
+function plazaHostTick(){
+  if(plazaRole !== 'host') return;
+  let changed = false;
+  for(const r of plazaRooms){
+    if(r.phase !== 'waiting' || r.players.length === 0) continue;
+    if(r.players.length >= r.maxPlayers && r.countdown > FULL_SECONDS) r.countdown = FULL_SECONDS;
+    r.countdown = Math.max(0, r.countdown - 1);
+    changed = true;
+    if(r.countdown <= 0) plazaHostStartGame(r);
+  }
+  if(changed) sendPlazaSnap(true);
+}
+function plazaBuildSnap(roomId, forPeerId){
+  const players = [];
+  for(const id in plazaClients){
+    const c = plazaClients[id];
+    if(c.room !== roomId || id === forPeerId) continue;
+    players.push({ id, nickname: c.nickname, x: Math.round(c.x), y: Math.round(c.y), moving: c.moving, facingDir: c.facingDir, walkFrame: c.walkFrame });
+  }
+  const room = (roomId >= 1 && roomId <= PUBLIC_ROOMS) ? plazaRooms[roomId - 1] : null;
+  return {
+    type: 'plazaSnap',
+    rooms: plazaRooms.map(r => ({ id: r.id, count: r.players.length, maxPlayers: r.maxPlayers, diffId: r.diffId, phase: r.phase, countdown: r.countdown, ownerId: r.ownerId, ownerName: r.ownerName })),
+    players,
+    total: Object.keys(plazaClients).length,
+    you: {
+      roomId, isOwner: !!(room && room.ownerId === forPeerId),
+      maxPlayers: room ? room.maxPlayers : MAX_LOBBY_PLAYERS,
+      diffId: room ? room.diffId : 'medio',
+      phase: room ? room.phase : 'none',
+      countdown: room ? room.countdown : 0,
+      ownerId: room ? room.ownerId : null
+    }
+  };
+}
+let plazaSnapQueued = false;
+function sendPlazaSnap(immediate){
+  if(plazaRole !== 'host') return;
+  const push = () => {
+    plazaSnapQueued = false;
+    for(const id in plazaClients){
+      const c = plazaClients[id];
+      if(c.conn && c.conn.open) c.conn.send(plazaBuildSnap(c.room, id));
+    }
+    const self = plazaClients[plazaMyId];
+    // keepRooms = true: el host NO debe pisar su estado autoritativo con el snapshot
+    if(self) plazaApplySnap(plazaBuildSnap(self.room, plazaMyId), true);
+  };
+  if(immediate){ push(); return; }
+  if(plazaSnapQueued) return;
+  plazaSnapQueued = true;
+  setTimeout(push, 90);
+}
+
+// ---------- Plaza pública: cliente ----------
+function plazaHandleHostMessage(msg){
+  if(!msg) return;
+  if(msg.type === 'plazaSnap') plazaApplySnap(msg);
+  else if(msg.type === 'plazaPrepareGame') plazaPrepareGameLocal(msg);
+  else if(msg.type === 'plazaFull'){
+    plazaNotice = 'plaza llena (' + PLAZA_MAX_PLAYERS + ')';
+    try { if(plazaPeer) plazaPeer.destroy(); } catch(e){}
+    plazaPeer = null; plazaConn = null;
+    plazaOfflineReset();
+    plazaNotice = 'plaza llena (' + PLAZA_MAX_PLAYERS + ') · modo solo';
+    renderPlazaUI();
+  }
+}
+function plazaApplySnap(snap, keepRooms){
+  if(snap.rooms && !keepRooms) plazaRooms = snap.rooms.map(r => ({ ...r, players: [] }));
+  plazaOthers = {};
+  for(const p of (snap.players || [])) if(p.id !== plazaMyId) plazaOthers[p.id] = p;
+  plazaYou = snap.you || {};
+  plazaTotal = snap.total || (Object.keys(plazaOthers).length + 1);
+  if(state === 'lobby' && salaKind === 'public' && typeof plazaYou.roomId === 'number' && plazaYou.roomId !== mySalaRoom){
+    mySalaRoom = plazaYou.roomId;
+  }
+  if(state === 'lobby') renderLobbyUI();
+  else if(state === 'plaza') renderPlazaUI();
+}
+function sendPlaza(msg){
+  if(plazaRole === 'guest' && plazaConn && plazaConn.open) plazaConn.send(msg);
+  else if(plazaRole === 'offline' && msg.type === 'plazaRoom') plazaOfflineSetRoom(msg.roomId | 0);
+}
+function plazaOfflineReset(){
+  plazaRole = 'offline';
+  plazaRooms = []; for(let i = 0; i < PUBLIC_ROOMS; i++) plazaRooms.push(newSala(i + 1));
+  plazaClients = {}; plazaOthers = {}; plazaYou = {}; plazaTotal = 1;
+}
+function plazaOfflineSetRoom(roomId){
+  const nick = myNickname || 'Jugador';
+  for(const r of plazaRooms) r.players = r.players.filter(p => p.peerId !== 'local');
+  if(roomId >= 1 && roomId <= PUBLIC_ROOMS){
+    const r = plazaRooms[roomId - 1];
+    r.players.push({ peerId: 'local', nickname: nick });
+    if(!r.ownerId){ r.ownerId = 'local'; r.ownerName = nick; r.phase = 'config'; r.countdown = 0; }
+    plazaYou = { roomId, isOwner: r.ownerId === 'local', maxPlayers: r.maxPlayers, diffId: r.diffId, phase: r.phase, countdown: r.countdown, ownerId: r.ownerId, ownerName: r.ownerName };
+  } else {
+    plazaRooms.forEach(r => { if(r.players.length === 0){ r.ownerId = null; r.ownerName = null; r.phase = 'idle'; r.countdown = 0; } });
+    plazaYou = { roomId: 0, isOwner: false, maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'none', countdown: 0, ownerId: null, ownerName: null };
+  }
+}
+function plazaOfflineConfigure(roomId, maxPlayers, diffId){
+  const r = plazaRooms[roomId - 1];
+  if(!r || r.ownerId !== 'local') return;
+  r.maxPlayers = Math.max(2, Math.min(MAX_LOBBY_PLAYERS, maxPlayers || MAX_LOBBY_PLAYERS));
+  if(DIFFICULTIES.some(d => d.id === diffId)) r.diffId = diffId;
+  r.phase = 'waiting';
+  r.countdown = (r.players.length >= r.maxPlayers) ? FULL_SECONDS : WAIT_SECONDS;
+  plazaYou = { roomId, isOwner: true, maxPlayers: r.maxPlayers, diffId: r.diffId, phase: r.phase, countdown: r.countdown, ownerId: r.ownerId };
+}
+function plazaOfflineTick(){
+  const r = plazaRooms[mySalaRoom - 1];
+  if(!r || r.phase !== 'waiting' || r.players.length === 0) return;
+  if(r.players.length >= r.maxPlayers && r.countdown > FULL_SECONDS) r.countdown = FULL_SECONDS;
+  r.countdown = Math.max(0, r.countdown - 1);
+  plazaYou.countdown = r.countdown; plazaYou.phase = r.phase;
+  renderLobbyUI();
+  if(r.countdown <= 0){
+    r.phase = 'starting';
+    plazaPrepareGameLocal({ roomId: r.id, code: null, diffId: r.diffId, ownerId: 'local' });
+  }
+}
+function plazaConnect(){
+  if(plazaPeer) return;
+  if(typeof Peer === 'undefined'){ plazaOfflineReset(); return; }
+  let settled = false;
+  const failOffline = () => { if(settled) return; settled = true; plazaOfflineReset(); if(state === 'plaza' || state === 'lobby'){ renderPlazaUI(); renderLobbyUI(); } };
+  try {
+    const p = new Peer(PLAZA_PEER_ID);
+    plazaPeer = p;
+    p.on('open', () => { settled = true; plazaHostSetup(p); if(state === 'plaza') renderPlazaUI(); else if(state === 'lobby') renderLobbyUI(); });
+    p.on('error', err => {
+      if(settled) return;
+      settled = true;
+      try { p.destroy(); } catch(e){}
+      plazaPeer = null;
+      if(err && err.type === 'unavailable-id') plazaJoinAsGuest();
+      else failOffline();
+    });
+    setTimeout(() => { if(!settled) failOffline(); }, 7000);
+  } catch(e){ failOffline(); }
+}
+function plazaJoinAsGuest(){
+  try {
+    const p = new Peer();
+    plazaPeer = p;
+    p.on('open', () => {
+      plazaMyId = p.id;
+      const conn = p.connect(PLAZA_PEER_ID, { metadata: { nickname: myNickname || 'Jugador' } });
+      plazaConn = conn;
+      conn.on('open', () => { plazaRole = 'guest'; conn.send({ type: 'plazaHello', nickname: myNickname || 'Jugador' }); sendPlaza({ type: 'plazaRoom', roomId: mySalaRoom }); });
+      conn.on('data', msg => plazaHandleHostMessage(msg));
+      conn.on('close', () => { if(state === 'plaza' || state === 'lobby') plazaReconnect(); });
+    });
+    p.on('error', () => { if(plazaRole !== 'guest'){ try { p.destroy(); } catch(e){} plazaPeer = null; plazaOfflineReset(); } });
+    setTimeout(() => { if(plazaRole !== 'guest' && state === 'plaza'){ try { p.destroy(); } catch(e){} plazaPeer = null; plazaOfflineReset(); renderPlazaUI(); renderLobbyUI(); } }, 8000);
+  } catch(e){ plazaOfflineReset(); }
+}
+function plazaReconnect(){
+  const wasRoom = mySalaRoom;
+  plazaShutdown();
+  plazaOfflineReset();
+  mySalaRoom = wasRoom;
+  plazaNotice = 'reconectando…';
+  setTimeout(() => { plazaConnect(); }, 1200);
+}
+function plazaShutdown(){
+  try { if(plazaConn) plazaConn.close(); } catch(e){}
+  plazaConn = null;
+  try { for(const id in plazaClients){ const c = plazaClients[id]; if(c.conn) c.conn.close(); } } catch(e){}
+  plazaClients = {};
+  try { if(plazaPeer) plazaPeer.destroy(); } catch(e){}
+  plazaPeer = null;
+  plazaRole = 'offline';
+}
+function prepSalaScene(){
+  mpOtherPlayers = {};
+  enemies = []; bullets = []; enemyProjectiles = []; particles = []; dmgNumbers = [];
+  currentBoss = null; turret = null; spawnQueue = 0;
+  player.hp = player.maxHp; player.hitFlash = 0;
+  player.moving = false; player.walkFrame = 0; player.walkTimer = 0; player.facingDir = 'down';
+  el('bossBar').style.display = 'none';
+  el('roomInfo').style.display = 'none';
+  el('shop').classList.remove('open');
+  showScreen(null);
+  showMobileControls(true);
+  stopBattleMusic(); playLobbyMusic();
+  const hudEl = el('hud'); if(hudEl) hudEl.style.display = 'none';
+}
+function enterSalita(kind, roomId){
+  salaKind = kind;
+  state = 'lobby';
+  cfgAutoOpened = false;
+  if(kind === 'public') mySalaRoom = roomId;
+  prepSalaScene();
+  computeLobbyZoom();
+  const sp = salaSpawn();
+  player.x = sp.x; player.y = sp.y;
+  camera.x = player.x; camera.y = player.y;
+  showEl('lobbyHud', true);
+  showEl('plazaHud', false);
+  renderLobbyUI();
+}
+function enterPlazaScene(){
+  state = 'plaza';
+  prepSalaScene();
+  computeLobbyZoom();
+  const sp = plazaSpawn();
+  player.x = sp.x; player.y = sp.y;
+  camera.x = player.x; camera.y = player.y;
+  showEl('lobbyHud', false);
+  showEl('plazaHud', true);
+  renderPlazaUI();
+}
+function plazaSetMyRoom(roomId){
+  mySalaRoom = roomId;
+  if(plazaRole === 'guest') sendPlaza({ type: 'plazaRoom', roomId });
+  else if(plazaRole === 'host') plazaHostSetRoom(plazaMyId, roomId);
+  else plazaOfflineSetRoom(roomId);
+}
+function plazaEnterRoom(roomId){
+  plazaSetMyRoom(roomId);
+  enterSalita('public', roomId);
+}
+function backToPlaza(){
+  plazaSetMyRoom(0);
+  enterPlazaScene();
+  plazaEnterGuard = performance.now() + 1200;
+}
+function sendSalaPosIfNeeded(){
+  if(salaKind === 'public') sendPlazaPos();
+  else sendSalaPos();
+}
+function returnToHub(){
+  hideMpHuds();
+  state = 'hub';
+  mpOtherPlayers = {};
+  enemies = []; bullets = []; enemyProjectiles = []; particles = []; dmgNumbers = [];
+  showMobileControls(false);
+  showScreen('hub');
+  refreshHubUI();
+}
+function hideMpHuds(){ showEl('lobbyHud', false); showEl('plazaHud', false); }
+// Entrar a la plaza pública (botón del hub)
+function goPublicPlaza(){
+  if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
+  if(mpRoomCode) leaveRoom();   // veníamos de una sala: la dejamos limpia
+  if(state === 'lobby' || state === 'plaza') hideMpHuds();
+  plazaOfflineReset();
+  plazaRooms = []; for(let i = 0; i < PUBLIC_ROOMS; i++) plazaRooms.push(newSala(i + 1));
+  mySalaRoom = 0;
+  enterPlazaScene();
+  plazaConnect();
+}
+// Sala privada (comportamiento de antes: código para compartir)
+function startPrivateRoomHost(){
+  privateRoom = { maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'waiting', countdown: WAIT_SECONDS };
+  enterSalita('private', 0);
+  broadcastToAll({ type: 'salaState', room: privateRoom });
+}
+function startPrivateRoomGuest(){
+  if(!privateRoom) privateRoom = { maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'waiting', countdown: WAIT_SECONDS };
+  if(state === 'lobby' && salaKind === 'private'){ renderLobbyUI(); return; }
+  enterSalita('private', 0);
+}
+// El host de la plaza avisa que arranca la partida de una salita pública
+function plazaPrepareGameLocal(payload){
+  if(!payload) return;
+  currentDiff = DIFFICULTIES.find(d => d.id === payload.diffId) || DIFFICULTIES[1];
+  if(plazaRole === 'offline' || !payload.code){ startSoloFromSala(); return; }
+  if(payload.ownerId === plazaMyId) startGameAsHostFromPlaza(payload.code);
+  else joinGameRoomFromPlaza(payload.code);
+}
+function startSoloFromSala(){
+  hideMpHuds();
+  plazaShutdown();
+  state = 'hub';
+  startRun();
+}
+async function startGameAsHostFromPlaza(code){
+  hideMpHuds();
+  plazaShutdown();
+  try {
+    mpRoomCode = code;
+    await initPeer(true, code);
+    mpConnections = {};
+    mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname || 'Jugador', isHost: true }];
+    mpReady = {}; mpReady[mpMyId] = true;
+    startRun();
+  } catch(e){
+    alert('No se pudo iniciar la partida: ' + e.message);
+    returnToHub();
+  }
+}
+async function joinGameRoomFromPlaza(code){
+  hideMpHuds();
+  plazaShutdown();
+  try {
+    await initPeer(false);
+    const conn = mpPeer.connect(code, { metadata: { nickname: myNickname || 'Jugador' } });
+    conn.on('open', () => {
+      mpRoomCode = code;
+      mpConnections[code] = { peerId: code, nickname: 'Host', conn, data: {} };
+      mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname || 'Jugador', isHost: false }];
+      conn.send({ type: 'requestPlayers' });
+    });
+    conn.on('data', d => handleHostData(d, code));
+    conn.on('close', () => { leaveRoom(); returnToHub(); });
+  } catch(e){
+    alert('No se pudo entrar a la partida: ' + e.message);
+    returnToHub();
+  }
+}
+// Cuenta regresiva de la sala privada (la maneja el host)
+function privateTick(){
+  if(!privateRoom || privateRoom.phase !== 'waiting') return;
+  if(mpRoomPlayers.length >= privateRoom.maxPlayers && privateRoom.countdown > FULL_SECONDS) privateRoom.countdown = FULL_SECONDS;
+  privateRoom.countdown = Math.max(0, privateRoom.countdown - 1);
+  broadcastToAll({ type: 'salaState', room: privateRoom });
+  renderLobbyUI();
+  if(privateRoom.countdown <= 0){
+    privateRoom.phase = 'starting';
+    renderLobbyUI();
+    hostPickDifficulty(privateRoom.diffId);
+  }
+}
+// Un solo tick por segundo para todas las cuentas regresivas
+setInterval(() => {
+  if(plazaRole === 'host') plazaHostTick();
+  else if(plazaRole === 'offline') plazaOfflineTick();
+  if(state === 'lobby' && salaKind === 'private' && mpIsHost) privateTick();
+}, 1000);
+// Vista normalizada de una sala (el host tiene players[], el cliente count)
+function roomView(i){
+  const r = plazaRooms[i];
+  if(!r) return { count: 0, maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'idle', countdown: 0, ownerId: null, ownerName: null };
+  return {
+    count: (typeof r.count === 'number') ? r.count : (r.players ? r.players.length : 0),
+    maxPlayers: r.maxPlayers, diffId: r.diffId, phase: r.phase, countdown: r.countdown,
+    ownerId: r.ownerId, ownerName: r.ownerName || null
+  };
+}
+function salaChip(text, isMe, extra, isEmpty){
+  const chip = document.createElement('div');
+  chip.className = 'lobbyChip' + (isMe ? ' me' : '') + (isEmpty ? ' empty' : '');
+  const name = document.createElement('span');
+  name.textContent = text;
+  chip.appendChild(name);
+  if(extra){ const rdy = document.createElement('span'); rdy.className = 'rdy'; rdy.textContent = extra; chip.appendChild(rdy); }
+  return chip;
+}
+// Modelo de la sala actual (pública o privada)
+function salaModel(){
+  if(salaKind === 'private'){
+    const pr = privateRoom || { maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'idle', countdown: 0 };
+    const host = mpRoomPlayers.find(p => p.isHost);
+    const hostName = host ? host.nickname : (mpIsHost ? myNickname : null);
+    return { maxPlayers: pr.maxPlayers, diffId: pr.diffId, phase: pr.phase, countdown: pr.countdown,
+             isOwner: !!mpIsHost, count: mpRoomPlayers.length,
+             label: 'SALA DE ' + (hostName || 'Jugador'), sub: (mpRoomCode || '').toUpperCase() };
+  }
+  const r = roomView(mySalaRoom - 1);
+  const you = plazaYou || {};
+  const ownerName = r.ownerName || (you.isOwner ? (myNickname || null) : null);
+  return {
+    maxPlayers: you.maxPlayers || r.maxPlayers,
+    diffId: you.diffId || r.diffId,
+    phase: you.phase || r.phase,
+    countdown: (typeof you.countdown === 'number') ? you.countdown : r.countdown,
+    isOwner: !!you.isOwner,
+    count: Object.keys(plazaOthers).length + 1,
+    label: ownerName ? ('SALA DE ' + ownerName) : ('SALA PÚBLICA ' + mySalaRoom),
+    sub: '#' + mySalaRoom
+  };
+}
+function renderLobbyUI(){
+  if(state !== 'lobby') return;
+  const m = salaModel();
+  el('salaLabel').textContent = m.label;
+  el('lobbyCode').textContent = m.sub;
+  el('lobbyCapacity').textContent = m.count + '/' + m.maxPlayers;
+  let info = '🎯 ' + diffName(m.diffId);
+  if(m.phase === 'config') info += ' · ⚙ esperando config';
+  else if(m.phase === 'waiting') info += ' · ⏳ ' + m.countdown + 's';
+  else if(m.phase === 'starting') info += ' · ¡empezando!';
+  el('salaInfo').textContent = info;
+  // El dueño ve la config apenas entra a una sala nueva
+  if(m.isOwner && m.phase === 'config' && !cfgAutoOpened){
+    cfgAutoOpened = true;
+    openSalaConfig();
+  }
+
+  const list = el('lobbyPlayers');
+  list.innerHTML = '';
+  if(salaKind === 'private'){
+    mpRoomPlayers.forEach(p => list.appendChild(salaChip((p.isHost ? '👑 ' : '') + (p.nickname || 'Jugador'), p.peerId === mpMyId, p.isHost ? '' : (mpReady[p.peerId] ? '✅' : '⏳'))));
+    for(let i = mpRoomPlayers.length; i < m.maxPlayers; i++) list.appendChild(salaChip('· libre ·', false, '', true));
+  } else {
+    const ownerId = (plazaYou && plazaYou.ownerId) || null;
+    list.appendChild(salaChip((ownerId === plazaMyId ? '👑 ' : '') + (myNickname || 'Tú') + ' (vos)', true, ''));
+    for(const id in plazaOthers) list.appendChild(salaChip((ownerId === id ? '👑 ' : '') + (plazaOthers[id].nickname || 'Jugador'), false, ''));
+    for(let i = m.count; i < m.maxPlayers; i++) list.appendChild(salaChip('· libre ·', false, '', true));
+  }
+
+  const cfgBtn = el('salaConfigBtn'), startNow = el('lobbyStartNowBtn'), startBtn = el('lobbyStartBtn'), readyBtn = el('lobbyReadyBtn');
+  cfgBtn.style.display = (m.isOwner && (m.phase === 'config' || m.phase === 'waiting')) ? 'inline-block' : 'none';
+  startNow.style.display = (m.isOwner && m.phase !== 'idle') ? 'inline-block' : 'none';
+  if(salaKind === 'private'){
+    startBtn.style.display = mpIsHost ? 'inline-block' : 'none';
+    readyBtn.style.display = mpIsHost ? 'none' : 'inline-block';
+    const allReady = mpRoomPlayers.every(p => p.isHost || mpReady[p.peerId]);
+    const canStart = mpRoomPlayers.length >= 2 && allReady;
+    startBtn.disabled = !canStart;
+    startBtn.style.opacity = canStart ? '1' : '0.45';
+    if(!mpIsHost){
+      const mine = !!mpReady[mpMyId];
+      readyBtn.textContent = mine ? '✅ Listo' : '⏳ Listo';
+      readyBtn.classList.toggle('isReady', mine);
+    }
+  } else {
+    startBtn.style.display = 'none';
+    readyBtn.style.display = 'none';
+  }
+  el('lobbyHint').textContent = (salaKind === 'public')
+    ? 'Salir te devuelve a la plaza para elegir otra sala · el dueño elige cupo y dificultad'
+    : 'Comparte el código · la partida arranca sola o cuando el host la inicie';
+}
+function renderPlazaUI(){
+  if(state !== 'plaza') return;
+  const st = el('plazaStatus');
+  if(st) st.textContent = plazaNotice ? plazaNotice : (plazaRole === 'host' ? 'anfitrión' : plazaRole === 'guest' ? 'conectado' : 'sin conexión');
+  const c = el('plazaCount');
+  if(c) c.textContent = plazaTotal + '/' + PLAZA_MAX_PLAYERS + ' jugadores';
+}
+// ---------- Modal de configuración de sala ----------
+function renderSalaConfig(){
+  const cap = el('cfgCapacity');
+  cap.innerHTML = '';
+  for(let n = 2; n <= MAX_LOBBY_PLAYERS; n++){
+    const b = document.createElement('button');
+    b.className = 'smallBtn cfgBtn' + (n === cfgMaxPlayers ? ' sel' : '');
+    b.textContent = n + ' jug.';
+    b.onclick = () => { cfgMaxPlayers = n; renderSalaConfig(); };
+    cap.appendChild(b);
+  }
+  const df = el('cfgDiff');
+  df.innerHTML = '';
+  DIFFICULTIES.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'smallBtn cfgBtn' + (d.id === cfgDiffId ? ' sel' : '');
+    b.textContent = d.name;
+    b.onclick = () => { cfgDiffId = d.id; renderSalaConfig(); };
+    df.appendChild(b);
+  });
+}
+function openSalaConfig(){
+  const m = salaModel();
+  cfgMaxPlayers = Math.max(2, Math.min(MAX_LOBBY_PLAYERS, m.maxPlayers || MAX_LOBBY_PLAYERS));
+  cfgDiffId = m.diffId || 'medio';
+  renderSalaConfig();
+  el('salaConfigModal').style.display = 'flex';
+}
+function confirmSalaConfig(){
+  el('salaConfigModal').style.display = 'none';
+  if(salaKind === 'private'){
+    if(!mpIsHost) return;
+    privateRoom = privateRoom || { maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'waiting', countdown: WAIT_SECONDS };
+    privateRoom.maxPlayers = Math.max(2, Math.min(MAX_LOBBY_PLAYERS, cfgMaxPlayers));
+    privateRoom.diffId = cfgDiffId;
+    privateRoom.phase = 'waiting';
+    privateRoom.countdown = (mpRoomPlayers.length >= privateRoom.maxPlayers) ? FULL_SECONDS : WAIT_SECONDS;
+    broadcastToAll({ type: 'salaState', room: privateRoom });
+    renderLobbyUI();
+    return;
+  }
+  if(plazaRole === 'offline'){
+    plazaOfflineConfigure(mySalaRoom, cfgMaxPlayers, cfgDiffId);
+    renderLobbyUI();
+  } else if(plazaRole === 'host'){
+    plazaHostConfigure(plazaMyId, mySalaRoom, cfgMaxPlayers, cfgDiffId);
+  } else {
+    sendPlaza({ type: 'plazaConfig', roomId: mySalaRoom, maxPlayers: cfgMaxPlayers, diffId: cfgDiffId });
+  }
+}
+// Mueve al jugador dentro de un cuarto (sirve para la salita y para la plaza)
+function moveAvatar(dt, bounds){
+  let dx = 0, dy = 0;
+  if(keys['w'] || keys['arrowup']) dy -= 1;
+  if(keys['s'] || keys['arrowdown']) dy += 1;
+  if(keys['a'] || keys['arrowleft']) dx -= 1;
+  if(keys['d'] || keys['arrowright']) dx += 1;
+  if(window.mobileInput){
+    const mdx = window.mobileInput.dx();
+    const mdy = window.mobileInput.dy();
+    if(Math.abs(mdx) > 0.1 || Math.abs(mdy) > 0.1){ dx += mdx; dy += mdy; }
+  }
+  player.moving = (dx !== 0 || dy !== 0);
+  const frameScale = dt / 16.667;
+  if(player.moving){
+    const len = Math.hypot(dx, dy) || 1;
+    player.x += (dx / len) * player.speed * frameScale;
+    player.y += (dy / len) * player.speed * frameScale;
+    player.facing = Math.atan2(dy, dx);
+    if(dy < -0.5) player.facingDir = 'up';
+    else if(dy > 0.5) player.facingDir = 'down';
+    else if(dx < 0) player.facingDir = 'left';
+    else player.facingDir = 'right';
+    const maxFrames = {up:3, down:3, left:2, right:2};
+    player.walkTimer += dt;
+    if(player.walkTimer > 250){
+      player.walkTimer = 0;
+      player.walkFrame = (player.walkFrame + 1) % maxFrames[player.facingDir];
+    }
+  } else {
+    player.walkFrame = 0;
+    player.walkTimer = 0;
+  }
+  // Límites: no atravesar la pared ni salir del cuarto
+  const minY = (bounds.top || 0) + player.r * 0.5;
+  player.x = Math.max(player.r, Math.min(bounds.w - player.r, player.x));
+  player.y = Math.max(minY, Math.min(bounds.h - player.r, player.y));
+  // Cámara centrada en el jugador; si el cuarto entra completo, queda fija
+  const halfW = W / (2 * LOBBY_ZOOM), halfH = H / (2 * LOBBY_ZOOM);
+  camera.x = (bounds.w > halfW * 2) ? Math.max(halfW, Math.min(bounds.w - halfW, player.x)) : bounds.w / 2;
+  camera.y = (bounds.h > halfH * 2) ? Math.max(halfH, Math.min(bounds.h - halfH, player.y)) : bounds.h / 2;
+}
+function updateLobby(dt){ moveAvatar(dt, { w: SALA_W, h: SALA_H, top: SALA_WALL_H }); }
+function updatePlaza(dt){
+  moveAvatar(dt, { w: PLAZA_W, h: PLAZA_H, top: PLAZA_WALL_H });
+  // Al pisar un cuadrito del piso te manda a esa salita
+  if(performance.now() < plazaEnterGuard) return;
+  for(let i = 0; i < PUBLIC_ROOMS; i++){
+    const s = plazaSquareRect(i);
+    if(player.x > s.x && player.x < s.x + s.w && player.y > s.y && player.y < s.y + s.h){
+      plazaEnterRoom(i + 1);
+      return;
+    }
+  }
+}
+// Envío de posiciones de la plaza (12.5 Hz alcanza y sobra)
+function sendPlazaPos(){
+  const now = performance.now();
+  if(now - plazaLastPos < 80) return;
+  plazaLastPos = now;
+  const msg = { type: 'plazaPos', x: Math.round(player.x), y: Math.round(player.y), room: mySalaRoom,
+                moving: player.moving, facingDir: player.facingDir, walkFrame: player.walkFrame };
+  if(plazaRole === 'guest') sendPlaza(msg);
+  else if(plazaRole === 'host' && plazaClients[plazaMyId]){
+    plazaHostMessage(plazaMyId, msg);
+  }
+}
+// Posiciones dentro de una sala privada (host y guests se ven entre sí)
+function sendSalaPos(){
+  const now = performance.now();
+  if(now - plazaLastPos < 80) return;
+  plazaLastPos = now;
+  const msg = { type: 'salaPos', x: Math.round(player.x), y: Math.round(player.y),
+                moving: player.moving, facingDir: player.facingDir, walkFrame: player.walkFrame };
+  broadcastToAll(msg);
+}
+function drawLobbyAvatar(x, y, moving, facingDir, walkFrame, nickname, isSelf){
+  const walkFrames = {
+    up: [sprites.walkUp0, sprites.walkUp1, sprites.walkUp2],
+    down: [sprites.walkDown0, sprites.walkDown1, sprites.walkDown2],
+    left: [sprites.walkLeft0, sprites.walkLeft1],
+    right: [sprites.walkRight0, sprites.walkRight1]
+  };
+  const idleFrames = { up: sprites.idleUp, down: sprites.idleDown, left: sprites.idleLeft, right: sprites.idleRight };
+  const dir = facingDir || 'down';
+  let img;
+  if(moving){
+    const frames = walkFrames[dir] || walkFrames.down;
+    img = frames[(walkFrame || 0) % frames.length];
+  } else {
+    img = idleFrames[dir] || idleFrames.down;
+  }
+  if(!img || !img.width) img = sprites.player;
+
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(x, y + 30, 22, 8, 0, 0, Math.PI * 2); ctx.fill();
+  // Aro rojo del lobby
+  ctx.strokeStyle = isSelf ? 'rgba(255,70,70,0.95)' : 'rgba(255,80,80,0.5)';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(x, y + 30, 24, 9, 0, 0, Math.PI * 2); ctx.stroke();
+
+  ctx.save();
+  ctx.translate(x, y);
+  if(img && img.width){
+    drawSprite(img, 0, 0, 30, false, false, 0);
+  } else {
+    // Fallback: personaje rojo
+    ctx.fillStyle = '#ff4d4d';
+    ctx.fillRect(-13, -26, 26, 34);
+  }
+  ctx.restore();
+
+  // Nametag
+  if(nickname || isSelf){
+    const label = isSelf ? (nickname ? ('TÚ · ' + nickname) : 'TÚ') : nickname;
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    const w = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(x - w/2 - 5, y - 54, w + 10, 14);
+    ctx.strokeStyle = isSelf ? 'rgba(255,80,80,0.9)' : 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - w/2 - 5, y - 54, w + 10, 14);
+    ctx.fillStyle = isSelf ? '#ff9a9a' : '#ffffff';
+    ctx.fillText(label, x, y - 44);
+  }
+}
+// Base común de dibujo para cualquier cuarto (suelo + pared + marco)
+function drawRoomBase(w, h, wallH){
+  ctx.fillStyle = '#0b0b12';
+  ctx.fillRect(0, 0, W, H);
+  ctx.translate(W/2, H/2);
+  ctx.scale(LOBBY_ZOOM, LOBBY_ZOOM);
+  ctx.translate(-camera.x, -camera.y);
+  if(floorPattern){
+    ctx.fillStyle = floorPattern;
+    ctx.fillRect(0, wallH, w, h - wallH);
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(0, wallH, w, h - wallH);
+  } else {
+    ctx.fillStyle = '#1a1a24';
+    ctx.fillRect(0, wallH, w, h - wallH);
+  }
+  ctx.fillStyle = '#241d2e';
+  ctx.fillRect(0, 0, w, wallH);
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.lineWidth = 2;
+  for(let ly = 0; ly < wallH; ly += 24){
+    ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(w, ly); ctx.stroke();
+  }
+  ctx.fillStyle = '#17121f';
+  ctx.fillRect(0, wallH - 6, w, 8);
+  ctx.strokeStyle = 'rgba(255,80,80,0.3)';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(0, 0, w, h);
+}
+// Cartel de la salita: cupo, dificultad y cuenta regresiva
+function drawSalaBoard(){
+  const m = salaModel();
+  const bw = 460, bh = 92, x = (SALA_W - bw) / 2, y = 14;
+  ctx.fillStyle = 'rgba(8,8,14,0.85)';
+  ctx.fillRect(x, y, bw, bh);
+  ctx.strokeStyle = (salaKind === 'public') ? '#ffd76a' : '#7ad0ff';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, bw, bh);
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillStyle = '#ffd76a';
+  ctx.fillText(m.label + (salaKind === 'private' ? ' · ' + m.sub : ''), SALA_W / 2, y + 24);
+  ctx.font = 'bold 9px monospace';
+  ctx.fillStyle = '#cfe3ff';
+  ctx.fillText('cupo ' + m.count + '/' + m.maxPlayers + ' · ' + diffName(m.diffId), SALA_W / 2, y + 46);
+  let st = 'esperando jugadores';
+  if(m.phase === 'config') st = '⚙ el dueño elige cupo y dificultad';
+  else if(m.phase === 'waiting') st = 'arranca en ' + m.countdown + 's';
+  else if(m.phase === 'starting') st = '¡empezando!';
+  ctx.fillStyle = (m.phase === 'waiting') ? '#9cff9c' : '#9aa6c8';
+  ctx.fillText(st, SALA_W / 2, y + 70);
+}
+function drawLobby(){
+  ctx.save();
+  drawRoomBase(SALA_W, SALA_H, SALA_WALL_H);
+  drawSalaBoard();
+  const ops = salaOthers();
+  for(const pid in ops){
+    const op = ops[pid];
+    if(!op || op.x == null) continue;
+    drawLobbyAvatar(op.x, op.y, !!op.moving, op.facingDir, op.walkFrame, op.nickname || 'Jugador', false);
+  }
+  drawLobbyAvatar(player.x, player.y, player.moving, player.facingDir, player.walkFrame, myNickname, true);
+  ctx.restore();
+}
+function drawPlaza(){
+  ctx.save();
+  drawRoomBase(PLAZA_W, PLAZA_H, PLAZA_WALL_H);
+  ctx.fillStyle = 'rgba(20,16,40,0.35)';
+  ctx.fillRect(0, PLAZA_WALL_H, PLAZA_W, PLAZA_H - PLAZA_WALL_H);
+  // Los 4 cuadritos: en el piso, pegados a la pared
+  for(let i = 0; i < PUBLIC_ROOMS; i++){
+    const s = plazaSquareRect(i);
+    const r = roomView(i);
+    const busy = r.count > 0;
+    ctx.fillStyle = busy ? 'rgba(255,215,106,0.22)' : 'rgba(120,200,255,0.12)';
+    ctx.fillRect(s.x, s.y, s.w, s.h);
+    ctx.setLineDash(busy ? [] : [8, 6]);
+    ctx.strokeStyle = busy ? '#ffd76a' : '#7ad0ff';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(s.x, s.y, s.w, s.h);
+    ctx.setLineDash([]);
+    const bob = Math.sin(performance.now() / 400 + i) * 3;
+    ctx.beginPath();
+    ctx.moveTo(s.x + s.w / 2, s.y + s.h + 8 + bob);
+    ctx.lineTo(s.x + s.w / 2 - 8, s.y + s.h + 20 + bob);
+    ctx.lineTo(s.x + s.w / 2 + 8, s.y + s.h + 20 + bob);
+    ctx.closePath();
+    ctx.fillStyle = busy ? '#ffd76a' : '#7ad0ff';
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillStyle = 'rgba(8,8,14,0.85)';
+    ctx.fillRect(s.x - 6, s.y + s.h + 24, s.w + 12, 42);
+    ctx.strokeStyle = busy ? '#ffd76a' : '#7ad0ff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(s.x - 6, s.y + s.h + 24, s.w + 12, 42);
+    ctx.fillStyle = '#ffd76a';
+    ctx.fillText((r.ownerName || ('SALA ' + (i + 1))).slice(0, 16), s.x + s.w / 2, s.y + s.h + 41);
+    ctx.font = 'bold 8px monospace';
+    ctx.fillStyle = '#cfe3ff';
+    ctx.fillText(r.count + '/' + r.maxPlayers + ' · ' + diffName(r.diffId), s.x + s.w / 2, s.y + s.h + 58);
+    let st = '';
+    if(r.phase === 'waiting') st = '⏳ ' + r.countdown + 's';
+    else if(r.phase === 'config') st = '⚙ config';
+    else if(r.phase === 'starting') st = '¡juego!';
+    if(st){
+      ctx.fillStyle = '#9cff9c';
+      ctx.fillText(st, s.x + s.w / 2, s.y - 8);
+    }
+  }
+  // Cartel de la plaza
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 13px monospace';
+  ctx.fillStyle = '#ffd76a';
+  ctx.fillText('PLAZA PÚBLICA', PLAZA_W / 2, 58);
+  ctx.font = 'bold 9px monospace';
+  ctx.fillStyle = '#cfe3ff';
+  ctx.fillText('paráte en un cuadrito para entrar a esa sala', PLAZA_W / 2, 82);
+  // Jugadores
+  for(const pid in plazaOthers){
+    const op = plazaOthers[pid];
+    if(!op || op.x == null) continue;
+    drawLobbyAvatar(op.x, op.y, !!op.moving, op.facingDir, op.walkFrame, op.nickname || 'Jugador', false);
+  }
+  drawLobbyAvatar(player.x, player.y, player.moving, player.facingDir, player.walkFrame, myNickname, true);
+  ctx.restore();
+}
+
+el('lobbyLeaveBtn').onclick = () => {
+  if(state === 'lobby' && salaKind === 'public'){ backToPlaza(); return; }
+  leaveRoom();
+  returnToHub();
+};
+el('lobbyStartBtn').onclick = () => {
+  if(!mpIsHost) return;
+  if(mpRoomPlayers.length < 2){ alert('Espera a que se una al menos otro jugador.'); return; }
+  if(privateRoom) privateRoom.phase = 'starting';
+  startMultiplayerGame();
+};
+el('lobbyReadyBtn').onclick = () => {
+  if(mpIsHost) return;
+  const next = !mpReady[mpMyId];
+  mpReady[mpMyId] = next;
+  broadcastToAll({ type: 'ready', ready: next });
+  renderLobbyUI();
+};
+el('salaConfigBtn').onclick = () => openSalaConfig();
+el('cfgCancelBtn').onclick = () => { el('salaConfigModal').style.display = 'none'; };
+el('cfgConfirmBtn').onclick = () => confirmSalaConfig();
+el('lobbyStartNowBtn').onclick = () => {
+  const m = salaModel();
+  if(salaKind === 'private'){
+    if(!mpIsHost) return;
+    privateRoom = privateRoom || { maxPlayers: MAX_LOBBY_PLAYERS, diffId: 'medio', phase: 'waiting', countdown: 0 };
+    privateRoom.phase = 'starting';
+    privateRoom.countdown = 0;
+    broadcastToAll({ type: 'salaState', room: privateRoom });
+    hostPickDifficulty(privateRoom.diffId || 'medio');
+    return;
+  }
+  if(!m.isOwner) return;
+  if(plazaRole === 'offline'){
+    plazaPrepareGameLocal({ roomId: mySalaRoom, code: null, diffId: m.diffId, ownerId: 'local' });
+  } else {
+    sendPlaza({ type: 'plazaStartNow', roomId: mySalaRoom });
+  }
+};
+el('plazaLeaveBtn').onclick = () => {
+  plazaShutdown();
+  plazaOfflineReset();
+  mySalaRoom = 0;
+  returnToHub();
+};
+el('goPublicBtn').onclick = () => goPublicPlaza();
 
 // ---------- Hook al login para actualizar UI ----------
 const origLoginConfirm = document.getElementById('loginConfirmBtn').onclick;
@@ -1769,7 +2844,7 @@ function playGunshotSfx(){
 
 // Agregar sonido a todos los botones del juego
 document.addEventListener('click', function(e){
-  const btn = e.target.closest('.bigBtn, .smallBtn, .diffCard, .crateCard, .card, #hubTabs button, .tabBtn, #continueBtn, #goDifficulty, #backToHubFromDiff, #goToHubBtn, #retryBtn, #createRoomBtn, #joinRoomBtn, #searchFriendBtn, #setNicknameBtn, #changeNicknameBtn, #buyPassiveCrate, #buyWeaponCrate, #buyPassiveSlot, #buyWeaponSlot, #buyMoneyBonus, #buyGemBonus, .invCard, .friendCard, #readyBtn, #startGameBtn');
+  const btn = e.target.closest('.bigBtn, .smallBtn, .diffCard, .crateCard, .card, #hubTabs button, .tabBtn, #continueBtn, #goDifficulty, #backToHubFromDiff, #goToHubBtn, #retryBtn, #createRoomBtn, #joinRoomBtn, #searchFriendBtn, #setNicknameBtn, #changeNicknameBtn, #buyPassiveCrate, #buyWeaponCrate, #buyPassiveSlot, #buyWeaponSlot, #buyMoneyBonus, #buyGemBonus, .invCard, .friendCard, #readyBtn, #startGameBtn, #lobbyStartBtn, #lobbyReadyBtn, #lobbyLeaveBtn, #goPublicBtn, #salaConfigBtn, #lobbyStartNowBtn, #cfgConfirmBtn, #cfgCancelBtn, #plazaLeaveBtn');
   if(btn) playBtnSfx();
 });
 
@@ -1940,6 +3015,8 @@ function startRun(){
   turret = null; turretCooldown = 0; turretLastShot = 0;
   // Mostrar/ocultar botón de torreta
   document.getElementById('turretBtn').style.display = hasTurretItem ? 'flex' : 'none';
+  const lobbyHideEl = document.getElementById('lobbyHud');
+  if(lobbyHideEl) lobbyHideEl.style.display = 'none';
   showScreen(null);
   showMobileControls(true);
   playBattleMusic(currentDiff.id);
@@ -2002,6 +3079,7 @@ window.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   if(e.key===' ') e.preventDefault();
   if(e.key.toLowerCase()==='q' && state==='playing') placeTurret();
+  if(e.key.toLowerCase()==='f') toggleFullscreen();
   // Menu pausado con ESC (solo solitario)
   if(e.key === 'Escape' && state === 'playing' && !mpRoomCode){
     togglePauseMenu();
@@ -2254,6 +3332,8 @@ function killEnemy(en){
 }
 
 function update(dt, t){
+  if(state === 'lobby'){ updateLobby(dt); sendSalaPosIfNeeded(); return; }
+  if(state === 'plaza'){ updatePlaza(dt); sendPlazaPos(); return; }
   if(state !== 'playing') return;
 
   let dx=0, dy=0;
@@ -2617,6 +3697,25 @@ document.getElementById('goToHubBtn').onclick = () => { showScreen('hub'); showM
 document.getElementById('retryBtn').onclick = () => { saveProfile(); startRun(); };
 
 // ---------- Dibujo ----------
+// Versión "en flash" cacheada: tiñe SOLO el sprite (antes el fillRect con
+// 'source-atop' pintaba también el suelo ya dibujado debajo del sprite)
+const _flashSprites = new WeakMap();
+function flashSprite(img){
+  if(!img || !img.width) return img;
+  let tinted = _flashSprites.get(img);
+  if(!tinted){
+    tinted = document.createElement('canvas');
+    tinted.width = img.width;
+    tinted.height = img.height;
+    const g = tinted.getContext('2d');
+    g.drawImage(img, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = 'rgba(255,255,255,0.75)';
+    g.fillRect(0, 0, tinted.width, tinted.height);
+    _flashSprites.set(img, tinted);
+  }
+  return tinted;
+}
 function drawSprite(img, x, y, boxSize, flashActive, flipX, extraRotate){
   if(!img || !img.width) return;
   const ratio = img.width / img.height;
@@ -2626,13 +3725,7 @@ function drawSprite(img, x, y, boxSize, flashActive, flipX, extraRotate){
   ctx.translate(x,y);
   if(extraRotate) ctx.rotate(extraRotate);
   if(flipX) ctx.scale(-1,1);
-  ctx.drawImage(img, -w/2, -h/2, w, h);
-  if(flashActive){
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    ctx.fillRect(-w/2,-h/2,w,h);
-    ctx.globalCompositeOperation = 'source-over';
-  }
+  ctx.drawImage(flashActive ? flashSprite(img) : img, -w/2, -h/2, w, h);
   ctx.restore();
 }
 
@@ -2643,16 +3736,11 @@ function drawSpriteSheet(img, frameX, frameY, cols, rows, x, y, boxSize, flashAc
   const ratio = fw / fh;
   let w, h;
   if(ratio > 1){ w = boxSize*1.7; h = w/ratio; } else { h = boxSize*1.7; w = h*ratio; }
+  const src = flashActive ? flashSprite(img) : img;
   ctx.save();
   ctx.translate(x,y);
   if(flipX) ctx.scale(-1,1);
-  ctx.drawImage(img, frameX*fw, frameY*fh, fw, fh, -w/2, -h/2, w, h);
-  if(flashActive){
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    ctx.fillRect(-w/2,-h/2,w,h);
-    ctx.globalCompositeOperation = 'source-over';
-  }
+  ctx.drawImage(src, frameX*fw, frameY*fh, fw, fh, -w/2, -h/2, w, h);
   ctx.restore();
 }
 
@@ -2991,7 +4079,13 @@ let last = performance.now();
 function loop(t){
   const dt = Math.min(t - last, 40);
   last = t;
-  if(assetsReady){ update(dt, t); draw(); broadcastGameState(); }
+  if(assetsReady){
+    update(dt, t);
+    if(state === 'lobby') drawLobby();
+    else if(state === 'plaza') drawPlaza();
+    else draw();
+    broadcastGameState();
+  }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
@@ -3056,6 +4150,49 @@ window.addEventListener('beforeunload', () => { saveProfile(); });
     renderFriends();
   }
 })();
+
+// ========================================================
+// RESPONSIVE: canvas al tamaño de la pestaña + zoom adaptativo
+// ========================================================
+const BASE_ZOOM = 1.55, BASE_VIEW_H = 500;   // referencia: 1.55x con 500px de alto
+function computeZoom(){
+  // Cuanto más alta la ventana (fullscreen), un poco más lejos la cámara
+  ZOOM = Math.max(1.05, Math.min(1.7, BASE_ZOOM * Math.pow(BASE_VIEW_H / Math.max(320, H), 0.28)));
+}
+function computeLobbyZoom(){
+  // La salita entra completa; la plaza se ve un poco más cerca
+  const salaZoom = Math.min(W / (SALA_W + 40), H / (SALA_H + 40));
+  const plazaZoom = Math.min(W / (PLAZA_W + 40), H / (PLAZA_H + 40));
+  LOBBY_ZOOM = Math.max(0.5, Math.min(1.6, (state === 'plaza') ? plazaZoom : Math.max(salaZoom, plazaZoom)));
+}
+function resizeCanvas(){
+  const wrap = document.getElementById('wrap');
+  const cssW = Math.max(320, wrap.clientWidth || window.innerWidth);
+  const cssH = Math.max(240, wrap.clientHeight || window.innerHeight);
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(cssH * dpr);
+  cv.style.width = cssW + 'px';
+  cv.style.height = cssH + 'px';
+  W = cssW; H = cssH;
+  // Dibujamos en px CSS; el backing store lleva el DPR
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  computeZoom();
+  computeLobbyZoom();
+}
+function toggleFullscreen(){
+  const wrap = document.getElementById('wrap');
+  if(!document.fullscreenElement){
+    if(wrap.requestFullscreen) wrap.requestFullscreen().catch(()=>{});
+  } else if(document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 150));
+if(window.visualViewport) window.visualViewport.addEventListener('resize', resizeCanvas);
+document.addEventListener('fullscreenchange', () => setTimeout(resizeCanvas, 80));
+resizeCanvas();
 
 </script>
 </body>
