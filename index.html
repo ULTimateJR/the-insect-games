@@ -522,6 +522,7 @@
     <div id="waveTxt">Oleada 1</div>
     <div id="moneyTxt">💰 0</div>
   </div>
+  <button id="soundToggleBtn" title="Encender/apagar el sonido" style="position:fixed; top:10px; right:10px; z-index:300; background:linear-gradient(135deg,#2a2036,#171122); border:2px solid #6a5acd; color:#e8dcff; font-family:'Press Start 2P',monospace; font-size:10px; padding:8px 10px; border-radius:8px; cursor:pointer; box-shadow:0 3px 0 #0d0a14;">🔇 Silencio</button>
   <div id="bossBar">
     <div class="label">JEFE ESCARABAJO</div>
     <div class="track"><div class="fill" id="bossFill"></div></div>
@@ -3732,23 +3733,67 @@ function refreshHubUI(){
   saveProfile();
 }
 
-// ==================== AUDIO DESACTIVADO ====================
-// El juego va sin sonido a petición: no se crea ningún Audio ni se reproduce nada.
-// Las funciones se dejan vacías para que ningún llamador se rompa.
-function playLobbyMusic(){}
-function pauseLobbyMusic(){}
-function playBattleMusic(diffId){}
-function stopBattleMusic(){}
-function playBtnSfx(){}
-function playFailureSfx(){}
-function playGunshotSfx(){}
+// ==================== AUDIO CON INTERRUPTOR ON/OFF ====================
+// Arranca apagado (por defecto se guarda en localStorage). Si lo encendés en
+// Ajustes, se crean los audios y suenan igual que antes.
+const SFX_BTN_SRC = 'button-fxs.mp3';
+const SOUND_KEY = 'ig_sound_on';
+let soundOn = localStorage.getItem(SOUND_KEY) === '1';
+let lobbyAudio = null, battleAudio = null, pesadillaAudio = null, failureSfx = null;
+let _gunshotPool = [], _gunshotIdx = 0, _lastBtnSfx = 0;
 
-// Corta de raíz cualquier Audio que se llegue a crear por otro camino
-if(typeof Audio !== 'undefined'){
-  const _AudioOrigPlay = Audio.prototype.play;
-  Audio.prototype.play = function(){ this.muted = true; this.volume = 0; try { return Promise.resolve(); } catch(e){ return; } };
-  const _AudioOrigPause = Audio.prototype.pause;
-  Audio.prototype.pause = function(){ try { _AudioOrigPause.call(this); } catch(e){} };
+function ensureAudio(){
+  if(lobbyAudio) return;
+  try {
+    lobbyAudio = new Audio('jazz-synth.mp3'); lobbyAudio.loop = true; lobbyAudio.volume = 0.5; lobbyAudio.preload = 'auto';
+    battleAudio = new Audio('batalla-tig.mp3'); battleAudio.loop = true; battleAudio.volume = 0.5; battleAudio.preload = 'auto';
+    pesadillaAudio = new Audio('pesadilla.mp3'); pesadillaAudio.loop = true; pesadillaAudio.volume = 0.5; pesadillaAudio.preload = 'auto';
+    failureSfx = new Audio('failure.mp3'); failureSfx.volume = 0.7; failureSfx.preload = 'auto';
+  } catch(e){}
+}
+function playLobbyMusic(){ if(!soundOn) return; ensureAudio(); if(lobbyAudio) lobbyAudio.play().catch(()=>{}); }
+function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} }
+function playBattleMusic(diffId){
+  if(!soundOn) return;
+  ensureAudio(); pauseLobbyMusic(); stopBattleMusic();
+  const track = (diffId === 'infinito' || diffId === 'pesadilla') ? pesadillaAudio : battleAudio;
+  if(track){ track.currentTime = 0; track.play().catch(()=>{}); }
+}
+function stopBattleMusic(){
+  if(battleAudio) try{ battleAudio.pause(); battleAudio.currentTime = 0; }catch(e){}
+  if(pesadillaAudio) try{ pesadillaAudio.pause(); pesadillaAudio.currentTime = 0; }catch(e){}
+}
+function playBtnSfx(){
+  if(!soundOn) return;
+  const now = Date.now(); if(now - _lastBtnSfx < 80) return; _lastBtnSfx = now;
+  try { const s = new Audio(SFX_BTN_SRC); s.volume = 1.0; s.play().catch(()=>{}); } catch(e){}
+}
+function playFailureSfx(){
+  if(!soundOn) return;
+  ensureAudio(); stopBattleMusic();
+  if(failureSfx){ failureSfx.currentTime = 0; failureSfx.play().catch(()=>{}); }
+}
+function playGunshotSfx(){
+  if(!soundOn) return;
+  try {
+    if(_gunshotPool.length < 5){ const s = new Audio('gunshot.mp3'); s.volume = 1.0; _gunshotPool.push(s); }
+    const s = _gunshotPool[_gunshotIdx % _gunshotPool.length]; s.currentTime = 0; s.play().catch(()=>{}); _gunshotIdx++;
+  } catch(e){}
+}
+// Encender / apagar el sonido desde el ajuste
+function setSoundOn(v){
+  soundOn = !!v;
+  localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0');
+  const b = document.getElementById('soundToggleBtn');
+  if(b) b.textContent = soundOn ? '🔊 Encendido' : '🔇 Silencio';
+  if(soundOn){ playLobbyMusic(); }
+  else { pauseLobbyMusic(); stopBattleMusic(); if(failureSfx) try{ failureSfx.pause(); }catch(e){} _gunshotPool.forEach(a => { try{ a.pause(); }catch(e){} }); }
+}
+function toggleSound(){ setSoundOn(!soundOn); }
+
+// El botón de sonido no debe sonar al apretarse a sí mismo
+if(typeof document !== 'undefined'){
+  setTimeout(() => { const b = document.getElementById('soundToggleBtn'); if(b) b.textContent = soundOn ? '🔊 Encendido' : '🔇 Silencio'; }, 0);
 }
 
 // Agregar sonido a todos los botones del juego
@@ -4023,10 +4068,14 @@ document.getElementById('pmContinue').onclick = () => {
 };
 document.getElementById('pmOptions').onclick = () => {
   if(pauseMenuOpen){
-    // Opciones: por ahora solo cierra el menu (puedes agregar ajustes aquí)
-    showMsg('⚙ Ajustes: volumen, controles, etc.', 2000);
-    closePauseMenu();
+    toggleSound();
+    showMsg('⚙ Sonido: ' + (soundOn ? '🔊 encendido' : '🔇 silencio'), 1600);
   }
+};
+// Botón de sonido on/off en el HUD (visible en hub, lobby y partida)
+document.getElementById('soundToggleBtn').onclick = (e) => {
+  e.stopPropagation();
+  toggleSound();
 };
 document.getElementById('pmExit').onclick = () => {
   if(pauseMenuOpen){
