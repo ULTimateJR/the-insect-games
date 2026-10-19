@@ -3732,69 +3732,23 @@ function refreshHubUI(){
   saveProfile();
 }
 
-// ==================== LOBBY MUSIC ====================
-let lobbyAudio = null;
-try { lobbyAudio = new Audio('jazz-synth.mp3'); lobbyAudio.loop = true; lobbyAudio.volume = 0.5; lobbyAudio.preload = 'auto'; } catch(e){}
-function playLobbyMusic(){ if(lobbyAudio) lobbyAudio.play().catch(()=>{}); }
-function pauseLobbyMusic(){ if(lobbyAudio) try{ lobbyAudio.pause(); }catch(e){} }
-document.addEventListener('click', function(){ playLobbyMusic(); }, { once: true });
-document.addEventListener('touchstart', function(){ playLobbyMusic(); }, { once: true });
+// ==================== AUDIO DESACTIVADO ====================
+// El juego va sin sonido a petición: no se crea ningún Audio ni se reproduce nada.
+// Las funciones se dejan vacías para que ningún llamador se rompa.
+function playLobbyMusic(){}
+function pauseLobbyMusic(){}
+function playBattleMusic(diffId){}
+function stopBattleMusic(){}
+function playBtnSfx(){}
+function playFailureSfx(){}
+function playGunshotSfx(){}
 
-// ==================== BATTLE MUSIC ====================
-let battleAudio = null;
-let pesadillaAudio = null;
-try { battleAudio = new Audio('batalla-tig.mp3'); battleAudio.loop = true; battleAudio.volume = 0.5; battleAudio.preload = 'auto'; } catch(e){}
-try { pesadillaAudio = new Audio('pesadilla.mp3'); pesadillaAudio.loop = true; pesadillaAudio.volume = 0.5; pesadillaAudio.preload = 'auto'; } catch(e){}
-function playBattleMusic(diffId){
-  pauseLobbyMusic();
-  stopBattleMusic();
-  const isPesadilla = (diffId === 'infinito' || diffId === 'pesadilla');
-  const track = isPesadilla ? pesadillaAudio : battleAudio;
-  if(track){ track.currentTime = 0; track.play().catch(()=>{}); }
-}
-function stopBattleMusic(){
-  if(battleAudio) try{ battleAudio.pause(); battleAudio.currentTime = 0; }catch(e){}
-  if(pesadillaAudio) try{ pesadillaAudio.pause(); pesadillaAudio.currentTime = 0; }catch(e){}
-}
-
-// ==================== BUTTON SFX ====================
-const SFX_BTN_SRC = 'button-fxs.mp3';
-let _lastBtnSfx = 0;
-function playBtnSfx(){
-  const now = Date.now();
-  if(now - _lastBtnSfx < 80) return; // anti-spam 80ms
-  _lastBtnSfx = now;
-  try {
-    const s = new Audio(SFX_BTN_SRC);
-    s.volume = 1.0;
-    s.play().catch(()=>{});
-  } catch(e){}
-}
-
-// ==================== FAILURE SFX ====================
-let failureSfx = null;
-try { failureSfx = new Audio('failure.mp3'); failureSfx.volume = 0.7; failureSfx.preload = 'auto'; } catch(e){}
-function playFailureSfx(){
-  stopBattleMusic();
-  if(failureSfx){ failureSfx.currentTime = 0; failureSfx.play().catch(()=>{}); }
-}
-
-// ==================== GUNSHOT SFX ====================
-let _gunshotPool = [];
-let _gunshotIdx = 0;
-function playGunshotSfx(){
-  try {
-    // Pool de 5 audios para disparos continuos
-    if(_gunshotPool.length < 5){
-      const s = new Audio('gunshot.mp3');
-      s.volume = 1.0;
-      _gunshotPool.push(s);
-    }
-    const s = _gunshotPool[_gunshotIdx % _gunshotPool.length];
-    s.currentTime = 0;
-    s.play().catch(()=>{});
-    _gunshotIdx++;
-  } catch(e){}
+// Corta de raíz cualquier Audio que se llegue a crear por otro camino
+if(typeof Audio !== 'undefined'){
+  const _AudioOrigPlay = Audio.prototype.play;
+  Audio.prototype.play = function(){ this.muted = true; this.volume = 0; try { return Promise.resolve(); } catch(e){ return; } };
+  const _AudioOrigPause = Audio.prototype.pause;
+  Audio.prototype.pause = function(){ try { _AudioOrigPause.call(this); } catch(e){} };
 }
 
 // Agregar sonido a todos los botones del juego
