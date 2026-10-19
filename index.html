@@ -43,6 +43,8 @@
     pointer-events:none;
   }
   #hud div { background:rgba(0,0,0,0.55); padding:4px 8px; border-radius:4px; }
+  #hudName { color:#9fd; }
+  #hudName.ownerName { background:rgba(90,10,10,0.75) !important; }
   #msg {
     position:absolute; top:30%; left:50%; transform:translate(-50%,-50%);
     text-align:center; font-size:14px; text-shadow:2px 2px 0 #000;
@@ -224,6 +226,43 @@
     font-family:inherit; font-size:8px; margin-bottom:10px;
   }
   #loginCard .btnRow { display:flex; gap:8px; justify-content:center; }
+
+  /* ---- CUENTAS / AMIGOS (barra superior) ---- */
+  #accountChip { display:none; align-items:center; gap:8px; }
+  #authName { font-size:9px; color:#9fd; }
+  .ownerName { color:#ff5c5c !important; text-shadow:0 0 6px rgba(255,60,60,0.55); }
+  .ownerTag {
+    background:#5c0f0f; color:#ffd6d6; border:1px solid #ff5c5c; border-radius:4px;
+    font-size:5px; padding:2px 6px; letter-spacing:1px; white-space:nowrap;
+  }
+  #friendsBar {
+    position:relative; z-index:2; width:100%; max-width:640px; display:none; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,0.5); border:2px solid rgba(255,215,106,0.35); border-radius:12px; padding:5px 10px;
+  }
+  #friendsBar .fbHead { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:7px; color:#ffd76a; letter-spacing:1px; }
+  #friendsBar .fbHead .fbStatus { color:#8fb; font-size:6px; letter-spacing:0; }
+  #friendsList { display:flex; flex-wrap:wrap; gap:5px; max-height:58px; overflow-y:auto; }
+  .fbChip { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:4px 9px; font-size:8px; color:#e6e6e6; }
+  .fbChip.on { border-color:rgba(95,214,95,0.45); }
+  .fbChip .dot { width:7px; height:7px; border-radius:50%; background:#666; display:inline-block; flex:none; }
+  .fbChip.on .dot { background:#5fd65f; box-shadow:0 0 6px #5fd65f; }
+  .fbChip .fbInv { background:#3a5a7d; border:none; color:#fff; border-radius:10px; font-family:inherit; font-size:9px; line-height:1; padding:4px 7px; cursor:pointer; }
+  .fbChip .fbInv:hover { background:#4a72a0; }
+  .fbChip .fbInv:disabled { opacity:0.35; cursor:not-allowed; }
+  .fbChip .fbDel { background:none; border:none; color:#999; font-family:inherit; font-size:9px; line-height:1; cursor:pointer; padding:0 2px; }
+  .fbChip .fbDel:hover { color:#ff7b7b; }
+  .fbEmpty { font-size:6px; color:#777; }
+  .authTabs { display:flex; gap:6px; justify-content:center; margin-bottom:8px; }
+  .authTabs button { background:#2a2a3a; border:2px solid #444; color:#bbb; font-family:inherit; font-size:7px; padding:6px 10px; border-radius:6px; cursor:pointer; }
+  .authTabs button.active { border-color:#ffd76a; color:#ffd76a; }
+  #loginEmailInput, #loginPasswordInput, #loginPassword2Input {
+    width:100%; padding:8px; border-radius:6px; border:2px solid #555; background:#111; color:#fff;
+    font-family:inherit; font-size:8px; margin-bottom:8px;
+  }
+  #authError { color:#ff7b7b; font-size:7px; min-height:12px; margin-bottom:6px; line-height:1.4; }
+  #toastWrap { position:absolute; top:70px; left:50%; transform:translateX(-50%); z-index:85; display:flex; flex-direction:column; gap:6px; align-items:center; pointer-events:none; }
+  .toast { background:#141420; border:2px solid #ffd76a; color:#ffe9a8; font-size:7px; padding:8px 12px; border-radius:8px; max-width:320px; text-align:center; }
+  #mpRequestModal { position:absolute; inset:0; z-index:78; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; }
 
   #gameOverPanel .statRow { display:flex; gap:20px; font-size:9px; }
   #gameOverPanel .statRow div { background:rgba(255,255,255,0.06); padding:8px 16px; border-radius:6px; }
@@ -479,6 +518,7 @@
 
   <div id="hud">
     <div id="hpTxt">❤ 100</div>
+    <div id="hudName">👤</div>
     <div id="waveTxt">Oleada 1</div>
     <div id="moneyTxt">💰 0</div>
   </div>
@@ -499,10 +539,19 @@
     <div id="hubSky"></div>
     <img id="hubLogo" src="" alt="The Insect Games">
     <div id="authBar">
-      <span id="authStatus">👤 Invitado (progreso solo en esta partida)</span>
-      <button class="smallBtn" id="openLoginBtn">Iniciar sesión con correo</button>
+      <span id="authStatus">👤 Invitado — inicia sesión para jugar multijugador</span>
+      <span id="accountChip"><span id="authName">-</span><span id="authOwnerTag" class="ownerTag" style="display:none;">OWNER · CREADOR</span></span>
+      <button class="smallBtn" id="openLoginBtn">Iniciar sesión / Crear cuenta</button>
       <button class="smallBtn" id="logoutBtn" style="display:none; background:#8b3a3a;">Cerrar sesión</button>
     </div>
+    <div id="friendsBar">
+      <div class="fbHead">
+        <span>👥 AMIGOS <span class="fbStatus" id="friendsOnlineCount">0 en línea</span></span>
+        <button class="smallBtn" id="addFriendBtn" style="font-size:7px;padding:4px 10px;">+ Agregar amigo</button>
+      </div>
+      <div id="friendsList"><span class="fbEmpty">Aún no tienes amigos. Agrégalos por su nombre de usuario.</span></div>
+    </div>
+    <div id="toastWrap"></div>
     <div id="hubSpacer"></div>
     <div id="hubTop">
       <div>Nivel <span id="hubLevel">1</span></div>
@@ -586,24 +635,10 @@
         <h2>🎮 Multijugador</h2>
         <p style="color:#9ab;font-size:7px;text-align:center;margin-bottom:6px;">Busca amigos por apodo y juega juntos en tiempo real.</p>
 
-        <div id="nicknameSection" style="display:none;width:100%;text-align:center;">
-          <p style="color:#ffd76a;font-size:8px;">Tu apodo: <span id="myNickname">-</span></p>
-          <button class="smallBtn" id="changeNicknameBtn" style="margin-top:4px;">Cambiar apodo</button>
-        </div>
-        <div id="noNicknameSection" style="width:100%;text-align:center;">
-          <p style="color:#f96;font-size:8px;">Necesitas un apodo para jugar multijugador</p>
-          <button class="bigBtn" id="setNicknameBtn" style="margin-top:6px;">Crear apodo</button>
-        </div>
-
-        <div style="width:100%;display:flex;gap:6px;justify-content:center;margin-top:8px;">
-          <input class="mpInput" id="friendSearchInput" placeholder="Buscar por apodo..." style="flex:1;">
-          <button class="smallBtn" id="searchFriendBtn">🔍 Buscar</button>
-        </div>
-        <div id="searchResults" style="width:100%;max-width:400px;"></div>
-
-        <h2 style="margin-top:10px;">👥 Mis amigos</h2>
-        <div class="friendList" id="friendList">
-          <p style="color:#666;font-size:7px;text-align:center;">Aún no tienes amigos</p>
+        <div id="mpAccountBox" style="width:100%;text-align:center;">
+          <p id="mpAccountLine" style="color:#ffd76a;font-size:8px;">👤 Invitado</p>
+          <p id="mpAccountHint" style="color:#9ab;font-size:7px;margin-top:3px;">Para entrar a multijugador necesitas una cuenta con nombre de usuario.</p>
+          <button class="smallBtn" id="mpAuthBtn" style="margin-top:4px;">Iniciar sesión / Crear cuenta</button>
         </div>
 
         <h2 style="margin-top:10px;">🏠 Salas</h2>
@@ -614,6 +649,7 @@
         <div style="display:flex;gap:8px;justify-content:center;margin-top:6px;">
           <button class="smallBtn" id="joinRoomBtn">Unirse con código</button>
         </div>
+        <p style="color:#8ab;font-size:7px;text-align:center;margin-top:6px;">👥 Tus amigos están en la barra de arriba: ahí ves quién está en línea y les envías invitación.</p>
       </div>
     </div>
     <div id="roomInfo"></div>
@@ -632,6 +668,7 @@
       <div id="lobbyHint">Movete con WASD / Flechas</div>
       <div id="lobbyActions">
         <button class="bigBtn secondary" id="salaConfigBtn" style="display:none;">⚙ Configurar</button>
+        <button class="bigBtn secondary" id="lobbyInviteBtn" style="display:none;">✉ Invitar amigos</button>
         <button class="bigBtn" id="lobbyStartNowBtn" style="display:none;">▶ Empezar ya</button>
         <button class="bigBtn" id="lobbyStartBtn" style="display:none;">▶ Empezar</button>
         <button class="bigBtn secondary" id="lobbyReadyBtn" style="display:none;">⏳ Listo</button>
@@ -669,11 +706,12 @@
   <!-- MODAL DE APODO -->
   <div id="nicknameModal" class="nicknameModal">
     <div class="nicknameCard">
-      <h3>🏷️ Elige tu apodo</h3>
-      <p>Este apodo se usará para que otros jugadores te busquen y te agreguen como amigo.</p>
-      <input class="mpInput" id="nicknameInput" placeholder="Mi apodo" style="margin-bottom:10px;">
+      <h3>🏷️ Tu nombre de usuario</h3>
+      <p>Es permanente y único: nadie más puede usarlo. Entre 5 y 20 caracteres (letras, números o _). Con este nombre te ven los demás y te agregan como amigo.</p>
+      <input class="mpInput" id="nicknameInput" placeholder="ej: george" maxlength="20" style="margin-bottom:6px;">
+      <div id="nicknameMsg" style="font-size:7px;color:#ff9;min-height:12px;margin-bottom:6px;"></div>
       <div style="display:flex;gap:8px;justify-content:center;">
-        <button class="smallBtn" id="nicknameCancelBtn">Cancelar</button>
+        <button class="smallBtn" id="nicknameCancelBtn">Más tarde</button>
         <button class="bigBtn" id="nicknameConfirmBtn" style="padding:8px 16px;font-size:9px;">Guardar</button>
       </div>
     </div>
@@ -718,14 +756,45 @@
 
   <div id="loginModal">
     <div id="loginCard">
-      <h3>👤 Guardar tu progreso</h3>
-      <p>Escribe tu correo para crear un perfil local. La próxima vez que abras este archivo en <b>este mismo navegador</b>, usa el mismo correo para recuperar tu nivel, gemas e inventario.<br><br>
-      <span style="color:#6fd06f;font-size:11px;">✅ Aceptados: Gmail, Hotmail, Outlook, Yahoo, iCloud, ProtonMail, AOL, Zoho, etc.</span><br>
-      <span style="color:#f0a;font-size:11px;">❌ No se aceptan correos educativos (.edu).</span></p>
-      <input type="email" id="loginEmailInput" placeholder="ej: tu@gmail.com, tu@hotmail.com">
+      <h3 id="authTitle">👤 Iniciar sesión</h3>
+      <div class="authTabs">
+        <button id="authTabLogin" class="active" data-mode="login">Iniciar sesión</button>
+        <button id="authTabRegister" data-mode="register">Crear cuenta</button>
+      </div>
+      <p>Necesitas una cuenta para jugar multijugador (pública y privada). Tu progreso se guarda con esta cuenta en este navegador.</p>
+      <input type="email" id="loginEmailInput" placeholder="tu@gmail.com" autocomplete="username">
+      <input type="password" id="loginPasswordInput" placeholder="Contraseña (mín. 6)" autocomplete="current-password">
+      <input type="password" id="loginPassword2Input" placeholder="Repite la contraseña" autocomplete="new-password" style="display:none;">
+      <div id="authError"></div>
       <div class="btnRow">
         <button class="smallBtn" id="loginCancelBtn">Cancelar</button>
-        <button class="bigBtn" id="loginConfirmBtn" style="padding:8px 20px;font-size:13px;">Entrar</button>
+        <button class="bigBtn" id="loginConfirmBtn" style="padding:8px 20px;font-size:10px;">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: agregar amigo -->
+  <div id="addFriendModal" class="nicknameModal">
+    <div class="nicknameCard">
+      <h3>👥 Agregar amigo</h3>
+      <p>Escribe el nombre de usuario exacto de tu amigo (el que eligió al registrarse).</p>
+      <input class="mpInput" id="addFriendInput" placeholder="Nombre de usuario" maxlength="20" style="margin-bottom:10px;">
+      <div id="addFriendMsg" style="font-size:7px;color:#ff9;min-height:12px;margin-bottom:6px;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="smallBtn" id="addFriendCancelBtn">Cancelar</button>
+        <button class="bigBtn" id="addFriendConfirmBtn" style="padding:8px 16px;font-size:9px;">Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: solicitud de amistad / invitación -->
+  <div id="mpRequestModal">
+    <div class="nicknameCard">
+      <h3 id="reqTitle">Solicitud</h3>
+      <p id="reqBody"></p>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="smallBtn" id="reqDeclineBtn">Ahora no</button>
+        <button class="bigBtn" id="reqAcceptBtn" style="padding:8px 16px;font-size:9px;">Aceptar</button>
       </div>
     </div>
   </div>
@@ -945,13 +1014,9 @@ function applyCheatProfile(){
   saveProfile();
 }
 
-document.getElementById('openLoginBtn').onclick = () => {
-  if(!storageAvailable){
-    alert('Este navegador está bloqueando el guardado local para archivos abiertos directamente (file://). Prueba abrir el juego con Firefox o Safari, o súbelo a un hosting (ver instrucciones) para que el guardado funcione.');
-    return;
-  }
-  document.getElementById('loginModal').style.display = 'flex';
-};
+document.getElementById('openLoginBtn').onclick = () => openAuthModal('login');
+document.getElementById('mpAuthBtn').onclick = () => openAuthModal('login');
+
 document.getElementById('loginCancelBtn').onclick = () => { document.getElementById('loginModal').style.display = 'none'; };
 const VALID_EMAIL_PROVIDERS = [
   'gmail.com','hotmail.com','hotmail.es','outlook.com','outlook.es','live.com','live.com.mx','live.es',
@@ -966,35 +1031,329 @@ const VALID_EMAIL_PROVIDERS = [
   'outlook.co.uk','outlook.fr','outlook.de','outlook.it','outlook.nl',
   'gmail.fr','gmail.de','gmail.it','gmail.es','gmail.co.uk','gmail.com.mx','gmail.com.ar','gmail.com.br',
 ];
-function isValidEmail(email){
-  if(!email || !email.includes('@') || !email.includes('.')) return false;
-  const domain = email.split('@')[1];
-  if(!domain) return false;
-  const dl = domain.toLowerCase();
-  if(dl.endsWith('.edu') || dl.endsWith('.edu.') || dl.endsWith('.ac.')) return false;
-  return VALID_EMAIL_PROVIDERS.includes(dl);
+// Dominios desechables / temporales típicos
+const DISPOSABLE_DOMAINS = ['mailinator.com','guerrillamail.com','guerrillamail.net','sharklasers.com','10minutemail.com','10minutemail.net','tempmail.com','temp-mail.org','temp-mail.io','throwawaymail.com','yopmail.com','yopmail.fr','trashmail.com','getnada.com','dispostable.com','maildrop.cc','fakeinbox.com','mintemail.com','mytemp.email','spam4.me','grr.la','mailnesia.com','mailcatch.com','tempr.email','discard.email','emailondeck.com','moakt.com','tmail.ws','burnermail.io','inboxkitten.com','emailfake.com','generator.email','luxusmail.org'];
+const BLOCKED_MAIL_SUFFIXES = ['.edu','.edu.','.ac.','.gov','.gov.','.mil','.mil.'];
+
+// Sintaxis estricta (sin puntos dobles, sin puntos al inicio/final, etc.)
+function emailDomainOf(email){
+  const parts = String(email || '').trim().split('@');
+  return parts.length === 2 ? parts[1].toLowerCase() : '';
 }
-document.getElementById('loginConfirmBtn').onclick = () => {
-  const email = document.getElementById('loginEmailInput').value.trim();
-  if(!isValidEmail(email)){ alert('❌ Correo no válido.\n\nSolo se aceptan correos personales:\nGmail, Hotmail, Outlook, Yahoo, iCloud, ProtonMail, etc.\n\nNo se aceptan correos educativos (.edu).'); return; }
-  currentEmail = email;
-  localStorage.setItem('insectgames_lastEmail', email);
-  const had = loadProfile(email);
-  if(isCheatEmail(email)) applyCheatProfile();
-  document.getElementById('authStatus').textContent = `✅ ${email}`;
-  document.getElementById('openLoginBtn').style.display = 'none';
-  document.getElementById('logoutBtn').style.display = 'inline-block';
+function isValidEmailSyntax(email){
+  const v = String(email || '').trim();
+  if(v.length < 6 || v.length > 254) return false;
+  if(!/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)+$/.test(v)) return false;
+  const at = v.lastIndexOf('@');
+  const local = v.slice(0, at), domain = v.slice(at + 1).toLowerCase();
+  if(!local || local.length > 64) return false;
+  if(local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false;
+  if(domain.includes('..') || domain.startsWith('-') || domain.endsWith('-')) return false;
+  const tld = domain.split('.').pop();
+  if(tld.length < 2 || !/^[a-z]+$/.test(tld)) return false;
+  return true;
+}
+function isBlockedMailDomain(domain){
+  const dl = String(domain || '').toLowerCase();
+  return BLOCKED_MAIL_SUFFIXES.some(s => dl.endsWith(s) || dl.includes('.edu.') || dl.includes('.ac.'));
+}
+function isDisposableDomain(domain){
+  const dl = String(domain || '').toLowerCase();
+  return DISPOSABLE_DOMAINS.some(d => dl === d || dl.endsWith('.' + d));
+}
+function isValidEmail(email){
+  const v = String(email || '').trim();
+  if(!isValidEmailSyntax(v)) return false;
+  const domain = emailDomainOf(v);
+  if(isBlockedMailDomain(domain)) return false;
+  if(isDisposableDomain(domain)) return false;
+  return true;
+}
+// Sugerencia para errores de tipeo típicos (gmial.com -> gmail.com)
+function levDist(a, b){
+  const m = a.length, n = b.length;
+  const d = new Array(n + 1);
+  for(let j = 0; j <= n; j++) d[j] = j;
+  for(let i = 1; i <= m; i++){
+    let prev = d[0]; d[0] = i;
+    for(let j = 1; j <= n; j++){
+      const tmp = d[j];
+      d[j] = Math.min(d[j] + 1, d[j-1] + 1, prev + (a[i-1] === b[j-1] ? 0 : 1));
+      prev = tmp;
+    }
+  }
+  return d[n];
+}
+function suggestEmailDomain(domain){
+  const dl = String(domain || '').toLowerCase();
+  if(!dl) return null;
+  let best = null, bestD = 99;
+  for(const p of VALID_EMAIL_PROVIDERS){
+    const d = levDist(dl, p);
+    if(d < bestD){ bestD = d; best = p; }
+  }
+  if(best && best !== dl && bestD <= 2 && dl.split('.')[0].length >= 4) return best;
+  return null;
+}
+
+// ---------- ¿El dominio realmente recibe correo? (DNS MX por DoH) ----------
+const EMAIL_CHECK_CACHE = 'insectgames_emailcheck_v1';
+const EMAIL_CHECK_TTL = 7 * 24 * 60 * 60 * 1000;
+function getEmailCheckCache(){
+  try { return JSON.parse(localStorage.getItem(EMAIL_CHECK_CACHE) || '{}') || {}; } catch(e){ return {}; }
+}
+function saveEmailCheckCache(o){ try { localStorage.setItem(EMAIL_CHECK_CACHE, JSON.stringify(o)); } catch(e){} }
+async function fetchWithTimeout(url, headers, ms){
+  const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const timer = setTimeout(() => { if(ctrl) ctrl.abort(); }, ms || 4000);
+  try {
+    return await fetch(url, { headers: headers || {}, signal: ctrl ? ctrl.signal : undefined });
+  } finally { clearTimeout(timer); }
+}
+// Devuelve { ok, unreachable } — ok = el dominio existe y realmente recibe correo
+async function domainAcceptsMail(domain){
+  const dl = String(domain || '').toLowerCase();
+  const cache = getEmailCheckCache();
+  const hit = cache[dl];
+  if(hit && (Date.now() - hit.t) < EMAIL_CHECK_TTL) return { ok: !!hit.mx, cached: true };
+  const endpoints = [
+    'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(dl) + '&type=MX',
+    'https://dns.google/resolve?name=' + encodeURIComponent(dl) + '&type=MX'
+  ];
+  let alcanzable = false;
+  for(const url of endpoints){
+    try {
+      const res = await fetchWithTimeout(url, { accept: 'application/dns-json' }, 4500);
+      if(!res || !res.ok) continue;
+      const j = await res.json();
+      alcanzable = true;
+      const ans = (j && (j.Answer || j.answers)) || [];
+      const mxs = ans.filter(a => Number(a.type) === 15).map(a => String(a.data || ''));
+      // RFC 7505: un único MX "0 ." (o localhost) significa "este dominio NO recibe correo"
+      const reales = mxs.filter(d => !/^\s*\d*\s*(\.|localhost\.?)\s*$/i.test(d));
+      const ok = reales.length > 0;
+      cache[dl] = { mx: ok, t: Date.now() };
+      saveEmailCheckCache(cache);
+      return { ok, mxs };
+    } catch(e){ /* probamos el siguiente proveedor */ }
+  }
+  return { ok: alcanzable, unreachable: !alcanzable };
+}
+// Comprueba el correo completo antes de crear la cuenta
+async function ensureEmailUsable(email){
+  const v = String(email || '').trim();
+  if(!isValidEmailSyntax(v)) return { ok:false, msg:'❌ Correo no válido. Ejemplo: tunombre@gmail.com' };
+  const domain = emailDomainOf(v);
+  if(isBlockedMailDomain(domain)) return { ok:false, msg:'❌ No se aceptan correos de escuelas/universidades ni institucionales (.edu, .ac, .gov, .mil). Usa un correo personal.' };
+  if(isDisposableDomain(domain)) return { ok:false, msg:'❌ Ese es un correo temporal. Usa uno real (Gmail, Hotmail, Outlook, Yahoo, iCloud…).' };
+  const res = await domainAcceptsMail(domain);
+  if(res.unreachable) return { ok:true, warn:'No se pudo comprobar el dominio (sin conexión). Verificá que el correo esté bien escrito.' };
+  if(!res.ok){
+    const sug = suggestEmailDomain(domain);
+    return { ok:false, msg:'❌ Ese correo no existe: el dominio «' + domain + '» no existe o no recibe correo.' + (sug ? ' ¿Quisiste decir @' + sug + '?' : '') };
+  }
+  return { ok:true };
+}
+// ========================================================
+// CUENTAS: correo + contraseña (obligatorias para multijugador)
+// ========================================================
+const ACCOUNTS_KEY = 'insectgames_accounts_v2';
+const SESSION_KEY = 'insectgames_lastEmail';
+const USERNAMES_KEY = 'insectgames_usernames_v1';
+const USERNAME_RE = /^[A-Za-z0-9_]{5,20}$/;
+let authMode = 'login';
+
+function accountKey(email){ return String(email || '').trim().toLowerCase(); }
+function getAccounts(){
+  try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}') || {}; } catch(e){ return {}; }
+}
+function saveAccounts(obj){
+  try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(obj)); } catch(e){ console.warn('No se pudo guardar la cuenta', e); }
+}
+function getAccount(email){ const a = getAccounts(); return a[accountKey(email)] || null; }
+function getUsernameRegistry(){
+  try { return JSON.parse(localStorage.getItem(USERNAMES_KEY) || '{}') || {}; } catch(e){ return {}; }
+}
+function saveUsernameRegistry(obj){
+  try { localStorage.setItem(USERNAMES_KEY, JSON.stringify(obj)); } catch(e){}
+}
+function isOwnerAccount(){ return !!currentEmail && isCheatEmail(currentEmail); }
+function isOwnerUser(name){
+  if(!name) return false;
+  const k = String(name).toLowerCase();
+  if(ownerNames.has(k)) return true;
+  const reg = getUsernameRegistry()[k];
+  if(reg && reg.owner) return true;
+  return !!(myNickname && isOwnerAccount() && k === String(myNickname).toLowerCase());
+}
+
+function randomSalt(){
+  const a = new Uint8Array(16);
+  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+  else for(let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+  return Array.from(a).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function hashPassword(pass, salt){
+  const text = 'ig|' + salt + '|' + pass;
+  try {
+    if(window.crypto && crypto.subtle && typeof TextEncoder !== 'undefined'){
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch(e){ console.warn('crypto.subtle no disponible, usando hash simple', e); }
+  let h1 = 0x811c9dc5, h2 = 0x9e3779b9;
+  for(let i = 0; i < text.length; i++){
+    h1 = Math.imul(h1 ^ text.charCodeAt(i), 16777619) >>> 0;
+    h2 = Math.imul(h2 + text.charCodeAt(i) * (i + 7), 2654435761) >>> 0;
+  }
+  return 'f' + h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
+}
+
+function setAuthMode(mode){
+  authMode = (mode === 'register') ? 'register' : 'login';
+  document.getElementById('authTabLogin').classList.toggle('active', authMode === 'login');
+  document.getElementById('authTabRegister').classList.toggle('active', authMode === 'register');
+  document.getElementById('authTitle').textContent = authMode === 'register' ? '✨ Crear cuenta' : '👤 Iniciar sesión';
+  document.getElementById('loginPassword2Input').style.display = authMode === 'register' ? 'block' : 'none';
+  document.getElementById('loginConfirmBtn').textContent = authMode === 'register' ? 'Crear cuenta' : 'Entrar';
+  document.getElementById('authError').textContent = '';
+}
+function openAuthModal(mode){
+  if(!storageAvailable){
+    alert('Este navegador está bloqueando el guardado local. Abre el juego desde el hosting (https) para poder crear tu cuenta.');
+    return;
+  }
+  const acc = currentEmail ? getAccount(currentEmail) : null;
+  setAuthMode(mode || (currentEmail && !acc ? 'register' : 'login'));
+  document.getElementById('loginEmailInput').value = currentEmail || '';
+  document.getElementById('loginPasswordInput').value = '';
+  document.getElementById('loginPassword2Input').value = '';
+  document.getElementById('loginModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('loginEmailInput').focus(), 60);
+}
+
+function renderAccountUI(){
+  const acc = currentEmail ? getAccount(currentEmail) : null;
+  const name = acc && acc.username ? acc.username : null;
+  const owner = isOwnerAccount();
+  document.getElementById('authStatus').textContent = currentEmail
+    ? '✅ ' + currentEmail
+    : '👤 Invitado — inicia sesión para jugar multijugador';
+  document.getElementById('accountChip').style.display = currentEmail ? 'flex' : 'none';
+  const nameEl = document.getElementById('authName');
+  nameEl.textContent = name || (currentEmail ? '(sin nombre)' : '-');
+  nameEl.className = owner ? 'ownerName' : '';
+  nameEl.style.color = owner ? '#ff5c5c' : '#9fd';
+  document.getElementById('authOwnerTag').style.display = (owner && name) ? 'inline-block' : 'none';
+  document.getElementById('openLoginBtn').style.display = currentEmail ? 'none' : 'inline-block';
+  document.getElementById('logoutBtn').style.display = currentEmail ? 'inline-block' : 'none';
+  document.getElementById('friendsBar').style.display = (currentEmail && name) ? 'flex' : 'none';
+  // Caja de la pestaña Multijugador
+  const line = document.getElementById('mpAccountLine');
+  const hint = document.getElementById('mpAccountHint');
+  const btn = document.getElementById('mpAuthBtn');
+  if(line){
+    if(!currentEmail){ line.textContent = '👤 Invitado'; line.className = ''; }
+    else if(!name){ line.textContent = '✅ ' + currentEmail + ' · falta tu nombre de usuario'; line.className = ''; }
+    else { line.textContent = '👤 ' + name + (owner ? '  ·  OWNER · CREADOR' : ''); line.className = owner ? 'ownerName' : ''; }
+    if(hint) hint.style.display = (currentEmail && name) ? 'none' : 'block';
+    if(btn){
+      btn.style.display = (currentEmail && name) ? 'none' : 'inline-block';
+      btn.textContent = (currentEmail && !name) ? 'Elegir mi nombre de usuario' : 'Iniciar sesión / Crear cuenta';
+    }
+  }
+}
+
+async function startSession(email){
+  currentEmail = accountKey(email);
+  try { localStorage.setItem(SESSION_KEY, String(email).trim()); } catch(e){}
+  loadProfile(currentEmail);
+  if(isCheatEmail(currentEmail)) applyCheatProfile();
+  const acc = getAccount(currentEmail);
+  myNickname = acc && acc.username ? acc.username : null;
   document.getElementById('loginModal').style.display = 'none';
+  renderAccountUI();
+  renderFriends();
   refreshHubUI();
   saveProfile();
-};
+  if(myNickname){
+    noteOwnerIfMine(myNickname);
+    const res = await startIdentity(myNickname);
+    if(res && res.reason === 'taken'){
+      toast('⚠ No se pudo reclamar «' + myNickname + '» en la red: puede estar abierto en otra pestaña o en uso por otro jugador');
+    }
+    startFriendLoop();
+  } else {
+    stopIdentity();
+    openUsernameModal();
+  }
+}
+
+function endSession(){
+  if(state === 'lobby' || state === 'plaza'){ try { returnToHub(); } catch(e){} }
+  stopIdentity();
+  stopFriendLoop();
+  if(mpPeer){ try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
+  mpRoomCode = null; mpRoomPlayers = []; mpConnections = {}; mpOtherPlayers = {}; mpReady = {}; mpIsHost = false;
+  currentEmail = null;
+  myNickname = null;
+  friendState = {};
+  try { localStorage.removeItem(SESSION_KEY); } catch(e){}
+  document.getElementById('friendsBar').style.display = 'none';
+  document.getElementById('friendsList').innerHTML = '<span class="fbEmpty">Aún no tienes amigos. Agrégalos por su nombre de usuario.</span>';
+  renderAccountUI();
+  renderFriends();
+}
+
+document.getElementById('authTabLogin').onclick = () => setAuthMode('login');
+document.getElementById('authTabRegister').onclick = () => setAuthMode('register');
+
+async function submitAuth(){
+  const emailEl = document.getElementById('loginEmailInput');
+  const passEl = document.getElementById('loginPasswordInput');
+  const pass2El = document.getElementById('loginPassword2Input');
+  const errEl = document.getElementById('authError');
+  const email = emailEl.value.trim();
+  const pass = passEl.value;
+  if(!isValidEmail(email)){
+    errEl.textContent = '❌ Correo no válido. Usa un correo personal real (Gmail, Hotmail, Outlook, Yahoo, iCloud, ProtonMail…). No se aceptan temporales, ni .edu/.gov.';
+    return;
+  }
+  if(authMode === 'register'){
+    if(getAccount(email)){ errEl.textContent = 'Ese correo ya tiene cuenta. Inicia sesión.'; setAuthMode('login'); return; }
+    if(pass.length < 6){ errEl.textContent = 'La contraseña necesita al menos 6 caracteres.'; return; }
+    if(pass !== pass2El.value){ errEl.textContent = 'Las contraseñas no coinciden.'; return; }
+    // Comprobamos de verdad que el correo exista (el dominio tiene que recibir correo)
+    errEl.textContent = 'Comprobando que el correo exista…';
+    const check = await ensureEmailUsable(email);
+    if(!check.ok){ errEl.textContent = check.msg; return; }
+    if(check.warn) toast('⚠ ' + check.warn);
+    errEl.textContent = 'Creando cuenta…';
+    const salt = randomSalt();
+    const hash = await hashPassword(pass, salt);
+    const accs = getAccounts();
+    accs[accountKey(email)] = { email: email, salt, hash, username: null, owner: isCheatEmail(email), createdAt: Date.now() };
+    saveAccounts(accs);
+    await startSession(email);
+    toast('✅ Cuenta creada. Ahora elige tu nombre de usuario.');
+    return;
+  }
+  const acc = getAccount(email);
+  if(!acc){ errEl.textContent = 'No existe esa cuenta en este navegador. Usa «Crear cuenta».'; setAuthMode('register'); return; }
+  errEl.textContent = 'Comprobando…';
+  const hash = await hashPassword(pass, acc.salt);
+  if(hash !== acc.hash){ errEl.textContent = '❌ Contraseña incorrecta.'; return; }
+  await startSession(email);
+}
+document.getElementById('loginConfirmBtn').onclick = submitAuth;
+['loginEmailInput', 'loginPasswordInput', 'loginPassword2Input'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('keydown', (e) => { if(e.key === 'Enter') submitAuth(); });
+});
 
 document.getElementById('logoutBtn').onclick = () => {
-  currentEmail = null;
-  localStorage.removeItem('insectgames_lastEmail');
-  document.getElementById('authStatus').textContent = '👤 Invitado (progreso solo en esta partida)';
-  document.getElementById('openLoginBtn').style.display = 'inline-block';
-  document.getElementById('logoutBtn').style.display = 'none';
+  endSession();
+  toast('Sesión cerrada');
 };
 
 // ========================================================
@@ -1009,103 +1368,458 @@ let mpRoomPlayers = [];     // Lista de jugadores en la sala
 let mpReady = {};           // { peerId: true/false } - estado de listo
 let mpOtherPlayers = {};    // { peerId: {x,y,nickname,shooting,facingDir,moving,walkFrame,hp} } durante juego
 
-// ---------- Sistema de apodo ----------
-let myNickname = localStorage.getItem('insectgames_nickname') || null;
+// ---------- Nombre de usuario (permanente y único) ----------
+let myNickname = null;
 
-function updateNicknameUI(){
-  const nickSection = document.getElementById('nicknameSection');
-  const noNickSection = document.getElementById('noNicknameSection');
-  if(myNickname){
-    nickSection.style.display = 'block';
-    noNickSection.style.display = 'none';
-    document.getElementById('myNickname').textContent = myNickname;
-  } else {
-    nickSection.style.display = 'none';
-    noNickSection.style.display = 'block';
-  }
-}
-
-function openNicknameModal(){
-  document.getElementById('nicknameInput').value = myNickname || '';
+function openUsernameModal(){
+  const acc = currentEmail ? getAccount(currentEmail) : null;
+  const input = document.getElementById('nicknameInput');
+  input.value = (acc && acc.username) ? acc.username : '';
+  document.getElementById('nicknameMsg').textContent = '';
   document.getElementById('nicknameModal').style.display = 'flex';
+  if(!currentEmail) toast('Inicia sesión para elegir tu nombre de usuario');
+  setTimeout(() => input.focus(), 60);
 }
 
-document.getElementById('setNicknameBtn').onclick = openNicknameModal;
-document.getElementById('changeNicknameBtn').onclick = openNicknameModal;
 document.getElementById('nicknameCancelBtn').onclick = () => {
   document.getElementById('nicknameModal').style.display = 'none';
 };
-document.getElementById('nicknameConfirmBtn').onclick = () => {
-  const nick = document.getElementById('nicknameInput').value.trim();
-  if(!nick || nick.length < 2){ alert('El apodo debe tener al menos 2 caracteres'); return; }
-  if(nick.length > 16){ alert('El apodo es muy largo (máx. 16 caracteres)'); return; }
-  myNickname = nick;
-  localStorage.setItem('insectgames_nickname', nick);
-  updateNicknameUI();
+document.getElementById('nicknameConfirmBtn').onclick = async () => {
+  if(!currentEmail){ openAuthModal('login'); return; }
+  const msg = document.getElementById('nicknameMsg');
+  const raw = document.getElementById('nicknameInput').value;
+  msg.textContent = 'Comprobando disponibilidad…';
+  const res = await claimUsername(raw);
+  if(!res.ok){ msg.textContent = '❌ ' + res.msg; return; }
+  msg.textContent = '';
   document.getElementById('nicknameModal').style.display = 'none';
+  toast('✅ Tu nombre es ' + res.name);
 };
 
-// ---------- Sistema de amigos (local) ----------
+document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') document.getElementById('nicknameConfirmBtn').click();
+});
+
+function updateNicknameUI(){ renderAccountUI(); }
+
+// ========================================================
+// AMIGOS + PRESENCIA + INVITACIONES (P2P por PeerJS)
+// ========================================================
+let friendState = {};      // nombreMin -> { online, conn, name, lastTry, fromThem }
+let pendingRequest = {};   // nombreMin -> true (mandé solicitud al conectar)
+let friendTimer = null;
+let ownerNames = new Set();
+
+function noteOwnerIfMine(name){ if(name && isOwnerAccount()) ownerNames.add(String(name).toLowerCase()); }
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function friendsStorageKey(){ return 'insectgames_friends_' + (currentEmail ? accountKey(currentEmail) : 'guest'); }
 function getFriends(){
-  try { return JSON.parse(localStorage.getItem('insectgames_friends') || '[]'); }
-  catch(e){ return []; }
+  try {
+    const list = JSON.parse(localStorage.getItem(friendsStorageKey()) || '[]');
+    return Array.isArray(list) ? list.filter(f => f && f.username) : [];
+  } catch(e){ return []; }
 }
-function saveFriends(friends){
-  localStorage.setItem('insectgames_friends', JSON.stringify(friends));
+function saveFriends(list){
+  try { localStorage.setItem(friendsStorageKey(), JSON.stringify(list)); } catch(e){}
 }
-function renderFriends(){
-  const list = document.getElementById('friendList');
-  const friends = getFriends();
-  if(friends.length === 0){
-    list.innerHTML = '<p style="color:#666;font-size:7px;text-align:center;">Aún no tienes amigos</p>';
-    return;
+function isFriend(name){
+  const k = String(name || '').toLowerCase();
+  return getFriends().some(f => f.username.toLowerCase() === k);
+}
+function addFriendLocal(name){
+  if(!name || isFriend(name)) return false;
+  const list = getFriends();
+  list.push({ username: name, addedAt: Date.now() });
+  saveFriends(list);
+  return true;
+}
+function removeFriend(name){
+  const k = String(name || '').toLowerCase();
+  saveFriends(getFriends().filter(f => f.username.toLowerCase() !== k));
+  if(friendState[k]){
+    const c = friendState[k].conn;
+    if(c){ try { c.close(); } catch(e){} }
+    delete friendState[k];
   }
-  list.innerHTML = '';
-  friends.forEach(f => {
-    const div = document.createElement('div');
-    div.className = 'friendItem';
-    div.innerHTML = `<span class="fname">${f.nickname}</span>` +
-      `<button class="fremove" data-nick="${f.nickname}">✕</button>`;
-    list.appendChild(div);
+  renderFriends();
+}
+
+function renderFriends(){
+  const list = document.getElementById('friendsList');
+  if(!list) return;
+  const friends = getFriends();
+  if(!friends.length){
+    list.innerHTML = '<span class="fbEmpty">Aún no tienes amigos. Agrégalos por su nombre de usuario.</span>';
+  } else {
+    list.innerHTML = '';
+    friends.forEach(f => {
+      const st = friendState[f.username.toLowerCase()] || {};
+      const online = !!st.online;
+      const chip = document.createElement('div');
+      chip.className = 'fbChip' + (online ? ' on' : '');
+      chip.title = f.username + (online ? ' · en línea' : ' · desconectado');
+      chip.innerHTML = '<span class="dot"></span>' +
+        '<span class="' + (isOwnerUser(f.username) ? 'ownerName' : '') + '">' + escapeHtml(f.username) + '</span>' +
+        '<button class="fbInv" data-inv="' + escapeHtml(f.username) + '" title="Invitar a mi sala privada"' + (online ? '' : ' disabled') + '>✉</button>' +
+        '<button class="fbDel" data-del="' + escapeHtml(f.username) + '" title="Quitar amigo">✕</button>';
+      list.appendChild(chip);
+    });
+    list.querySelectorAll('[data-inv]').forEach(b => { b.onclick = () => inviteFriend(b.dataset.inv); });
+    list.querySelectorAll('[data-del]').forEach(b => { b.onclick = () => removeFriend(b.dataset.del); });
+  }
+  const onlineCount = friends.filter(f => (friendState[f.username.toLowerCase()] || {}).online).length;
+  const cEl = document.getElementById('friendsOnlineCount');
+  if(cEl) cEl.textContent = onlineCount + ' en línea';
+}
+
+// ---------- Identidad: PeerJS con ID derivado del nombre ----------
+let identityPeer = null, identityReady = false, identityUsername = null, identityId = null;
+function stableHash(s){
+  let h1 = 0x811c9dc5, h2 = 0x9e3779b9;
+  for(let i = 0; i < s.length; i++){
+    h1 = Math.imul(h1 ^ s.charCodeAt(i), 16777619) >>> 0;
+    h2 = Math.imul(h2 + s.charCodeAt(i) * (i + 13), 2654435761) >>> 0;
+  }
+  return h1.toString(36) + h2.toString(36);
+}
+function identityPeerIdFor(name){ return 'ig' + stableHash(String(name || '').toLowerCase()); }
+function stopIdentity(){
+  if(identityPeer){ try { identityPeer.destroy(); } catch(e){} }
+  identityPeer = null; identityReady = false; identityUsername = null; identityId = null;
+  friendState = {};
+}
+function startIdentity(name){
+  return new Promise(resolve => {
+    stopIdentity();
+    const id = identityPeerIdFor(name);
+    let p;
+    try { p = new Peer(id); } catch(e){ resolve({ ok:false, reason:'error' }); return; }
+    identityPeer = p; identityUsername = name; identityId = id; identityReady = false;
+    let settled = false;
+    const done = (ok, reason) => { if(settled) return; settled = true; resolve({ ok, reason: reason || null }); };
+    const timer = setTimeout(() => { if(!identityReady) done(true, 'pending'); }, 9000);
+    p.on('open', () => {
+      clearTimeout(timer);
+      identityReady = true;
+      p.on('connection', handleIdentityConnection);
+      ensureFriendConnections();
+      done(true);
+    });
+    p.on('error', (err) => {
+      const type = err && err.type;
+      if(type === 'unavailable-id'){
+        clearTimeout(timer);
+        if(identityPeer === p){ identityPeer = null; identityReady = false; }
+        try { p.destroy(); } catch(e){}
+        done(false, 'taken');
+      } else if(type === 'peer-unavailable'){
+        markOfflineFromPeerError(err);
+      } else if(type !== 'disconnected' && type !== 'network'){
+        console.warn('[identidad] error', type);
+      }
+    });
+    p.on('disconnected', () => {
+      identityReady = false;
+      try { p.reconnect(); } catch(e){}
+    });
   });
-  list.querySelectorAll('.fremove').forEach(btn => {
-    btn.onclick = () => {
-      const nick = btn.dataset.nick;
-      saveFriends(getFriends().filter(f => f.nickname !== nick));
-      renderFriends();
+}
+function waitIdentityReady(timeout){
+  return new Promise(resolve => {
+    const start = Date.now();
+    const tick = () => {
+      if(identityReady || Date.now() - start > (timeout || 9000)) return resolve(identityReady);
+      setTimeout(tick, 120);
     };
+    tick();
   });
 }
 
-// Buscar amigo por ID de PeerJS (local)
-document.getElementById('searchFriendBtn').onclick = () => {
-  const q = document.getElementById('friendSearchInput').value.trim().toLowerCase();
-  if(!q){ return; }
-  const friends = getFriends();
-  const already = friends.some(f => f.nickname.toLowerCase() === q);
-  const results = document.getElementById('searchResults');
-  if(already){
-    results.innerHTML = '<p style="color:#6f6;font-size:7px;text-align:center;">' + q + ' ya es tu amigo ✅</p>';
-    return;
-  }
-  // Buscar entre jugadores conectados a tu peer
-  let found = null;
-  for(const id in mpConnections){
-    if(mpConnections[id].nickname && mpConnections[id].nickname.toLowerCase() === q){
-      found = mpConnections[id];
-      break;
+function markOfflineFromPeerError(err){
+  const msg = String((err && err.message) || '');
+  const id = msg.split(' ').pop();
+  for(const key in friendState){
+    if(identityPeerIdFor(key) === id){
+      if(friendState[key].conn){ try { friendState[key].conn.close(); } catch(e){} }
+      friendState[key].conn = null;
+      friendState[key].online = false;
+      renderFriends();
     }
   }
-  if(found){
-    friends.push({ nickname: q, peerId: found.peerId || '' });
-    saveFriends(friends);
-    renderFriends();
-    results.innerHTML = '<p style="color:#6f6;font-size:7px;text-align:center;">¡Amigo agregado! ✅</p>';
-  } else {
-    results.innerHTML = '<p style="color:#f96;font-size:7px;text-align:center;">' +
-      (mpPeer ? 'Jugador no encontrado (necesita estar en la sala)' : 'Únete a una sala primero para buscar amigos') + '</p>';
+}
+
+// ---------- Reclamar nombre de usuario ----------
+async function claimUsername(raw){
+  const name = String(raw || '').trim();
+  if(!currentEmail) return { ok:false, msg:'Inicia sesión primero' };
+  if(!USERNAME_RE.test(name)) return { ok:false, msg:'Entre 5 y 20 caracteres: letras, números o _' };
+  const key = accountKey(currentEmail);
+  const lk = name.toLowerCase();
+  const reg = getUsernameRegistry();
+  if(reg[lk] && reg[lk].email !== key) return { ok:false, msg:'Ese nombre ya está ocupado' };
+  const accsAll = getAccounts();
+  for(const k in accsAll){
+    if(k !== key && accsAll[k].username && String(accsAll[k].username).toLowerCase() === lk){
+      return { ok:false, msg:'Ese nombre ya está ocupado' };
+    }
   }
+  const prevName = myNickname;
+  const res = await startIdentity(name);
+  if(!res.ok && res.reason === 'taken'){
+    if(prevName && prevName.toLowerCase() !== lk) await startIdentity(prevName);
+    return { ok:false, msg:'Ese nombre está en uso por otro jugador ahora mismo' };
+  }
+  const accs = getAccounts();
+  if(!accs[key]) return { ok:false, msg:'Tu cuenta no existe, inicia sesión otra vez' };
+  accs[key].username = name;
+  accs[key].owner = isCheatEmail(currentEmail);
+  saveAccounts(accs);
+  reg[lk] = { name, email: key, owner: !!accs[key].owner };
+  saveUsernameRegistry(reg);
+  myNickname = name;
+  noteOwnerIfMine(name);
+  renderAccountUI();
+  renderFriends();
+  saveProfile();
+  startFriendLoop();
+  return { ok:true, name };
+}
+
+// ---------- Conexiones con amigos ----------
+function ensureFriendConnections(){
+  if(!identityReady || !identityPeer || !myNickname) return;
+  getFriends().forEach(f => {
+    const key = f.username.toLowerCase();
+    if(key === String(myNickname).toLowerCase()) return;
+    const st = friendState[key];
+    if(st && st.conn) return;
+    connectToFriend(f.username);
+  });
+}
+function connectToFriend(username){
+  if(!identityPeer || !identityReady) return;
+  const key = username.toLowerCase();
+  if(key === String(myNickname || '').toLowerCase()) return;
+  if(friendState[key] && friendState[key].conn) return;
+  const peerId = identityPeerIdFor(username);
+  let conn;
+  try {
+    conn = identityPeer.connect(peerId, { metadata: { ig: 1, username: myNickname, owner: isOwnerAccount() } });
+  } catch(e){ return; }
+  const st = friendState[key] || (friendState[key] = { online: false, name: username });
+  st.conn = conn; st.lastTry = Date.now(); st.name = username;
+  const drop = () => {
+    if(friendState[key] && friendState[key].conn === conn){
+      friendState[key].conn = null;
+      friendState[key].online = false;
+      renderFriends();
+    }
+  };
+  conn.on('open', () => {
+    st.online = true;
+    renderFriends();
+    try { conn.send({ type: 'friendHello', username: myNickname, owner: isOwnerAccount() }); } catch(e){}
+    if(pendingRequest[key]){
+      try { conn.send({ type: 'friendRequest', username: myNickname, owner: isOwnerAccount() }); } catch(e){}
+    }
+  });
+  conn.on('data', d => handleFriendMessage(d, conn, key));
+  conn.on('close', drop);
+  conn.on('error', drop);
+  setTimeout(() => { if(!st.online && friendState[key] && friendState[key].conn === conn) drop(); }, 9000);
+}
+function handleIdentityConnection(conn){
+  const meta = conn.metadata || {};
+  const username = meta.username ? String(meta.username) : null;
+  if(!username){ try { conn.close(); } catch(e){} return; }
+  if(meta.owner) ownerNames.add(username.toLowerCase());
+  const key = username.toLowerCase();
+  const st = friendState[key] || (friendState[key] = { online: false, name: username });
+  if(st.conn && st.conn.open && st.conn !== conn){
+    try { conn.close(); } catch(e){}
+    return;
+  }
+  st.conn = conn; st.online = true; st.name = username; st.fromThem = true;
+  renderFriends();
+  try { conn.send({ type: 'friendHello', username: myNickname, owner: isOwnerAccount() }); } catch(e){}
+  conn.on('data', d => handleFriendMessage(d, conn, key));
+  const drop = () => {
+    if(friendState[key] && friendState[key].conn === conn){
+      friendState[key].conn = null;
+      friendState[key].online = false;
+      renderFriends();
+    }
+  };
+  conn.on('close', drop);
+  conn.on('error', drop);
+}
+function handleFriendMessage(msg, conn, key){
+  if(!msg || !msg.type) return;
+  if(msg.owner && msg.username) ownerNames.add(String(msg.username).toLowerCase());
+  switch(msg.type){
+    case 'friendHello': {
+      const st = friendState[key] || (friendState[key] = { online: false });
+      st.online = true; st.name = msg.username || key;
+      renderFriends();
+      break;
+    }
+    case 'friendRequest':
+      showFriendRequest(msg.username || key, conn);
+      break;
+    case 'friendAccept':
+      if(addFriendLocal(msg.username || key)) toast('✅ ' + (msg.username || key) + ' aceptó tu solicitud');
+      delete pendingRequest[key];
+      renderFriends();
+      break;
+    case 'gameInvite':
+      showGameInvite(msg);
+      break;
+  }
+}
+function startFriendLoop(){
+  stopFriendLoop();
+  friendTimer = setInterval(() => {
+    if(document.hidden) return;
+    ensureFriendConnections();
+    renderFriends();
+  }, 12000);
+}
+function stopFriendLoop(){
+  if(friendTimer){ clearInterval(friendTimer); friendTimer = null; }
+}
+
+// ---------- Solicitudes e invitaciones ----------
+let reqAcceptHandler = null;
+function openRequestModal(title, body, acceptLabel, onAccept){
+  document.getElementById('reqTitle').textContent = title;
+  document.getElementById('reqBody').textContent = body;
+  document.getElementById('reqAcceptBtn').textContent = acceptLabel;
+  reqAcceptHandler = onAccept;
+  document.getElementById('mpRequestModal').style.display = 'flex';
+}
+function closeRequestModal(){ document.getElementById('mpRequestModal').style.display = 'none'; reqAcceptHandler = null; }
+document.getElementById('reqDeclineBtn').onclick = closeRequestModal;
+document.getElementById('reqAcceptBtn').onclick = () => {
+  const fn = reqAcceptHandler;
+  closeRequestModal();
+  if(typeof fn === 'function') fn();
 };
+function showFriendRequest(username, conn){
+  const who = escapeHtml(username);
+  openRequestModal('👋 Solicitud de amistad', who + ' quiere agregarte a sus amigos. ¿Lo agregas también?', 'Aceptar', () => {
+    addFriendLocal(username);
+    renderFriends();
+    try { if(conn && conn.open) conn.send({ type: 'friendAccept', username: myNickname, owner: isOwnerAccount() }); } catch(e){}
+    const st = friendState[username.toLowerCase()];
+    if(!st || !st.conn){ connectToFriend(username); }
+    toast('✅ ' + username + ' agregado a tus amigos');
+  });
+}
+function showGameInvite(msg){
+  const from = escapeHtml(msg.from || 'Un amigo');
+  const code = String(msg.code || '').toLowerCase();
+  if(!code) return;
+  openRequestModal('✉ Invitación a partida', from + ' te invita a su sala privada (código ' + code.toUpperCase() + '). ¿Entras?', 'Entrar', () => {
+    acceptInvite(code);
+  });
+}
+
+// ---------- Agregar amigos ----------
+function openAddFriendModal(){
+  if(!requireMultiplayerAccount()) return;
+  document.getElementById('addFriendInput').value = '';
+  document.getElementById('addFriendMsg').textContent = '';
+  document.getElementById('addFriendModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('addFriendInput').focus(), 60);
+}
+document.getElementById('addFriendBtn').onclick = openAddFriendModal;
+document.getElementById('addFriendCancelBtn').onclick = () => { document.getElementById('addFriendModal').style.display = 'none'; };
+document.getElementById('addFriendModal').addEventListener('click', (e) => {
+  if(e.target.id === 'addFriendModal') document.getElementById('addFriendModal').style.display = 'none';
+});
+document.getElementById('addFriendInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') document.getElementById('addFriendConfirmBtn').click();
+});
+document.getElementById('addFriendConfirmBtn').onclick = async () => {
+  const msg = document.getElementById('addFriendMsg');
+  const name = document.getElementById('addFriendInput').value.trim();
+  if(!USERNAME_RE.test(name)){ msg.textContent = '❌ El nombre debe tener entre 5 y 20 caracteres (letras, números o _).'; return; }
+  if(myNickname && name.toLowerCase() === String(myNickname).toLowerCase()){ msg.textContent = '❌ Ese eres tú.'; return; }
+  if(isFriend(name)){ msg.textContent = '✅ ' + name + ' ya está en tus amigos.'; return; }
+  msg.textContent = 'Conectando con ' + name + '…';
+  addFriendLocal(name);
+  renderFriends();
+  pendingRequest[name.toLowerCase()] = true;
+  await waitIdentityReady(7000);
+  connectToFriend(name);
+  setTimeout(() => {
+    const st = friendState[name.toLowerCase()] || {};
+    if(st.online){
+      msg.textContent = '✅ ' + name + ' agregado · en línea';
+      document.getElementById('addFriendModal').style.display = 'none';
+      toast('✅ ' + name + ' agregado a tus amigos');
+    } else {
+      msg.textContent = '✅ Agregado. ' + name + ' no está en línea ahora: aparecerá prendido cuando se conecte.';
+    }
+  }, 5000);
+};
+
+// ---------- Invitar a sala privada ----------
+function inviteFriend(username){
+  if(!requireMultiplayerAccount()) return;
+  const key = String(username || '').toLowerCase();
+  const st = friendState[key];
+  if(!st || !st.online || !st.conn || !st.conn.open){
+    toast('⚪ ' + username + ' no está en línea');
+    return;
+  }
+  if(!mpRoomCode || salaKind !== 'private'){
+    if(mpRoomCode){ toast('Salí de tu sala pública y creá una privada para invitar'); return; }
+    createPrivateRoom().then(ok => {
+      if(!ok) return;
+      sendInviteTo(key, username);
+    }).catch(() => toast('No se pudo crear la sala'));
+    return;
+  }
+  sendInviteTo(key, username);
+}
+function sendInviteTo(key, username){
+  const st = friendState[key];
+  if(!st || !st.conn || !st.conn.open){ toast('⚪ ' + username + ' no está en línea'); return; }
+  try {
+    st.conn.send({ type: 'gameInvite', from: myNickname, owner: isOwnerAccount(), code: mpRoomCode, diffId: (privateRoom && privateRoom.diffId) || 'medio' });
+    toast('✉ Invitación enviada a ' + username);
+  } catch(e){ toast('No se pudo enviar la invitación'); }
+}
+function inviteAllOnlineFriends(){
+  const online = getFriends().filter(f => (friendState[f.username.toLowerCase()] || {}).online);
+  if(!online.length){ toast('No tienes amigos en línea ahora'); return; }
+  online.forEach(f => inviteFriend(f.username));
+}
+document.getElementById('lobbyInviteBtn').onclick = inviteAllOnlineFriends;
+
+// ---------- Toast ----------
+function toast(text, ms){
+  const wrap = document.getElementById('toastWrap');
+  if(!wrap) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; }, (ms || 3200) - 400);
+  setTimeout(() => { if(t.parentNode) t.parentNode.removeChild(t); }, ms || 3200);
+}
+
+// ---------- Gate de multijugador ----------
+function requireMultiplayerAccount(){
+  if(!currentEmail){ openAuthModal('login'); return false; }
+  if(!getAccount(currentEmail)){ openAuthModal('register'); return false; }
+  if(!myNickname){ openUsernameModal(); return false; }
+  return true;
+}
 
 // ---------- PeerJS: Crear Peer ----------
 function generateRoomCode(){
@@ -1114,95 +1828,156 @@ function generateRoomCode(){
   for(let i=0;i<6;i++) c += chars[Math.floor(Math.random()*chars.length)];
   return c;
 }
+let lastPeerError = null;
 function initPeer(isHost, customId){
-  if(mpPeer){ mpPeer.destroy(); mpPeer = null; }
+  if(mpPeer){ try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
+  lastPeerError = null;
   return new Promise((resolve) => {
-    mpPeer = customId ? new Peer(customId) : new Peer();
+    let peerId = customId;
+    if(peerId) peerId = String(peerId).toLowerCase();
+    mpPeer = peerId ? new Peer(peerId) : new Peer();
+    let settled = false;
+    const done = (id) => { if(settled) return; settled = true; resolve(id); };
     mpPeer.on('open', (id) => {
       mpMyId = id;
       mpIsHost = isHost;
       console.log('PeerJS conectado, ID:', id);
-      resolve(id);
+      done(id);
     });
     mpPeer.on('connection', (conn) => {
       if(!isHost) return;
       handleIncomingConnection(conn);
     });
     mpPeer.on('error', (err) => {
-      console.error('PeerJS error:', err);
-      alert('Error de conexión: ' + err.type);
+      lastPeerError = err && err.type;
+      console.warn('PeerJS error:', err && err.type, err && err.message);
+      // Estos errores son normales mientras se reintenta conectar con una sala
+      if(err && (err.type === 'peer-unavailable' || err.type === 'network' || err.type === 'disconnected')) return;
+      if(err && err.type === 'unavailable-id'){ done(null); return; }
+      alert('Error de conexión: ' + (err && err.type));
     });
+    setTimeout(() => done(null), 12000);
   });
 }
 
-// ---------- Sala: Crear (Host) ----------
-document.getElementById('createRoomBtn').onclick = async () => {
-  if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
-  if(mpRoomCode){ alert('Ya estás en una sala. Sal primero.'); return; }
+// ---------- Sala privada: crear (host) ----------
+async function createPrivateRoom(){
+  if(mpRoomCode) return true;
   try {
     mpRoomCode = generateRoomCode();
-    await initPeer(true, mpRoomCode);
+    let id = await initPeer(true, mpRoomCode);
+    // Si el código ya está tomado, probamos con otro
+    for(let i = 0; i < 3 && !id; i++){
+      mpRoomCode = generateRoomCode();
+      id = await initPeer(true, mpRoomCode);
+    }
+    if(!id){ mpRoomCode = null; alert('No se pudo crear la sala. Revisá tu conexión a internet.'); return false; }
     mpConnections = {};
-    mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname, isHost: true }];
+    mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname, isHost: true, owner: isOwnerAccount() }];
     mpReady[mpMyId] = true;
     renderRoomUI();
     document.getElementById('roomInfo').style.display = 'block';
     startPrivateRoomHost();
+    return true;
   } catch(e){
+    mpRoomCode = null;
     alert('Error al crear sala: ' + e.message);
+    return false;
   }
+}
+document.getElementById('createRoomBtn').onclick = async () => {
+  if(!requireMultiplayerAccount()) return;
+  if(mpRoomCode){ alert('Ya estás en una sala. Sal primero.'); return; }
+  await createPrivateRoom();
 };
+
+// ---------- Sala privada: unirse con código ----------
+async function joinPrivateByCode(rawCode){
+  const code = String(rawCode || '').trim().toLowerCase();
+  if(!code){ alert('Ingresa un código'); return; }
+  if(!requireMultiplayerAccount()) return;
+  if(mpRoomCode){ leaveRoom(); }
+  pendingPrivateJoin = true;
+  let entrado = false;
+  for(let intento = 0; intento < 4 && !entrado; intento++){
+    try {
+      const id = await initPeer(false);
+      if(!id){ await new Promise(r => setTimeout(r, 600)); continue; }
+      const conn = mpPeer.connect(code, { metadata: { nickname: myNickname, owner: isOwnerAccount() } });
+      entrado = await new Promise((resolve) => {
+        let done = false;
+        const finish = (v) => { if(!done){ done = true; resolve(v); } };
+        conn.on('open', () => {
+          mpRoomCode = code;
+          mpConnections[code] = { peerId: code, nickname: 'Host', conn: conn, data: {} };
+          mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname, isHost: false, owner: isOwnerAccount() }];
+          document.getElementById('joinRoomModal').style.display = 'none';
+          renderRoomUI();
+          document.getElementById('roomInfo').style.display = 'block';
+          try { conn.send({ type: 'requestPlayers' }); } catch(e){}
+          conn.on('close', () => {
+            if(state === 'playing' || state === 'shop') return;
+            alert('Desconectado del host');
+            leaveRoom();
+          });
+          finish(true);
+        });
+        conn.on('data', (data) => { handleHostData(data, code); });
+        conn.on('error', () => finish(false));
+        setTimeout(() => finish(false), 3500);
+      });
+    } catch(e){ entrado = false; }
+    if(!entrado){
+      try { if(mpPeer) mpPeer.destroy(); } catch(e){}
+      mpPeer = null;
+      await new Promise(r => setTimeout(r, 700));
+    }
+  }
+  if(!entrado){
+    pendingPrivateJoin = false;
+    toast('No se pudo entrar a la sala ' + code.toUpperCase() + '. Revisá el código.');
+    document.getElementById('joinRoomModal').style.display = 'none';
+  }
+}
+function acceptInvite(code){
+  if(!requireMultiplayerAccount()) return;
+  if(state === 'playing' || state === 'shop'){
+    toast('Termina tu partida para aceptar la invitación');
+    return;
+  }
+  document.getElementById('joinRoomModal').style.display = 'none';
+  if(state !== 'hub' && state !== 'lobby' && state !== 'plaza'){ returnToHub(); }
+  joinPrivateByCode(code);
+}
 
 // ---------- Sala: Unirse (Guest) ----------
 document.getElementById('joinRoomBtn').onclick = () => {
-  if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
+  if(!requireMultiplayerAccount()) return;
   if(mpRoomCode){ alert('Ya estás en una sala. Sal primero.'); return; }
   document.getElementById('joinRoomModal').style.display = 'flex';
 };
 document.getElementById('joinRoomCancelBtn').onclick = () => {
   document.getElementById('joinRoomModal').style.display = 'none';
 };
-document.getElementById('joinRoomConfirmBtn').onclick = async () => {
+document.getElementById('joinRoomConfirmBtn').onclick = () => {
   const code = document.getElementById('roomCodeInput').value.trim().toLowerCase();
   if(!code){ alert('Ingresa un código'); return; }
-  if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
-  pendingPrivateJoin = true;
-  try {
-    await initPeer(false);
-    // Conectar al host usando el código como peerId
-    const conn = mpPeer.connect(code, { metadata: { nickname: myNickname } });
-    conn.on('open', () => {
-      mpRoomCode = code;
-      mpConnections[code] = { peerId: code, nickname: 'Host', conn: conn, data: {} };
-      mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname, isHost: false }];
-      document.getElementById('joinRoomModal').style.display = 'none';
-      renderRoomUI();
-      document.getElementById('roomInfo').style.display = 'block';
-      // Pedir lista de jugadores al host
-      conn.send({ type: 'requestPlayers' });
-    });
-    conn.on('data', (data) => { handleHostData(data, code); });
-    conn.on('close', () => {
-      alert('Desconectado del host');
-      leaveRoom();
-    });
-  } catch(e){
-    alert('Error al conectar: ' + e.message);
-    document.getElementById('joinRoomModal').style.display = 'none';
-  }
+  joinPrivateByCode(code);
 };
 
 // ---------- Host: Manejar conexiones entrantes ----------
 function handleIncomingConnection(conn){
   conn.on('open', () => {
     const nick = conn.metadata?.nickname || 'Jugador';
+    const isOwner = !!conn.metadata?.owner;
     if(Object.keys(mpConnections).length >= 5){
       conn.send({ type: 'roomFull' });
       conn.close();
       return;
     }
-    mpConnections[conn.peer] = { peerId: conn.peer, nickname: nick, conn: conn, data: {} };
-    mpRoomPlayers.push({ peerId: conn.peer, nickname: nick, isHost: false });
+    if(isOwner) ownerNames.add(String(nick).toLowerCase());
+    mpConnections[conn.peer] = { peerId: conn.peer, nickname: nick, owner: isOwner, conn: conn, data: {} };
+    mpRoomPlayers.push({ peerId: conn.peer, nickname: nick, owner: isOwner, isHost: false });
     // Enviar bienvenida y lista de jugadores a todos
     broadcastRoomState();
     if(conn.open){
@@ -1235,27 +2010,28 @@ function handleGuestData(data, peerId){
     if(mpConnections[peerId]){
       Object.assign(mpConnections[peerId].data, data.update);
     }
-  } else if(data.type === 'playerState'){
-    if(mpConnections[peerId]){
-      Object.assign(mpConnections[peerId].data, data);
-    }
-    mpOtherPlayers[peerId] = {
-      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp, maxHp: data.maxHp || 100,
-      facingDir: data.facingDir || 'down', moving: data.moving || false,
-      walkFrame: data.walkFrame || 0, nickname: data.nickname || 'Jugador'
-    };
-    // Reenviar a otros guests para que se vean entre ellos
+  } else if(data.type === 'ps'){
+    if(mpConnections[peerId]) Object.assign(mpConnections[peerId].data, data);
+    data.id = peerId;
+    applyRemoteState(data);
+    if(data.h) applyGuestHits(data.h, peerId);
+    // Reenviar a los demás guests para que se vean entre ellos (sin el bloque de impactos)
     for(const id in mpConnections){
       if(id === peerId) continue;
       const conn = mpConnections[id].conn;
-      if(conn && conn.open){ conn.send(data); }
+      if(conn && conn.open){
+        const copy = Object.assign({}, data);
+        delete copy.h; delete copy.w;
+        try { conn.send(copy); } catch(e){}
+      }
     }
   } else if(data.type === 'ready'){
     mpReady[peerId] = data.ready;
     broadcastToAll({ type: 'readyUpdate', peerId: peerId, ready: data.ready });
     renderRoomUI();
   } else if(data.type === 'salaPos'){
-    mpOtherPlayers[peerId] = { x: data.x, y: data.y, moving: data.moving, facingDir: data.facingDir, walkFrame: data.walkFrame, nickname: (mpConnections[peerId] && mpConnections[peerId].nickname) || 'Jugador', hp: 100 };
+    const gid = String(data.id || peerId);
+    if(gid !== String(mpMyId)) applyRemoteSalaPos(gid, data);
     for(const id in mpConnections){
       if(id === peerId) continue;
       const conn = mpConnections[id].conn;
@@ -1283,7 +2059,8 @@ function handleHostData(data, hostId){
     if(data.room) privateRoom = data.room;
     renderLobbyUI();
   } else if(data.type === 'salaPos'){
-    mpOtherPlayers[data.peerId] = { x: data.x, y: data.y, moving: data.moving, facingDir: data.facingDir, walkFrame: data.walkFrame, nickname: data.nickname || 'Jugador', hp: 100 };
+    if(data.id == null) data.id = hostId;
+    applyRemoteSalaPos(data.id, data);
   } else if(data.type === 'enterLobby'){
     startPrivateRoomGuest();
   } else if(data.type === 'roomFull'){
@@ -1306,88 +2083,22 @@ function handleHostData(data, hostId){
   } else if(data.type === 'readyUpdate'){
     mpReady[data.peerId] = data.ready;
     renderRoomUI();
-  } else if(data.type === 'playerState'){
-    mpOtherPlayers[data.peerId] = {
-      x: data.x, y: data.y, shooting: data.shooting, angle: data.angle, hp: data.hp, maxHp: data.maxHp || 100,
-      facingDir: data.facingDir || 'down', moving: data.moving || false,
-      walkFrame: data.walkFrame || 0, nickname: data.nickname || 'Jugador'
-    };
-    // El host sincroniza los enemigos - el guest NO genera sus propios enemigos
-    if(data.enemies && !mpIsHost){
-      enemies = data.enemies.map(e => ({
-        x: e.x, y: e.y, r: e.r, type: e.type,
-        hp: e.hp, maxHp: e.maxHp,
-        flash: e.flash ? 60 : 0, animT: e.animT,
-        bossState: e.bossState, attackPulse: e.attackPulse,
-        // Propiedades necesarias para que draw() funcione
-        reward: 0, rewardXp: 0, rewardGems: 0,
-        dmg: 0, speed: 0, dead: false
-      }));
-      // Actualizar HUD del guest
-      wave = data.wave || wave;
-      killsThisWave = data.killsThisWave || killsThisWave;
-      waveTargetKills = data.waveTargetKills || waveTargetKills;
-      money = data.money || money;
-      // Boss bar
-      if(data.bossHp > 0){
-        currentBoss = { hp: data.bossHp, maxHp: data.bossMaxHp };
-        document.getElementById('bossBar').style.display = 'flex';
-        document.getElementById('bossFill').style.width = Math.max(0,(data.bossHp/data.bossMaxHp)*100) + '%';
-      } else {
-        currentBoss = null;
-        document.getElementById('bossBar').style.display = 'none';
-      }
-      // Sincronizar balas
-      if(data.bullets){
-        // Reemplazar balas locales con las del host (para que se vea igual)
-        bullets = data.bullets.map(b => ({
-          x:b.x, y:b.y, vx:b.vx, vy:b.vy, r:b.r, dmg:b.dmg, hitsLeft:b.hitsLeft,
-          hitSet:new Set(), source:b.source || 'player'
-        }));
-      }
-      // Sincronizar proyectiles enemigos
-      if(data.enemyProjectiles){
-        enemyProjectiles = data.enemyProjectiles.map(p => ({
-          x:p.x, y:p.y, vx:p.vx, vy:p.vy, r:p.r, dmg:p.dmg, poison:p.poison,
-          life:p.life, isMeteor:p.isMeteor, dead:false
-        }));
-      }
-      // Sincronizar torretas
-      if(data.turrets && data.turrets.length > 0){
-        const t = data.turrets[0];
-        turret = {x:t.x, y:t.y, hp:t.hp, maxHp:t.maxHp, damage:t.damage, fireRate:t.fireRate, lastShot:0, r:t.r};
-      } else if(data.turrets && data.turrets.length === 0){
-        turret = null;
-      }
-      // Sincronizar partículas
-      if(data.particles){
-        particles = data.particles.map(p => ({x:p.x, y:p.y, vx:p.vx, vy:p.vy, life:p.life, color:p.color}));
-      }
-      // Sincronizar números de daño
-      if(data.dmgNumbers){
-        dmgNumbers = data.dmgNumbers.map(d => ({x:d.x, y:d.y, text:d.text, life:d.life, vy:d.vy||0.6, crit:!!d.crit}));
-      }
-      // Sincronizar estado de juego (shop, playing, gameover)
-      if(data.gameState === 'shop' && state !== 'shop'){
-        openShop();
-      } else if(data.gameState === 'playing' && state !== 'playing'){
-        // El host arranca la oleada: el invitado también juega (si no, la cámara no sigue)
-        document.getElementById('shop').classList.remove('open');
-        state = 'playing';
-        showMobileControls(true);
-      } else if(data.gameState === 'gameover' && state !== 'gameover'){
-        state = 'gameover';
-        playFailureSfx();
-        document.getElementById('bossBar').style.display = 'none';
-        document.getElementById('gameOverWave').textContent = data.gameOverMsg || `Caíste en la oleada ${wave}`;
-        document.getElementById('goMoney').textContent = data.goMoney || 0;
-        document.getElementById('goXp').textContent = data.goXp || 0;
-        document.getElementById('goGems').textContent = data.goGems || 0;
-        bankRunMoney(); refreshHubUI();
-        showScreen('gameOverPanel');
-        showMobileControls(false);
-      }
+  } else if(data.type === 'ps'){
+    if(data.id == null) data.id = hostId;
+    applyRemoteState(data);
+  } else if(data.type === 'turretDamage' && data.dmg){
+    if(turret){
+      turret.hp -= data.dmg;
+      if(turret.hp <= 0) destroyTurret();
     }
+  } else if(data.type === 'reward'){
+    // Me lo gané yo matando (el host me manda las recompensas de mis bajas)
+    const rm = data.m || 0, rxp = data.xp || 0, rg = data.g || 0;
+    money += rm; moneyEarnedRun += rm; runStats.money += rm;
+    runStats.xp += rxp; runStats.gems += rg;
+    addXp(rxp);
+    addGems(rg * (1 + meta.gemBonusLvl*0.1));
+
   } else if(data.type === 'takeDamage' && data.dmg){
     // El host envia dano que el jugador recibio de enemigos
     player.hp -= data.dmg;
@@ -1418,52 +2129,240 @@ function broadcastRoomState(){
   renderRoomUI();
 }
 
-// ---------- Broadcast: Enviar estado de juego ----------
-function broadcastGameState(){
-  if(!mpRoomCode) return;
-  if(state === 'lobby' || state === 'plaza') return;   // en salas no se manda estado de partida
-  const msg = { type: 'playerState', peerId: mpMyId, x: player.x, y: player.y, shooting: player.shooting, angle: player.angle, hp: player.hp, maxHp: player.maxHp, facingDir: player.facingDir, moving: player.moving, walkFrame: player.walkFrame, nickname: myNickname };
-  if(mpIsHost){
-    // Host envia el estado de TODOS los enemigos para que todos vean lo mismo
-    msg.enemies = enemies.filter(e => !e.dead).map(e => ({
-      x: Math.round(e.x), y: Math.round(e.y), r: e.r, type: e.type,
-      hp: Math.round(e.hp), maxHp: Math.round(e.maxHp),
-      flash: e.flash > 0, animT: Math.round(e.animT),
-      bossState: e.bossState, attackPulse: e.attackPulse || 0
-    }));
-    msg.wave = wave;
-    msg.killsThisWave = killsThisWave;
-    msg.waveTargetKills = waveTargetKills;
-    msg.money = money;
-    msg.gameState = state;
-    msg.bossHp = currentBoss ? Math.round(currentBoss.hp) : 0;
-    msg.bossMaxHp = currentBoss ? Math.round(currentBoss.maxHp) : 0;
-    if(state === 'gameover'){
-      msg.gameOverMsg = document.getElementById('gameOverWave').textContent;
-      msg.goMoney = runStats.money;
-      msg.goXp = Math.round(runStats.xp);
-      msg.goGems = Math.round(runStats.gems);
-    }
-    // Enviar balas y proyectiles para que guests los vean
-    msg.bullets = bullets.map(b => ({x:Math.round(b.x), y:Math.round(b.y), vx:b.vx, vy:b.vy, r:b.r, dmg:b.dmg, hitsLeft:b.hitsLeft, source:b.source || 'player'}));
-    msg.enemyProjectiles = enemyProjectiles.map(p => ({x:Math.round(p.x), y:Math.round(p.y), vx:p.vx, vy:p.vy, r:p.r, dmg:p.dmg, poison:p.poison, life:p.life, isMeteor:p.isMeteor}));
-    // Enviar torretas
-    msg.turrets = turret ? [{x:Math.round(turret.x), y:Math.round(turret.y), hp:Math.round(turret.hp), maxHp:Math.round(turret.maxHp), damage:turret.damage, fireRate:turret.fireRate, r:turret.r}] : [];
-    // Enviar partículas y números de daño (opcional, pueden ser costosos)
-    msg.particles = particles.map(p => ({x:Math.round(p.x), y:Math.round(p.y), vx:p.vx, vy:p.vy, life:p.life, color:p.color}));
-    msg.dmgNumbers = dmgNumbers.map(d => ({x:Math.round(d.x), y:Math.round(d.y), text:d.text, life:d.life, vy:d.vy, crit:d.crit}));
+// ========================================================
+// SINCRONIZACIÓN DE PARTIDA (20 Hz)
+// Antes se mandaba TODO el mundo a 60 Hz (enemigos + balas +
+// partículas por jugador): eso reventaba la conexión con más de
+// 2 jugadores. Ahora:
+//   · el host es la autoridad del mundo (enemigos y oleadas)
+//   · cada jugador manda lo suyo: posición, vida, torreta y balas
+//   · el host reparte el estado de cada invitado a los demás
+// ========================================================
+const NET_INTERVAL = 50;                    // ms entre envíos = 20 Hz
+let netAccum = 0;
+const ENEMY_CODE = { fly: 0, wasp: 1, caterpillar: 2, boss: 3 };
+const ENEMY_NAME = ['fly', 'wasp', 'caterpillar', 'boss'];
+
+function buildOwnState(){
+  const b = [];
+  for(let i = 0; i < bullets.length && b.length < 18; i++){
+    const x = bullets[i];
+    b.push([Math.round(x.x), Math.round(x.y), Math.round(x.vx * 100) / 100, Math.round(x.vy * 100) / 100, x.r, x.source === 'turret' ? 1 : 0]);
   }
-  // Enviar a todos los peers
+  const tu = turret ? [Math.round(turret.x), Math.round(turret.y), Math.round(turret.hp), Math.round(turret.maxHp), turret.r] : null;
+  return {
+    type: 'ps', id: mpMyId,
+    x: Math.round(player.x), y: Math.round(player.y),
+    hp: Math.round(player.hp), mhp: Math.round(player.maxHp),
+    dir: player.facingDir, mv: player.moving ? 1 : 0, wf: player.walkFrame || 0,
+    sh: player.shooting ? 1 : 0, ang: player.angle == null ? 0 : Math.round(player.angle * 100) / 100,
+    n: myNickname || 'Jugador', o: isOwnerAccount() ? 1 : 0,
+    b, tu
+  };
+}
+function buildWorldState(){
+  const en = [];
+  for(const e of enemies){
+    if(e.dead) continue;
+    en.push([e.eid || 0, Math.round(e.x), Math.round(e.y), e.r, ENEMY_CODE[e.type] || 0,
+             Math.round(e.hp), Math.round(e.maxHp), e.flash > 0 ? 1 : 0,
+             Math.round(e.animT || 0), e.bossState || 0, Math.round((e.attackPulse || 0) * 100) / 100]);
+    if(en.length >= 140) break;
+  }
+  const ep = [];
+  for(const p of enemyProjectiles){
+    ep.push([Math.round(p.x), Math.round(p.y), Math.round(p.vx * 100) / 100, Math.round(p.vy * 100) / 100, p.r, Math.round(p.dmg), p.poison ? 1 : 0, p.isMeteor ? 1 : 0, Math.round(p.life)]);
+    if(ep.length >= 140) break;
+  }
+  return {
+    en, ep, wave, kw: killsThisWave, wt: waveTargetKills,
+    gs: state, bh: currentBoss ? Math.round(currentBoss.hp) : 0, bmh: currentBoss ? Math.round(currentBoss.maxHp) : 0,
+    go: state === 'gameover' ? {
+      msg: document.getElementById('gameOverWave').textContent,
+      m: runStats.money, xp: Math.round(runStats.xp), g: Math.round(runStats.gems)
+    } : null
+  };
+}
+function netSendAll(msg){
   for(const id in mpConnections){
     const conn = mpConnections[id].conn;
-    if(conn && conn.open){ conn.send(msg); }
+    if(conn && conn.open){ try { conn.send(msg); } catch(e){} }
+  }
+}
+// Se llama cada frame: manda el estado propio a 20 Hz (host añade el mundo)
+function netTick(dt){
+  if(!mpRoomCode || state === 'lobby' || state === 'plaza') return;
+  netAccum += dt;
+  if(netAccum < NET_INTERVAL) return;
+  netAccum = 0;
+  const msg = buildOwnState();
+  if(pendingHits.length){ msg.h = pendingHits; pendingHits = []; }
+  if(mpIsHost) msg.w = buildWorldState();
+  netSendAll(msg);
+}
+
+// ---------- Aplicar el estado de otro jugador (host o invitado) ----------
+function applyRemoteState(data){
+  if(!data || data.id == null) return;
+  const key = String(data.id);
+  if(key === String(mpMyId)) return;
+  let op = mpOtherPlayers[key];
+  if(!op){
+    op = mpOtherPlayers[key] = { dx: data.x, dy: data.y, hp: 100, maxHp: 100, bul: [], tur: null };
+  }
+  op.nickname = data.n || op.nickname || 'Jugador';
+  op.owner = !!data.o;
+  if(op.owner) ownerNames.add(op.nickname.toLowerCase());
+  const far = (op.x == null) || Math.abs(data.x - op.x) > 600 || Math.abs(data.y - op.y) > 600;
+  op.x = data.x; op.y = data.y;
+  if(far || op.dx == null){ op.dx = data.x; op.dy = data.y; }
+  op.hp = (typeof data.hp === 'number') ? data.hp : op.hp;
+  op.maxHp = data.mhp || 100;
+  op.facingDir = data.dir || 'down';
+  op.moving = !!data.mv;
+  op.walkFrame = data.wf || 0;
+  op.shooting = !!data.sh;
+  op.angle = data.ang || 0;
+  op.bul = (data.b || []).map(a => ({ x: a[0], y: a[1], vx: a[2], vy: a[3], r: a[4], source: a[5] ? 'turret' : 'player' }));
+  op.tur = data.tu ? { x: data.tu[0], y: data.tu[1], hp: data.tu[2], maxHp: data.tu[3], r: data.tu[4] } : null;
+  op.t = performance.now();
+  if(data.w) applyWorldState(data.w);
+}
+
+// ---------- Aplicar el mundo (solo invitados) ----------
+let syncEnemies = {};
+function applyWorldState(w){
+  if(!w || mpIsHost) return;
+  const now = performance.now();
+  const alive = {};
+  const next = [];
+  for(const a of (w.en || [])){
+    const eid = a[0];
+    alive[eid] = 1;
+    let e = syncEnemies[eid];
+    if(!e){
+      e = { eid, x: a[1], y: a[2], tx: a[1], ty: a[2], dx: a[1], dy: a[2], vx: 0, vy: 0,
+            r: a[3], type: ENEMY_NAME[a[4]] || 'fly', hp: a[5], maxHp: a[6], flash: 0,
+            animT: a[8], bossState: a[9] || undefined, attackPulse: a[10] || 0, rt: now,
+            reward: 0, rewardXp: 0, rewardGems: 0, dmg: 0, speed: 0, dead: false };
+      syncEnemies[eid] = e;
+    } else {
+      const dtms = Math.max(24, now - (e.rt || now));
+      e.vx = ((a[1] - e.tx) / dtms) * 0.5 + e.vx * 0.5;
+      e.vy = ((a[2] - e.ty) / dtms) * 0.5 + e.vy * 0.5;
+      e.tx = a[1]; e.ty = a[2];
+      e.flash = a[7] ? 100 : 0;
+      e.hp = a[5]; e.maxHp = a[6];
+      e.bossState = a[9] || undefined;
+      e.attackPulse = a[10] || 0;
+      e.animT = a[8];
+    }
+    e.rt = now;
+    e.r = a[3];
+    next.push(e);
+  }
+  for(const k in syncEnemies){ if(!alive[k]) delete syncEnemies[k]; }
+  enemies = next;
+  enemyProjectiles = (w.ep || []).map(p => ({ x:p[0], y:p[1], vx:p[2], vy:p[3], r:p[4], dmg:p[5], poison:!!p[6], isMeteor:!!p[7], life:p[8], dead:false }));
+  wave = w.wave || wave;
+  killsThisWave = w.kw || 0;
+  waveTargetKills = w.wt || waveTargetKills;
+  if(w.bh > 0){
+    currentBoss = { hp: w.bh, maxHp: w.bmh };
+    document.getElementById('bossBar').style.display = 'flex';
+    document.getElementById('bossFill').style.width = Math.max(0, (w.bh / w.bmh) * 100) + '%';
+  } else if(currentBoss){
+    currentBoss = null;
+    document.getElementById('bossBar').style.display = 'none';
+  }
+  if(w.gs === 'shop' && state !== 'shop'){
+    openShop();
+  } else if(w.gs === 'playing' && state !== 'playing'){
+    document.getElementById('shop').classList.remove('open');
+    state = 'playing';
+    showMobileControls(true);
+  } else if(w.gs === 'gameover' && state !== 'gameover' && w.go){
+    state = 'gameover'; playFailureSfx();
+    document.getElementById('bossBar').style.display = 'none';
+    document.getElementById('gameOverWave').textContent = w.go.msg || ('Caíste en la oleada ' + wave);
+    document.getElementById('goMoney').textContent = w.go.m;
+    document.getElementById('goXp').textContent = w.go.xp;
+    document.getElementById('goGems').textContent = w.go.g;
+    bankRunMoney(); refreshHubUI();
+    showScreen('gameOverPanel');
+    showMobileControls(false);
   }
 }
 
-// ---------- Enviar daño a guest ----------
+// ---------- Sincronizar posiciones de la salita/plaza (12.5 Hz) ----------
+function applyRemoteSalaPos(id, data){
+  if(id == null) return;
+  const key = String(id);
+  if(key === String(mpMyId)) return;
+  let op = mpOtherPlayers[key];
+  if(!op) op = mpOtherPlayers[key] = { dx: data.x, dy: data.y, nickname: data.n || 'Jugador', hp: 100, maxHp: 100, bul: [], tur: null };
+  const far = (op.x == null) || Math.abs(data.x - op.x) > 400 || Math.abs(data.y - op.y) > 400;
+  op.x = data.x; op.y = data.y;
+  if(far || op.dx == null){ op.dx = data.x; op.dy = data.y; }
+  op.moving = !!data.moving;
+  op.facingDir = data.facingDir || 'down';
+  op.walkFrame = data.walkFrame || 0;
+  if(data.n) op.nickname = data.n;
+  if(data.o){ op.owner = true; ownerNames.add(String(op.nickname || '').toLowerCase()); }
+}
+// Interpola enemigos y jugadores remotos para que se muevan suave con snapshots de 20 Hz
+function smoothRemoteEntities(dt){
+  const k = Math.min(1, dt / 70);
+  for(const id in mpOtherPlayers){
+    const o = mpOtherPlayers[id];
+    if(o.dx == null){ o.dx = o.x; o.dy = o.y; }
+    o.dx += (o.x - o.dx) * k;
+    o.dy += (o.y - o.dy) * k;
+  }
+  if(mpRoomCode && !mpIsHost){
+    const ke = Math.min(1, dt / 45);
+    for(const e of enemies){
+      if(e.dx == null){ e.dx = (e.tx == null ? e.x : e.tx); e.dy = (e.ty == null ? e.y : e.ty); }
+      const tx = (e.tx == null ? e.x : e.tx), ty = (e.ty == null ? e.y : e.ty);
+      e.dx += (tx - e.dx) * ke + (e.vx || 0) * dt;
+      e.dy += (ty - e.dy) * ke + (e.vy || 0) * dt;
+      e.x = e.dx; e.y = e.dy;
+      if(e.flash > 0) e.flash -= dt;
+    }
+  }
+}
+// El invitado no es autoridad del mundo: reporta sus impactos al host
+function reportHit(eid, dmg){
+  if(mpIsHost || !eid) return;
+  if(pendingHits.length < 24) pendingHits.push([eid, Math.round(dmg)]);
+}
+function applyGuestHits(hits, fromPeerId){
+  if(!mpIsHost || !hits || !hits.length) return;
+  let anyHit = false;
+  for(const h of hits){
+    const eid = h[0], dmg = h[1] || 0;
+    for(const en of enemies){
+      if(en.eid === eid && !en.dead){
+        en.hp -= dmg;
+        en.flash = 100;
+        en._hitBy = fromPeerId || en._hitBy || null;
+        if(en.hp <= 0) killEnemy(en, en._hitBy);
+        anyHit = true;
+        break;
+      }
+    }
+  }
+  if(anyHit) enemies = enemies.filter(e => !e.dead);
+}
+
+// ---------- Enviar daño a guest / a su torreta ----------
 function sendDamageToGuest(peerId, dmg){
   const conn = mpConnections[peerId]?.conn;
   if(conn && conn.open){ conn.send({ type: 'takeDamage', dmg: Math.round(dmg) }); }
+}
+function sendTurretDamage(peerId, dmg){
+  const conn = mpConnections[peerId]?.conn;
+  if(conn && conn.open){ conn.send({ type: 'turretDamage', dmg: Math.round(dmg) }); }
 }
 
 // ---------- Renderizar UI de sala ----------
@@ -1563,6 +2462,7 @@ function leaveRoom(){
   mpIsHost = false;
   mpReady = {};
   mpOtherPlayers = {};
+  syncEnemies = {}; pendingHits = []; netAccum = 0;
   if(mpPeer){ mpPeer.destroy(); mpPeer = null; }
   document.getElementById('roomInfo').innerHTML = '';
   document.getElementById('roomInfo').style.display = 'none';
@@ -1657,7 +2557,9 @@ function plazaHostMessage(peerId, msg){
   const c = plazaClients[peerId];
   if(!c || !msg) return;
   if(msg.type === 'plazaHello'){
-    c.nickname = String(msg.nickname || 'Jugador').slice(0, 16);
+    c.nickname = String(msg.nickname || 'Jugador').slice(0, 20);
+    c.owner = !!msg.owner;
+    if(c.owner && c.nickname) ownerNames.add(c.nickname.toLowerCase());
     sendPlazaSnap(true);
   } else if(msg.type === 'plazaPos'){
     c.x = msg.x; c.y = msg.y; c.room = msg.room | 0;
@@ -1729,7 +2631,7 @@ function plazaBuildSnap(roomId, forPeerId){
   for(const id in plazaClients){
     const c = plazaClients[id];
     if(c.room !== roomId || id === forPeerId) continue;
-    players.push({ id, nickname: c.nickname, x: Math.round(c.x), y: Math.round(c.y), moving: c.moving, facingDir: c.facingDir, walkFrame: c.walkFrame });
+    players.push({ id, nickname: c.nickname, owner: !!c.owner, x: Math.round(c.x), y: Math.round(c.y), moving: c.moving, facingDir: c.facingDir, walkFrame: c.walkFrame });
   }
   const room = (roomId >= 1 && roomId <= PUBLIC_ROOMS) ? plazaRooms[roomId - 1] : null;
   return {
@@ -1763,7 +2665,8 @@ function sendPlazaSnap(immediate){
   if(immediate){ push(); return; }
   if(plazaSnapQueued) return;
   plazaSnapQueued = true;
-  setTimeout(push, 90);
+  // En la plaza llena mandamos los snapshots un poco más espaciados
+  setTimeout(push, plazaTotal > 8 ? 140 : 90);
 }
 
 // ---------- Plaza pública: cliente ----------
@@ -1863,7 +2766,7 @@ function plazaJoinAsGuest(){
       plazaMyId = p.id;
       const conn = p.connect(PLAZA_PEER_ID, { metadata: { nickname: myNickname || 'Jugador' } });
       plazaConn = conn;
-      conn.on('open', () => { plazaRole = 'guest'; conn.send({ type: 'plazaHello', nickname: myNickname || 'Jugador' }); sendPlaza({ type: 'plazaRoom', roomId: mySalaRoom }); });
+      conn.on('open', () => { plazaRole = 'guest'; conn.send({ type: 'plazaHello', nickname: myNickname || 'Jugador', owner: isOwnerAccount() }); sendPlaza({ type: 'plazaRoom', roomId: mySalaRoom }); });
       conn.on('data', msg => plazaHandleHostMessage(msg));
       conn.on('close', () => { if(state === 'plaza' || state === 'lobby') plazaReconnect(); });
     });
@@ -1997,7 +2900,13 @@ async function startGameAsHostFromPlaza(code){
   plazaShutdown();
   try {
     mpRoomCode = code;
-    await initPeer(true, code);
+    const id = await initPeer(true, code);
+    if(!id){
+      mpRoomCode = null;
+      toast('No se pudo abrir la partida (¿sin internet?)');
+      returnToHub();
+      return;
+    }
     mpConnections = {};
     mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname || 'Jugador', isHost: true }];
     mpReady = {}; mpReady[mpMyId] = true;
@@ -2007,22 +2916,41 @@ async function startGameAsHostFromPlaza(code){
     returnToHub();
   }
 }
+// Conectarse a la partida del anfitrión, reintentando: el host acaba de
+// crear su sala y puede tardar un momento en quedar disponible.
 async function joinGameRoomFromPlaza(code){
   hideMpHuds();
   plazaShutdown();
-  try {
-    await initPeer(false);
-    const conn = mpPeer.connect(code, { metadata: { nickname: myNickname || 'Jugador' } });
-    conn.on('open', () => {
-      mpRoomCode = code;
-      mpConnections[code] = { peerId: code, nickname: 'Host', conn, data: {} };
-      mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname || 'Jugador', isHost: false }];
-      conn.send({ type: 'requestPlayers' });
-    });
-    conn.on('data', d => handleHostData(d, code));
-    conn.on('close', () => { leaveRoom(); returnToHub(); });
-  } catch(e){
-    alert('No se pudo entrar a la partida: ' + e.message);
+  let conectado = false;
+  for(let intento = 0; intento < 6 && !conectado; intento++){
+    try {
+      const id = await initPeer(false);
+      if(!id){ await new Promise(r => setTimeout(r, 600)); continue; }
+      const conn = mpPeer.connect(code, { metadata: { nickname: myNickname || 'Jugador', owner: isOwnerAccount() } });
+      conectado = await new Promise((resolve) => {
+        let done = false;
+        const finish = (v) => { if(!done){ done = true; resolve(v); } };
+        conn.on('open', () => {
+          mpRoomCode = code;
+          mpConnections[code] = { peerId: code, nickname: 'Host', conn, data: {} };
+          mpRoomPlayers = [{ peerId: mpMyId, nickname: myNickname || 'Jugador', isHost: false }];
+          try { conn.send({ type: 'requestPlayers' }); } catch(e){}
+          conn.on('close', () => { leaveRoom(); returnToHub(); });
+          finish(true);
+        });
+        conn.on('data', d => handleHostData(d, code));
+        conn.on('error', () => finish(false));
+        setTimeout(() => finish(false), 3500);
+      });
+    } catch(e){ conectado = false; }
+    if(!conectado){
+      try { if(mpPeer) mpPeer.destroy(); } catch(e){}
+      mpPeer = null;
+      await new Promise(r => setTimeout(r, 700));
+    }
+  }
+  if(!conectado){
+    toast('No se pudo conectar con la partida del anfitrión');
     returnToHub();
   }
 }
@@ -2055,11 +2983,12 @@ function roomView(i){
     ownerId: r.ownerId, ownerName: r.ownerName || null
   };
 }
-function salaChip(text, isMe, extra, isEmpty){
+function salaChip(text, isMe, extra, isEmpty, ownerFlag){
   const chip = document.createElement('div');
   chip.className = 'lobbyChip' + (isMe ? ' me' : '') + (isEmpty ? ' empty' : '');
   const name = document.createElement('span');
   name.textContent = text;
+  if(ownerFlag) name.classList.add('ownerName');
   chip.appendChild(name);
   if(extra){ const rdy = document.createElement('span'); rdy.className = 'rdy'; rdy.textContent = extra; chip.appendChild(rdy); }
   return chip;
@@ -2108,12 +3037,12 @@ function renderLobbyUI(){
   const list = el('lobbyPlayers');
   list.innerHTML = '';
   if(salaKind === 'private'){
-    mpRoomPlayers.forEach(p => list.appendChild(salaChip((p.isHost ? '👑 ' : '') + (p.nickname || 'Jugador'), p.peerId === mpMyId, p.isHost ? '' : (mpReady[p.peerId] ? '✅' : '⏳'))));
+    mpRoomPlayers.forEach(p => list.appendChild(salaChip((p.isHost ? '👑 ' : '') + (p.nickname || 'Jugador'), p.peerId === mpMyId, p.isHost ? '' : (mpReady[p.peerId] ? '✅' : '⏳'), false, !!p.owner || isOwnerUser(p.nickname))));
     for(let i = mpRoomPlayers.length; i < m.maxPlayers; i++) list.appendChild(salaChip('· libre ·', false, '', true));
   } else {
     const ownerId = (plazaYou && plazaYou.ownerId) || null;
-    list.appendChild(salaChip((ownerId === plazaMyId ? '👑 ' : '') + (myNickname || 'Tú') + ' (vos)', true, ''));
-    for(const id in plazaOthers) list.appendChild(salaChip((ownerId === id ? '👑 ' : '') + (plazaOthers[id].nickname || 'Jugador'), false, ''));
+    list.appendChild(salaChip((ownerId === plazaMyId ? '👑 ' : '') + (myNickname || 'Tú') + ' (vos)', true, '', false, isOwnerUser(myNickname)));
+    for(const id in plazaOthers) list.appendChild(salaChip((ownerId === id ? '👑 ' : '') + (plazaOthers[id].nickname || 'Jugador'), false, '', false, !!plazaOthers[id].owner || isOwnerUser(plazaOthers[id].nickname)));
     for(let i = m.count; i < m.maxPlayers; i++) list.appendChild(salaChip('· libre ·', false, '', true));
   }
 
@@ -2136,9 +3065,11 @@ function renderLobbyUI(){
     startBtn.style.display = 'none';
     readyBtn.style.display = 'none';
   }
+  const invBtn = el('lobbyInviteBtn');
+  if(invBtn) invBtn.style.display = (salaKind === 'private') ? 'inline-block' : 'none';
   el('lobbyHint').textContent = (salaKind === 'public')
     ? 'Salir te devuelve a la plaza para elegir otra sala · el dueño elige cupo y dificultad'
-    : 'Comparte el código · la partida arranca sola o cuando el host la inicie';
+    : 'Comparte el código o invitá a tus amigos · la partida arranca sola o cuando el host la inicie';
 }
 function renderPlazaUI(){
   if(state !== 'plaza') return;
@@ -2239,8 +3170,28 @@ function moveAvatar(dt, bounds){
   camera.x = (bounds.w > halfW * 2) ? Math.max(halfW, Math.min(bounds.w - halfW, player.x)) : bounds.w / 2;
   camera.y = (bounds.h > halfH * 2) ? Math.max(halfH, Math.min(bounds.h - halfH, player.y)) : bounds.h / 2;
 }
-function updateLobby(dt){ moveAvatar(dt, { w: SALA_W, h: SALA_H, top: SALA_WALL_H }); }
+// Interpola los avatares remotos de la salita y de la plaza (se ven a 60 fps aunque las
+// posiciones lleguen a 12.5 Hz: así la plaza con mucha gente se ve fluida)
+function smoothSalaAvatars(dt){
+  const k = Math.min(1, dt / 70);
+  for(const id in mpOtherPlayers){
+    const o = mpOtherPlayers[id];
+    if(o.x == null) continue;
+    if(o.dx == null){ o.dx = o.x; o.dy = o.y; }
+    o.dx += (o.x - o.dx) * k;
+    o.dy += (o.y - o.dy) * k;
+  }
+  for(const id in plazaOthers){
+    const o = plazaOthers[id];
+    if(o.x == null) continue;
+    if(o.dx == null){ o.dx = o.x; o.dy = o.y; }
+    o.dx += (o.x - o.dx) * k;
+    o.dy += (o.y - o.dy) * k;
+  }
+}
+function updateLobby(dt){ smoothSalaAvatars(dt); moveAvatar(dt, { w: SALA_W, h: SALA_H, top: SALA_WALL_H }); }
 function updatePlaza(dt){
+  smoothSalaAvatars(dt);
   moveAvatar(dt, { w: PLAZA_W, h: PLAZA_H, top: PLAZA_WALL_H });
   // Al pisar un cuadrito del piso te manda a esa salita
   if(performance.now() < plazaEnterGuard) return;
@@ -2255,7 +3206,10 @@ function updatePlaza(dt){
 // Envío de posiciones de la plaza (12.5 Hz alcanza y sobra)
 function sendPlazaPos(){
   const now = performance.now();
-  if(now - plazaLastPos < 80) return;
+  // Con mucha gente en la sala bajamos un poco la frecuencia para no saturar la conexión
+  const gente = Object.keys(plazaOthers).length;
+  const rate = gente >= 6 ? 160 : (gente >= 3 ? 110 : 80);
+  if(now - plazaLastPos < rate) return;
   plazaLastPos = now;
   const msg = { type: 'plazaPos', x: Math.round(player.x), y: Math.round(player.y), room: mySalaRoom,
                 moving: player.moving, facingDir: player.facingDir, walkFrame: player.walkFrame };
@@ -2269,8 +3223,9 @@ function sendSalaPos(){
   const now = performance.now();
   if(now - plazaLastPos < 80) return;
   plazaLastPos = now;
-  const msg = { type: 'salaPos', x: Math.round(player.x), y: Math.round(player.y),
-                moving: player.moving, facingDir: player.facingDir, walkFrame: player.walkFrame };
+  const msg = { type: 'salaPos', id: mpMyId, x: Math.round(player.x), y: Math.round(player.y),
+                moving: player.moving, facingDir: player.facingDir, walkFrame: player.walkFrame,
+                n: myNickname || 'Jugador', o: isOwnerAccount() ? 1 : 0 };
   broadcastToAll(msg);
 }
 function drawLobbyAvatar(x, y, moving, facingDir, walkFrame, nickname, isSelf){
@@ -2321,7 +3276,7 @@ function drawLobbyAvatar(x, y, moving, facingDir, walkFrame, nickname, isSelf){
     ctx.strokeStyle = isSelf ? 'rgba(255,80,80,0.9)' : 'rgba(255,255,255,0.18)';
     ctx.lineWidth = 1;
     ctx.strokeRect(x - w/2 - 5, y - 54, w + 10, 14);
-    ctx.fillStyle = isSelf ? '#ff9a9a' : '#ffffff';
+    ctx.fillStyle = isOwnerUser(nickname) ? '#ff5c5c' : (isSelf ? '#ff9a9a' : '#ffffff');
     ctx.fillText(label, x, y - 44);
   }
 }
@@ -2385,7 +3340,7 @@ function drawLobby(){
   for(const pid in ops){
     const op = ops[pid];
     if(!op || op.x == null) continue;
-    drawLobbyAvatar(op.x, op.y, !!op.moving, op.facingDir, op.walkFrame, op.nickname || 'Jugador', false);
+    drawLobbyAvatar((op.dx != null ? op.dx : op.x), (op.dy != null ? op.dy : op.y), !!op.moving, op.facingDir, op.walkFrame, op.nickname || 'Jugador', false);
   }
   drawLobbyAvatar(player.x, player.y, player.moving, player.facingDir, player.walkFrame, myNickname, true);
   ctx.restore();
@@ -2448,7 +3403,7 @@ function drawPlaza(){
   for(const pid in plazaOthers){
     const op = plazaOthers[pid];
     if(!op || op.x == null) continue;
-    drawLobbyAvatar(op.x, op.y, !!op.moving, op.facingDir, op.walkFrame, op.nickname || 'Jugador', false);
+    drawLobbyAvatar((op.dx != null ? op.dx : op.x), (op.dy != null ? op.dy : op.y), !!op.moving, op.facingDir, op.walkFrame, op.nickname || 'Jugador', false);
   }
   drawLobbyAvatar(player.x, player.y, player.moving, player.facingDir, player.walkFrame, myNickname, true);
   ctx.restore();
@@ -2499,7 +3454,7 @@ el('plazaLeaveBtn').onclick = () => {
   mySalaRoom = 0;
   returnToHub();
 };
-el('goPublicBtn').onclick = () => goPublicPlaza();
+el('goPublicBtn').onclick = () => { if(!requireMultiplayerAccount()) return; goPublicPlaza(); };
 
 // ---------- Hook al login para actualizar UI ----------
 const origLoginConfirm = document.getElementById('loginConfirmBtn').onclick;
@@ -2867,6 +3822,12 @@ document.querySelectorAll('#hubTabs button').forEach(btn => {
     document.querySelectorAll('.hubPanel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab'+btn.dataset.tab[0].toUpperCase()+btn.dataset.tab.slice(1)).classList.add('active');
+    if(btn.dataset.tab === 'multiplayer'){
+      renderAccountUI();
+      renderFriends();
+      if(!currentEmail) openAuthModal('login');
+      else if(!myNickname) openUsernameModal();
+    }
   };
 });
 
@@ -2908,6 +3869,9 @@ const camera = {x: WORLD_W/2, y: WORLD_H/2};
 let money = 0, moneyEarnedRun = 0;
 let wave = 1, bestWave = 1;
 let enemies = [], bullets = [], enemyProjectiles = [], particles = [], dmgNumbers = [];
+let eidSeq = 1;              // id estable de cada enemigo (para sincronizar daño entre jugadores)
+let pendingHits = [];        // [[eid, dmg], ...] impactos que el invitado reporta al host
+let hitSeq = 0;              // contador para vaciar pendingHits
 let keys = {}, mouse = {x:W/2,y:H/2,down:false};
 let state = 'hub';
 let spawnQueue = 0, spawnTimer = 0, waveTargetKills = 0, killsThisWave = 0;
@@ -3009,6 +3973,12 @@ function startRun(){
   money = 0; moneyEarnedRun = 0;
   wave = 1;
   enemies = []; bullets = []; enemyProjectiles = []; particles = []; dmgNumbers = [];
+  // Limpiar restos de la salita: sólo quedan los jugadores que siguen conectados a la sala
+  const keepPeers = {};
+  for(const id in mpConnections) keepPeers[id] = 1;
+  if(mpMyId) keepPeers[mpMyId] = 1;
+  for(const id in mpOtherPlayers){ if(!keepPeers[id]) delete mpOtherPlayers[id]; }
+  syncEnemies = {}; remoteTurrets = {}; pendingHits = [];
   costs = {...costs0};
   runStats = {money:0, xp:0, gems:0};
   // Reset torreta
@@ -3230,9 +4200,11 @@ function spawnEnemy(type){
   const {x,y} = edgeSpawnPos();
   const d = currentDiff;
   const pm = dynamicPowerMult(); // Multiplicador de poder dinámico
+  const eid = eidSeq++;
 
   if(type === 'boss'){
     const en = {
+      eid,
       x: WORLD_W/2, y: WORLD_H/2, r: 74, type:'boss',
       hp: Math.round((650 + wave*55) * 5 * d.hpMult * pm), maxHp: 0,
       speed: 0.85 * d.speedMult, reward: Math.round((90 + wave*3)*d.moneyMult), rewardXp: 90*d.xpMult, rewardGems: 18*d.gemMult,
@@ -3250,7 +4222,7 @@ function spawnEnemy(type){
   }
   if(type === 'caterpillar'){
     enemies.push({
-      x, y, r: 40, type:'caterpillar',
+      eid, x, y, r: 40, type:'caterpillar',
       hp: Math.round((90 + wave*7)*d.hpMult * pm), maxHp: 0,
       speed: 0.8*d.speedMult, reward: Math.round(18*d.moneyMult), rewardXp: 12*d.xpMult, rewardGems: 3*d.gemMult,
       dmg: Math.round(10*d.dmgMult * pm), flash:0, atkCooldown: 900, animT: Math.random()*1000, atkTimer: 0
@@ -3262,7 +4234,7 @@ function spawnEnemy(type){
   const tough = Math.random() < Math.min(0.05 + wave*0.02, 0.35);
   if(tough){
     enemies.push({
-      x, y, r: 24, type:'wasp',
+      eid, x, y, r: 24, type:'wasp',
       hp: Math.round((40 + wave*4)*d.hpMult * pm), maxHp:0,
       speed: (1.5 + Math.random()*0.5)*d.speedMult, reward: Math.round(8*d.moneyMult), rewardXp: 5*d.xpMult, rewardGems: 1*d.gemMult,
       dmg: Math.round(14*d.dmgMult * pm), flash: 0, animT: Math.random()*1000, atkTimer: 0
@@ -3270,7 +4242,7 @@ function spawnEnemy(type){
     enemies[enemies.length-1].maxHp = enemies[enemies.length-1].hp;
   } else {
     enemies.push({
-      x, y, r: 13, type:'fly',
+      eid, x, y, r: 13, type:'fly',
       hp: Math.round((14 + wave*2)*d.hpMult * pm), maxHp:0,
       speed: (1.1 + Math.random()*0.5)*d.speedMult, reward: Math.round(3*d.moneyMult), rewardXp: 2*d.xpMult, rewardGems: 0,
       dmg: Math.round(7*d.dmgMult * pm), flash: 0, animT: Math.random()*1000, atkTimer: 0
@@ -3318,14 +4290,20 @@ function tryShoot(t){
   });
 }
 
-function killEnemy(en){
+// byPeerId: si el que mató es un invitado, la recompensa va para él
+function killEnemy(en, byPeerId){
   en.dead = true;
   const reward = en.reward || 0;
-  money += reward; moneyEarnedRun += reward; runStats.money += reward;
   const xpR = en.rewardXp || 0, gemR = en.rewardGems || 0;
-  runStats.xp += xpR; runStats.gems += gemR;
-  addXp(xpR * (1));
-  addGems(gemR * (1 + meta.gemBonusLvl*0.1));
+  const conn = byPeerId ? (mpConnections[byPeerId] && mpConnections[byPeerId].conn) : null;
+  if(conn && conn.open){
+    try { conn.send({ type: 'reward', m: reward, xp: xpR, g: gemR }); } catch(e){}
+  } else {
+    money += reward; moneyEarnedRun += reward; runStats.money += reward;
+    runStats.xp += xpR; runStats.gems += gemR;
+    addXp(xpR * (1));
+    addGems(gemR * (1 + meta.gemBonusLvl*0.1));
+  }
   killsThisWave++;
   spawnParticles(en.x, en.y, '#ffd76a', en.type==='boss' ? 34 : (en.type==='caterpillar'?16:10));
   if(en.type === 'boss'){ currentBoss = null; bossIntroActive = false; document.getElementById('bossBar').style.display='none'; shake = 220; }
@@ -3427,8 +4405,9 @@ function update(dt, t){
     player.hp -= player.poisonDps * (dt/1000);
   }
 
-  // Guests NO generan sus propios enemigos - el host los sincroniza
-  const isGuest = mpRoomCode && !mpIsHost;
+  // Los invitados no generan enemigos: el host es la autoridad del mundo
+  const isGuest = !!(mpRoomCode && !mpIsHost);
+  smoothRemoteEntities(dt);
   if(!isGuest) {
     if(spawnQueue > 0){
       spawnTimer -= dt;
@@ -3449,7 +4428,11 @@ function update(dt, t){
   }
   for(const pid in mpOtherPlayers){
     const op = mpOtherPlayers[pid];
-    if(op && op.x) allPlayers.push({ x: op.x, y: op.y, r: 30, peerId: pid, hp: op.hp||100, isLocal: false });
+    if(!op) continue;
+    const ox = (op.dx != null) ? op.dx : op.x, oy = (op.dy != null) ? op.dy : op.y;
+    if(op.x != null) allPlayers.push({ x: ox, y: oy, r: 30, peerId: pid, hp: op.hp||100, isLocal: false });
+    // Las torretas de los demás también existen para los enemigos
+    if(op.tur) allPlayers.push({ x: op.tur.x, y: op.tur.y, r: op.tur.r, isTurret: true, remoteTurret: pid, hp: op.tur.hp||100, isLocal: false });
   }
 
   for(const en of enemies){
@@ -3560,7 +4543,8 @@ function update(dt, t){
             const atkCD = en.type==='wasp' ? 500 : 1000;
             const dmgAmount = en.dmg*(dt/1000)*4;
             if(pl.isTurret){
-              if(turret){ turret.hp -= dmgAmount; if(turret.hp <= 0){ destroyTurret(); } }
+              if(pl.remoteTurret){ sendTurretDamage(pl.remoteTurret, dmgAmount); }
+              else if(turret){ turret.hp -= dmgAmount; if(turret.hp <= 0){ destroyTurret(); } }
             } else if(pl.isLocal){ player.hp -= dmgAmount; player.hitFlash = 150; }
             else { sendDamageToGuest(pl.peerId, dmgAmount); }
             en.x -= (edx/elen)*2; en.y -= (edy/elen)*2;
@@ -3577,7 +4561,8 @@ function update(dt, t){
       const d = Math.hypot(p.x-pl.x, p.y-pl.y);
       if(d < pl.r + p.r){
         if(pl.isTurret){
-          if(turret){ turret.hp -= p.dmg; if(turret.hp <= 0) destroyTurret(); }
+          if(pl.remoteTurret){ sendTurretDamage(pl.remoteTurret, p.dmg); }
+          else if(turret){ turret.hp -= p.dmg; if(turret.hp <= 0) destroyTurret(); }
         } else if(pl.isLocal){ player.hp -= p.dmg; player.hitFlash = 150; player.poisonUntil = t+3000; player.poisonDps = 6; }
         else { sendDamageToGuest(pl.peerId, p.dmg); }
         p.dead = true;
@@ -3588,17 +4573,27 @@ function update(dt, t){
   }
   enemyProjectiles = enemyProjectiles.filter(p => !p.dead && p.life > 0);
 
-  // --- Torreta: disparo automático ---
+  } // fin de la parte autoritativa del host
+
+  // El invitado mueve los proyectiles enemigos localmente para que no den saltos
+  // entre snapshot y snapshot (el host los corrige 20 veces por segundo)
+  if(isGuest){
+    for(const p of enemyProjectiles){ p.x += p.vx * frameScale; p.y += p.vy * frameScale; p.life -= dt; }
+    enemyProjectiles = enemyProjectiles.filter(p => p.life > 0);
+  }
+
+  // ---- Torreta propia y balas propias: igual para host e invitado ----
   if(turret){
     turretLastShot += dt;
     if(turretLastShot >= turret.fireRate){
       turretLastShot = 0;
-      // Disparar al enemigo más cercano
       let closest = null, closestD = Infinity;
       for(const en of enemies){
         if(en.dead) continue;
-        const d = Math.hypot(en.x - turret.x, en.y - turret.y);
-        if(d < 500 && d < closestD){ closestD = d; closest = en; }
+        const ex = (en.dx != null) ? en.dx : en.x;
+        const ey = (en.dy != null) ? en.dy : en.y;
+        const d = Math.hypot(ex - turret.x, ey - turret.y);
+        if(d < 500 && d < closestD){ closestD = d; closest = { x: ex, y: ey }; }
       }
       if(closest){
         const a = Math.atan2(closest.y - turret.y, closest.x - turret.x);
@@ -3613,38 +4608,42 @@ function update(dt, t){
     }
   }
 
-
-
   for(const b of bullets){ b.x += b.vx * frameScale; b.y += b.vy * frameScale; }
   bullets = bullets.filter(b => b.x>-30 && b.x<WORLD_W+30 && b.y>-30 && b.y<WORLD_H+30);
 
+  // Impacto de las balas propias: el host aplica el daño, el invitado lo reporta
   for(const b of bullets){
     if(b.hitsLeft <= 0) continue;
     for(const en of enemies){
-      if(en.dead || b.hitSet.has(en)) continue;
-      const d = Math.hypot(b.x-en.x, b.y-en.y);
+      if(en.dead || b.hitSet.has(en.eid)) continue;
+      const ex = (en.dx != null) ? en.dx : en.x;
+      const ey = (en.dy != null) ? en.dy : en.y;
+      const d = Math.hypot(b.x-ex, b.y-ey);
       if(d < b.r + en.r){
         let dmg = b.dmg;
-        let isCrit = Math.random() < player.critChance;
+        const isCrit = Math.random() < player.critChance;
         if(isCrit) dmg *= 2;
-        en.hp -= dmg;
-        en.flash = 100;
-        b.hitSet.add(en);
+        b.hitSet.add(en.eid);
         b.hitsLeft--;
-        const kdx=(en.x-b.x), kdy=(en.y-b.y), klen=Math.hypot(kdx,kdy)||1;
-        const kb = (en.type==='boss'?2:7) * (1+player.knockbackBonus);
-        en.x += (kdx/klen)*kb; en.y += (kdy/klen)*kb;
+        en.flash = 100;
+        const kdx=(ex-b.x), kdy=(ey-b.y), klen=Math.hypot(kdx,kdy)||1;
+        if(mpIsHost){
+          const kb = (en.type==='boss'?2:7) * (1+player.knockbackBonus);
+          en.hp -= dmg;
+          en.x += (kdx/klen)*kb; en.y += (kdy/klen)*kb;
+          en._hitBy = null;
+          if(en.hp <= 0 && !en.dead) killEnemy(en);
+        } else {
+          reportHit(en.eid, dmg);
+        }
         spawnParticles(b.x,b.y,'#ffd76a',5);
-        dmgNumbers.push({x:en.x,y:en.y-en.r,text:Math.round(dmg)+(isCrit?'!':''),life:600,vy:-0.6,crit:isCrit});
-        // shake removed for smoother gameplay
-        if(en.hp <= 0 && !en.dead) killEnemy(en);
+        dmgNumbers.push({x:ex,y:ey-en.r,text:Math.round(dmg)+(isCrit?'!':''),life:600,vy:-0.6,crit:isCrit});
         if(b.hitsLeft <= 0) break;
       }
     }
   }
   bullets = bullets.filter(b => b.hitsLeft > 0);
-  enemies = enemies.filter(en => !en.dead);
-  } // cierra if(!isGuest)
+  if(mpIsHost) enemies = enemies.filter(en => !en.dead);
 
   for(const p of particles){ p.x += p.vx; p.y += p.vy; p.life -= dt; p.vx*=0.9; p.vy*=0.9; }
   particles = particles.filter(p => p.life > 0);
@@ -3929,15 +4928,86 @@ function draw(){
   drawSprite(playerSprite, 0, 0, player.r, player.hitFlash > 0, false, 0);
   ctx.restore();
 
+  // Tu nombre sobre el personaje (multijugador y solo)
+  if(myNickname){
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'center';
+    const nameW = ctx.measureText(myNickname).width;
+    const own = isOwnerAccount();
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(player.x - nameW/2 - 5, player.y - 60, nameW + 10, 14);
+    ctx.strokeStyle = own ? 'rgba(255,80,80,0.9)' : 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(player.x - nameW/2 - 5, player.y - 60, nameW + 10, 14);
+    ctx.fillStyle = own ? '#ff5c5c' : '#a8f0c0';
+    ctx.fillText(myNickname, player.x, player.y - 50);
+  }
+
+  // --- Torretas de los demás jugadores (y sus balas) ---
+  const turretSpriteImg = sprites.turretFront && sprites.turretFront.width ? sprites.turretFront : null;
+  for(const peerId in mpOtherPlayers){
+    const op = mpOtherPlayers[peerId];
+    if(!op) continue;
+    const ox = (op.dx != null) ? op.dx : op.x, oy = (op.dy != null) ? op.dy : op.y;
+    if(op.tur){
+      const t = op.tur;
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(t.x, t.y + t.r * 0.85, t.r * 0.55, t.r * 0.18, 0, 0, Math.PI*2);
+      ctx.fill();
+      if(turretSpriteImg) drawSprite(turretSpriteImg, t.x, t.y, t.r, false, false, 0);
+      else {
+        ctx.fillStyle = '#ffb347';
+        ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI*2); ctx.fill();
+      }
+      const tHp = Math.max(0, (t.hp || 0) / (t.maxHp || 1));
+      ctx.fillStyle = '#000';
+      ctx.fillRect(t.x - t.r, t.y - t.r - 10, t.r*2, 5);
+      ctx.fillStyle = tHp > 0.5 ? '#5fd65f' : tHp > 0.25 ? '#ffd76a' : '#ff4444';
+      ctx.fillRect(t.x - t.r, t.y - t.r - 10, t.r*2*tHp, 5);
+      ctx.fillStyle = '#ffb347';
+      ctx.font = '6px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('🏗️ TORRETA', t.x, t.y - t.r - 14);
+    }
+    // Balas de ese jugador (extrapoladas para que se vean fluidas)
+    if(op.bul && op.bul.length){
+      const el = Math.max(0, Math.min(5, (performance.now() - (op.t || performance.now())) / (1000/60)));
+      for(const b of op.bul){
+        const bx = b.x + b.vx * el, by = b.y + b.vy * el;
+        const ang = Math.atan2(b.vy, b.vx);
+        const dirs = ['right', 'downRight', 'down', 'downLeft', 'left', 'upLeft', 'up', 'upRight'];
+        const dirNames = ['right','downRight','down','downLeft','left','upLeft','up','upRight'];
+        const bsp = { right: sprites.bulletRight, downRight: sprites.bulletDownRight, down: sprites.bulletDown, downLeft: sprites.bulletDownLeft,
+                      left: sprites.bulletLeft, upLeft: sprites.bulletUpLeft, up: sprites.bulletUp, upRight: sprites.bulletUpRight };
+        let norm = ang < 0 ? ang + Math.PI*2 : ang;
+        const idx = Math.round(norm / (Math.PI/4)) % 8;
+        const spr = bsp[dirNames[idx]] || bsp.right;
+        if(spr && spr.width){
+          const scale = b.r * 2 / Math.max(spr.width, spr.height);
+          ctx.save();
+          ctx.translate(bx, by);
+          ctx.scale(scale, scale);
+          ctx.drawImage(spr, -spr.width/2, -spr.height/2);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = '#ffe38a';
+          ctx.fillRect(bx - b.r, by - b.r, b.r*2, b.r*2);
+        }
+      }
+    }
+  }
+
   // Dibujar otros jugadores (multijugador)
   for(const peerId in mpOtherPlayers){
     const op = mpOtherPlayers[peerId];
-    if(!op || !op.x) continue;
+    if(!op || op.x == null) continue;
+    const ox = (op.dx != null) ? op.dx : op.x, oy = (op.dy != null) ? op.dy : op.y;
     const opBob = op.moving ? Math.sin(performance.now() / 85) * 4 : 0;
     // Sombra
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    ctx.ellipse(op.x, op.y + 32, 22, 8, 0, 0, Math.PI*2);
+    ctx.ellipse(ox, oy + 32, 22, 8, 0, 0, Math.PI*2);
     ctx.fill();
     // Sprite
     const opWalkFrames = {
@@ -3956,24 +5026,26 @@ function draw(){
     }
     if(!opSprite || !opSprite.width) opSprite = sprites.player;
     ctx.save();
-    ctx.translate(op.x, op.y + opBob);
+    ctx.translate(ox, oy + opBob);
     drawSprite(opSprite, 0, 0, 30, false, false, 0);
     ctx.restore();
-    // Nametag
-    const isFriend = getFriends().some(f => f.nickname === op.nickname);
-    const tagColor = isFriend ? '#5fd65f' : '#ffffff';
+    // Nametag (rojo si es owner/creador, verde si es amigo)
+    const opNick = String(op.nickname || 'Jugador');
+    const isFriend = getFriends().some(f => f.username.toLowerCase() === opNick.toLowerCase());
+    const tagColor = (op.owner || isOwnerUser(opNick)) ? '#ff5c5c' : (isFriend ? '#5fd65f' : '#ffffff');
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.font = 'bold 8px monospace';
     ctx.textAlign = 'center';
-    const nameW = ctx.measureText(op.nickname).width;
-    ctx.fillRect(op.x - nameW/2 - 4, op.y - 44, nameW + 8, 12);
+    const nameW = ctx.measureText(opNick).width;
+    ctx.fillRect(ox - nameW/2 - 4, oy - 44, nameW + 8, 12);
     ctx.fillStyle = tagColor;
-    ctx.fillText(op.nickname, op.x, op.y - 35);
+    ctx.fillText(opNick, ox, oy - 35);
     // Barra de vida
+    const opHpPct = Math.max(0, (op.hp || 0) / (op.maxHp || 100));
     ctx.fillStyle = '#000';
-    ctx.fillRect(op.x - 15, op.y - 50, 30, 3);
-    ctx.fillStyle = '#5fd65f';
-    ctx.fillRect(op.x - 15, op.y - 50, 30 * Math.max(0, (op.hp||100)/100), 3);
+    ctx.fillRect(ox - 15, oy - 50, 30, 3);
+    ctx.fillStyle = opHpPct > 0.5 ? '#5fd65f' : opHpPct > 0.25 ? '#ffd76a' : '#ff4444';
+    ctx.fillRect(ox - 15, oy - 50, 30 * opHpPct, 3);
   }
 
 
@@ -4067,6 +5139,11 @@ function draw(){
   ctx.restore();
 
   document.getElementById('hpTxt').textContent = `❤ ${Math.max(0,Math.ceil(player.hp))}/${player.maxHp}`;
+  const hudName = document.getElementById('hudName');
+  if(hudName){
+    hudName.textContent = myNickname ? ('👤 ' + myNickname + (isOwnerAccount() ? ' · OWNER' : '')) : '👤 Invitado';
+    hudName.classList.toggle('ownerName', isOwnerAccount());
+  }
   const maxLabel = currentDiff.maxWaves === Infinity ? '∞' : currentDiff.maxWaves;
   document.getElementById('waveTxt').textContent = state==='shop' ? `Oleada ${wave}/${maxLabel} (preparando)` : `Oleada ${wave}/${maxLabel} — ${killsThisWave}/${waveTargetKills}`;
   document.getElementById('moneyTxt').textContent = `💰 ${money}`;
@@ -4084,7 +5161,7 @@ function loop(t){
     if(state === 'lobby') drawLobby();
     else if(state === 'plaza') drawPlaza();
     else draw();
-    broadcastGameState();
+    netTick(dt);
   }
   requestAnimationFrame(loop);
 }
@@ -4122,6 +5199,8 @@ document.getElementById('buySpeed').onclick = () => {
 document.getElementById('continueBtn').onclick = () => {
   shopEl.classList.remove('open');
   showMobileControls(true);
+  // En multijugador la oleada la arranca el anfitrión: el invitado sólo espera
+  if(mpRoomCode && !mpIsHost){ saveProfile(); return; }
   saveProfile();
   // Mostrar botón de torreta si tiene equipada y no hay cooldown
   const turretBtn = document.getElementById('turretBtn');
@@ -4136,19 +5215,16 @@ window.addEventListener('beforeunload', () => { saveProfile(); });
 
 // --- AUTO-LOGIN: recuperar sesión guardada al cargar la página ---
 (function autoLogin(){
-  if(!storageAvailable) return;
-  const saved = localStorage.getItem('insectgames_lastEmail');
-  if(saved && saved.includes('@')){
-    currentEmail = saved;
-    loadProfile(saved);
-    if(isCheatEmail(saved)) applyCheatProfile();
-    document.getElementById('authStatus').textContent = `✅ ${saved}`;
-    document.getElementById('openLoginBtn').style.display = 'none';
-    document.getElementById('logoutBtn').style.display = 'inline-block';
-    refreshHubUI();
-    updateNicknameUI();
-    renderFriends();
+  if(!storageAvailable){ renderAccountUI(); return; }
+  let saved = null;
+  try { saved = localStorage.getItem(SESSION_KEY) || localStorage.getItem('insectgames_lastEmail'); } catch(e){}
+  const acc = saved ? getAccount(saved) : null;
+  if(acc && saved && saved.includes('@')){
+    startSession(saved);
+  } else {
+    renderAccountUI();
   }
+  renderFriends();
 })();
 
 // ========================================================
