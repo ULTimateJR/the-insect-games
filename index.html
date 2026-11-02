@@ -510,6 +510,16 @@
   .mpShopCard .buy:disabled { opacity:0.4; }
   .plazaInvGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
   #invToggleBtn:active { transform:translateY(2px); }
+  /* En teléfono el inventario portátil va como botoncito chico abajo, centrado */
+  @media (pointer:coarse), (hover:none) {
+    #invToggleBtn {
+      top:auto; right:auto; left:50%; bottom:max(14px, env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      width:46px; height:46px; padding:0; font-size:15px; border-radius:12px;
+      opacity:0.92;
+    }
+    #invToggleBtn:active { transform:translateX(-50%) translateY(2px); }
+  }
   /* ---- CAÍDO / REVIVIR / ESPECTAR ---- */
   #downModal, #deadModal {
     position:absolute; inset:0; z-index:80; background:rgba(6,0,0,0.72);
