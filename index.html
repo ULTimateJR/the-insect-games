@@ -635,7 +635,6 @@
       <button class="active" data-tab="play">Jugar</button>
       <button data-tab="shop">Tienda</button>
       <button data-tab="upgrades">Mejoras</button>
-      <button data-tab="inventory">Inventario</button>
       <button data-tab="multiplayer">Multijugador</button>
     </div>
 
@@ -693,12 +692,6 @@
       </div>
     </div>
 
-    <div class="hubPanel" id="tabInventory">
-      <h2>Pasivos (equipa hasta tu límite de ranuras)</h2>
-      <div class="invList" id="passiveInvList"></div>
-      <h2>Mods de habilidad</h2>
-      <div class="invList" id="weaponInvList"></div>
-    </div>
 
     <div class="hubPanel" id="tabMultiplayer">
       <div class="mpSection">
@@ -4401,6 +4394,8 @@ document.getElementById('buyWeaponCrate').onclick = () => {
 function renderInventory(){
   const pWrap = document.getElementById('passiveInvList');
   const wWrap = document.getElementById('weaponInvList');
+  // El inventario del menú se sacó: ahora se usa el portátil (tecla X / botón 🎒)
+  if(!pWrap || !wWrap) return;
   pWrap.innerHTML = '';
   wWrap.innerHTML = '';
   for(const item of meta.passiveInv){
