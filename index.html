@@ -509,6 +509,7 @@
   .mpShopCard .buy { font-size:8px; padding:7px 10px; white-space:nowrap; }
   .mpShopCard .buy:disabled { opacity:0.4; }
   .plazaInvGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
+  #invToggleBtn:active { transform:translateY(2px); }
   /* ---- CAÍDO / REVIVIR / ESPECTAR ---- */
   #downModal, #deadModal {
     position:absolute; inset:0; z-index:80; background:rgba(6,0,0,0.72);
@@ -580,6 +581,7 @@
     <div id="moneyTxt">💰 0</div>
   </div>
   <button id="soundToggleBtn" title="Encender/apagar el sonido" style="position:fixed; top:10px; right:10px; z-index:300; background:linear-gradient(135deg,#2a2036,#171122); border:2px solid #6a5acd; color:#e8dcff; font-family:'Press Start 2P',monospace; font-size:10px; padding:8px 10px; border-radius:8px; cursor:pointer; box-shadow:0 3px 0 #0d0a14;">🔇 Silencio</button>
+  <button id="invToggleBtn" title="Inventario portátil (X)" style="position:fixed; top:52px; right:10px; z-index:300; background:linear-gradient(135deg,#1f2a3a,#101720); border:2px solid #7ad0ff; color:#dff0ff; font-family:'Press Start 2P',monospace; font-size:12px; padding:7px 10px; border-radius:8px; cursor:pointer; box-shadow:0 3px 0 #0a1118;">🎒</button>
   <div id="bossBar">
     <div class="label">JEFE ESCARABAJO</div>
     <div class="track"><div class="fill" id="bossFill"></div></div>
@@ -743,7 +745,7 @@
       <button class="smallBtn" id="plazaLeaveBtn">🚪 Salir del servidor</button>
     </div>
     <div id="plazaBottom">
-      <div id="plazaHint">Pisá el círculo 🛒 TIENDA o 🎒 INVENTARIO · pisá un cuadrito del piso para entrar a esa sala · 4 salas · máx. 5 jugadores</div>
+      <div id="plazaHint">Pisá el círculo 🛒 TIENDA o 🎒 INVENTARIO · tecla X abre el inventario portátil en cualquier momento · pisá un cuadrito para entrar a esa sala · 4 salas · máx. 5 jugadores</div>
     </div>
   </div>
 
@@ -761,9 +763,14 @@
   <!-- INVENTARIO RÁPIDO (círculo de la plaza) -->
   <div id="plazaInvModal" class="nicknameModal">
     <div class="plazaPanelCard">
-      <h3>🎒 INVENTARIO</h3>
-      <div class="sub">Tocá un ítem para equiparlo o desequiparlo sin salir del servidor.</div>
-      <div class="coins">🎽 Pasivos <span id="plazaInvPassiveCount">0/0</span> · 🔧 Mods <span id="plazaInvWeaponCount">0/0</span></div>
+      <h3>🎒 INVENTARIO PORTÁTIL · tecla X</h3>
+      <div class="sub">Se abre en cualquier momento (plaza, sala o partida) con la tecla X o el botón 🎒. Tocá un ítem para equiparlo o desequiparlo sin salir.</div>
+      <div class="coins">⚡ Pociones de equipo · 🎽 Pasivos <span id="plazaInvPassiveCount">0/0</span> · 🔧 Mods <span id="plazaInvWeaponCount">0/0</span></div>
+      <h3 style="font-size:10px;">⚡ POCIONES DE EQUIPO</h3>
+      <div class="sub" style="margin-bottom:6px;">Se gastan al usarlas y el bonus dura solo la partida en curso. Vos decidís cuándo activarlas.</div>
+      <div id="plazaPotionList"></div>
+      <div class="sub" id="potionHint"></div>
+      <h3 style="font-size:10px;margin-top:10px;">🧪 PASIVOS Y MODS</h3>
       <div class="plazaInvGrid" id="plazaInvPassiveList"></div>
       <div class="plazaInvGrid" id="plazaInvWeaponList"></div>
       <button class="smallBtn" id="plazaInvClose">Cerrar</button>
@@ -1061,6 +1068,7 @@ const meta = {
   equippedPassive: [], equippedWeapon: [],
   passiveCrateCost: 20, weaponCrateCost: 25,
   mpShop: { speed: 0, revive: 0, hp: 0, teamHp: 0, dmg: 0 },
+  mpPotions: { speed: {}, teamHp: {} },
 };
 function xpToNext(level){ return Math.floor(80 + level*45); }
 function addXp(amount){
@@ -1099,6 +1107,20 @@ function loadProfile(email){
 function ensureMpShop(){
   const def = { speed: 0, revive: 0, hp: 0, teamHp: 0, dmg: 0 };
   meta.mpShop = Object.assign(def, (meta.mpShop && typeof meta.mpShop === 'object') ? meta.mpShop : {});
+  if(!meta.mpPotions || typeof meta.mpPotions !== 'object') meta.mpPotions = { speed:{}, teamHp:{} };
+  if(!meta.mpPotions.speed || typeof meta.mpPotions.speed !== 'object') meta.mpPotions.speed = {};
+  if(!meta.mpPotions.teamHp || typeof meta.mpPotions.teamHp !== 'object') meta.mpPotions.teamHp = {};
+  // Perfiles viejos: los bonus de equipo permanentes se convierten en pociones de 1 partida
+  if((meta.mpShop.speed | 0) > 0){
+    const lvl = Math.max(1, Math.min(5, meta.mpShop.speed | 0));
+    meta.mpPotions.speed[String(lvl)] = ((meta.mpPotions.speed[String(lvl)] | 0) + 1);
+    meta.mpShop.speed = 0;
+  }
+  if((meta.mpShop.teamHp | 0) > 0){
+    const lvl = Math.max(1, Math.min(4, meta.mpShop.teamHp | 0));
+    meta.mpPotions.teamHp[String(lvl)] = ((meta.mpPotions.teamHp[String(lvl)] | 0) + 1);
+    meta.mpShop.teamHp = 0;
+  }
 }
 const CHEAT_EMAIL = 'jorgito19pera@gmail.com';
 function isCheatEmail(email){ return email && email.trim().toLowerCase() === CHEAT_EMAIL; }
@@ -2110,7 +2132,7 @@ function handleIncomingConnection(conn){
       if(state === 'playing' || state === 'shop') conn.send({ type: 'startGame', diffId: currentDiff.id });
       // Compartimos los bonus de equipo de la tienda con el que entra
       if(conn.open){
-        try { conn.send({ type: 'teamPerk', speed: mpShopLvl('speed'), hp: mpShopLvl('teamHp'), n: myNickname || 'Jugador' }); } catch(e){}
+        try { conn.send({ type: 'teamPerk', speed: mpTeamPerks.speed | 0, hp: mpTeamPerks.hp | 0, n: myNickname || 'Jugador' }); } catch(e){}
       }
     }
     conn.on('data', (data) => { handleGuestData(data, conn.peer); });
@@ -2628,6 +2650,7 @@ function leaveRoom(){
   document.getElementById('roomInfo').style.display = 'none';
   downState = null; player.dead = false; spectateId = null;
   reviveTarget = null; reviveProg = 0; reviveHold = false;
+  mpTeamPerks = { speed: 0, hp: 0 };
   el('downModal').style.display = 'none';
   el('deadModal').style.display = 'none';
   el('spectateBar').style.display = 'none';
@@ -3648,24 +3671,38 @@ const PLAZA_PORTALS = [
 ];
 let plazaPanel = null;          // null | 'shop' | 'inv'
 let plazaPortalGuard = 0;       // evita que el panel se reabra al cerrarlo
+let portableInvOpen = false;    // inventario portátil abierto con X (frena el movimiento)
 
 // ---------- Tienda multijugador: SOLO monedas ----------
+// Mejoras PROPIAS: permanentes y por niveles
 const MP_SHOP_ITEMS = [
-  { id:'speed',  icon:'⚡', name:'Botas de equipo',    desc:'+8% de velocidad para todo el equipo', max:5, base:2000, mult:1.7, team:true },
-  { id:'teamHp', icon:'💚', name:'Vida de equipo',     desc:'+10 de vida máxima para todo el equipo', max:4, base:2600, mult:1.7, team:true },
-  { id:'hp',     icon:'❤',  name:'Vida propia',        desc:'+15 de vida máxima para vos', max:5, base:1600, mult:1.6, team:false },
-  { id:'revive', icon:'🩹', name:'Revivir veloz',      desc:'Revivís compañeros 25% más rápido por nivel', max:4, base:2400, mult:1.7, team:false },
-  { id:'dmg',    icon:'🗡', name:'Munición reforzada', desc:'+5% de daño en partida', max:5, base:2200, mult:1.6, team:false },
+  { id:'hp',     icon:'❤',  name:'Vida propia',        desc:'+15 de vida máxima para vos', max:5, base:1600, mult:1.6 },
+  { id:'revive', icon:'🩹', name:'Revivir veloz',      desc:'Revivís compañeros 25% más rápido por nivel', max:4, base:2400, mult:1.7 },
+  { id:'dmg',    icon:'🗡', name:'Munición reforzada', desc:'+5% de daño en partida', max:5, base:2200, mult:1.6 },
+];
+// Pociones de EQUIPO: se venden por nivel y duran UNA sola partida multijugador
+const MP_TEAM_ITEMS = [
+  { id:'speed',  icon:'⚡', name:'Poción de velocidad', unit:'%',  per:8,  max:5, base:1200, mult:1.6 },
+  { id:'teamHp', icon:'💚', name:'Poción de vida',      unit:' HP', per:10, max:4, base:1500, mult:1.6 },
 ];
 function mpShopLvl(id){ ensureMpShop(); return Math.max(0, meta.mpShop[id] | 0); }
 function mpShopCost(item){ return Math.round(item.base * Math.pow(item.mult, mpShopLvl(item.id))); }
 
+function shopHeader(txt, sub){
+  const d = document.createElement('div');
+  d.style.cssText = 'text-align:left;margin:12px 0 6px;';
+  d.innerHTML = '<div style="color:#ffd76a;font-size:9px;">' + txt + '</div>' +
+    '<div style="color:#9ab;font-size:7px;margin-top:2px;line-height:1.4;">' + sub + '</div>';
+  return d;
+}
 function renderPlazaShop(){
   const wrap = el('plazaShopList');
   const coins = el('plazaShopCoins');
   if(coins) coins.textContent = meta.bankMoney.toLocaleString();
   if(!wrap) return;
+  ensureMpShop();
   wrap.innerHTML = '';
+  wrap.appendChild(shopHeader('⭐ MEJORAS PROPIAS · PERMANENTES', 'Quedan para siempre en tu cuenta y suben de nivel. Se pagan con monedas 💰.'));
   MP_SHOP_ITEMS.forEach(item => {
     const lvl = mpShopLvl(item.id);
     const maxed = lvl >= item.max;
@@ -3673,7 +3710,7 @@ function renderPlazaShop(){
     const card = document.createElement('div');
     card.className = 'mpShopCard' + (maxed ? ' maxed' : '');
     card.innerHTML = '<div class="ico">' + item.icon + '</div>' +
-      '<div class="info"><div class="nm">' + item.name + (item.team ? ' · EQUIPO' : '') + '</div>' +
+      '<div class="info"><div class="nm">' + item.name + '</div>' +
       '<div class="ds">' + item.desc + '</div>' +
       '<div class="lvl">Nivel ' + lvl + '/' + item.max + '</div></div>';
     const btn = document.createElement('button');
@@ -3684,6 +3721,109 @@ function renderPlazaShop(){
     card.appendChild(btn);
     wrap.appendChild(card);
   });
+  wrap.appendChild(shopHeader('⚡ POCIONES DE EQUIPO · 1 PARTIDA', 'Se compran por nivel y se guardan en tu inventario portátil (X). Las gastás vos cuando quieras y el bonus va para todo el equipo hasta que termina esa partida.'));
+  MP_TEAM_ITEMS.forEach(item => {
+    for(let lvl = 1; lvl <= item.max; lvl++){
+      const cost = Math.round(item.base * Math.pow(item.mult, lvl - 1));
+      const owned = ((meta.mpPotions[item.id] || {})[String(lvl)]) | 0;
+      const card = document.createElement('div');
+      card.className = 'mpShopCard';
+      card.innerHTML = '<div class="ico">' + item.icon + '</div>' +
+        '<div class="info"><div class="nm">' + item.name + ' · Nivel ' + lvl + '</div>' +
+        '<div class="ds">+' + (item.per * lvl) + item.unit + ' para todo el equipo · dura 1 partida</div>' +
+        '<div class="lvl">En tu inventario: ' + owned + '</div></div>';
+      const btn = document.createElement('button');
+      btn.className = 'smallBtn buy';
+      btn.textContent = '💰 ' + cost.toLocaleString();
+      btn.disabled = meta.bankMoney < cost;
+      btn.onclick = () => buyTeamPotion(item.id, lvl);
+      card.appendChild(btn);
+      wrap.appendChild(card);
+    }
+  });
+}
+
+function buyTeamPotion(id, lvl){
+  const item = MP_TEAM_ITEMS.find(i => i.id === id);
+  if(!item || lvl < 1 || lvl > item.max) return;
+  const cost = Math.round(item.base * Math.pow(item.mult, lvl - 1));
+  if(meta.bankMoney < cost){ toast('Te faltan monedas: necesitás 💰' + cost.toLocaleString()); return; }
+  ensureMpShop();
+  meta.bankMoney -= cost;
+  const key = String(lvl);
+  meta.mpPotions[id][key] = ((meta.mpPotions[id][key] | 0) + 1);
+  saveProfile();
+  playBtnSfx();
+  refreshHubUI();
+  renderPlazaShop();
+  toast('🧪 ' + item.name + ' nivel ' + lvl + ' agregada al inventario');
+}
+
+function potionRows(){
+  ensureMpShop();
+  const out = [];
+  MP_TEAM_ITEMS.forEach(item => {
+    const store = meta.mpPotions[item.id] || {};
+    Object.keys(store).map(Number).sort((a, b) => a - b).forEach(lvl => {
+      const count = store[String(lvl)] | 0;
+      if(count > 0) out.push({ item, lvl, count });
+    });
+  });
+  return out;
+}
+function renderPotionsUI(){
+  const wrap = el('plazaPotionList');
+  if(!wrap) return;
+  const inMatch = isMpMatch() && (state === 'playing' || state === 'shop');
+  const hint = el('potionHint');
+  if(hint) hint.textContent = inMatch
+    ? '✅ Estás en partida: podés usar las pociones ahora mismo.'
+    : '⏳ Entrá a una partida multijugador para poder usarlas.';
+  wrap.innerHTML = '';
+  const rows = potionRows();
+  if(!rows.length){
+    wrap.innerHTML = '<div class="sub">No tenés pociones de equipo: compralas en el círculo 🛒 TIENDA.</div>';
+    return;
+  }
+  rows.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'mpShopCard';
+    card.innerHTML = '<div class="ico">' + r.item.icon + '</div>' +
+      '<div class="info"><div class="nm">' + r.item.name + ' · Nivel ' + r.lvl + '</div>' +
+      '<div class="ds">+' + (r.item.per * r.lvl) + r.item.unit + ' para todo el equipo</div>' +
+      '<div class="lvl">Tenés: ' + r.count + '</div></div>';
+    const btn = document.createElement('button');
+    btn.className = 'smallBtn buy';
+    btn.textContent = inMatch ? 'Usar' : 'En partida';
+    btn.disabled = !inMatch;
+    btn.onclick = () => useTeamPotion(r.item.id, r.lvl);
+    card.appendChild(btn);
+    wrap.appendChild(card);
+  });
+}
+function useTeamPotion(id, lvl){
+  const item = MP_TEAM_ITEMS.find(i => i.id === id);
+  if(!item) return;
+  if(!isMpMatch() || (state !== 'playing' && state !== 'shop')){
+    toast('Las pociones de equipo solo se usan en una partida multijugador');
+    return;
+  }
+  ensureMpShop();
+  const key = String(lvl);
+  const have = (meta.mpPotions[id] && meta.mpPotions[id][key]) | 0;
+  if(have <= 0){ toast('No te quedan pociones de ese nivel'); return; }
+  meta.mpPotions[id][key] = have - 1;
+  const perkKey = (id === 'speed') ? 'speed' : 'hp';
+  const before = mpTeamPerks[perkKey] | 0;
+  mpTeamPerks[perkKey] = Math.max(before, lvl);
+  saveProfile();
+  applyMpPerks();
+  shareTeamPerks();
+  playBtnSfx();
+  renderPlazaInv();
+  toast(lvl > before
+    ? ('✨ ' + item.name + ' nivel ' + lvl + ' activa para todo el equipo')
+    : 'Ya tenían un bonus de equipo igual o mejor activo');
 }
 
 function buyMpShopItem(id){
@@ -3700,11 +3840,11 @@ function buyMpShopItem(id){
   meta.mpShop[id] = lvl + 1;
   saveProfile();
   playBtnSfx();
-  if(item.team) shareTeamPerks();
   refreshHubUI();
   renderPlazaShop();
   toast('✅ ' + item.name + ' · nivel ' + (lvl + 1));
 }
+
 
 function renderPlazaInv(){
   const pw = el('plazaInvPassiveList'), ww = el('plazaInvWeaponList');
@@ -3755,6 +3895,7 @@ function renderPlazaInv(){
       playBtnSfx();
     }));
   });
+  renderPotionsUI();
 }
 
 function openPlazaPanel(kind){
@@ -3764,14 +3905,28 @@ function openPlazaPanel(kind){
     el('plazaShopModal').style.display = 'flex';
   } else {
     plazaPanel = 'inv';
+    portableInvOpen = true;
     renderPlazaInv();
     el('plazaInvModal').style.display = 'flex';
   }
   player.moving = false;
   playBtnSfx();
 }
+function openPortableInv(){
+  if(state === 'plaza' && !plazaPanel){ openPlazaPanel('inv'); return; }
+  if(plazaPanel === 'shop') hidePlazaPanels();
+  portableInvOpen = true;
+  renderPlazaInv();
+  el('plazaInvModal').style.display = 'flex';
+  playBtnSfx();
+}
+function togglePortableInv(){
+  if(plazaPanel === 'inv' || el('plazaInvModal').style.display === 'flex'){ closePlazaPanel(); return; }
+  openPortableInv();
+}
 function hidePlazaPanels(){
   plazaPanel = null;
+  portableInvOpen = false;
   el('plazaShopModal').style.display = 'none';
   el('plazaInvModal').style.display = 'none';
 }
@@ -3823,6 +3978,7 @@ function exitPublicServer(){
   toast('Saliste del servidor público');
   returnToHub();
 }
+el('invToggleBtn').onclick = togglePortableInv;
 el('plazaShopClose').onclick = closePlazaPanel;
 el('plazaInvClose').onclick = closePlazaPanel;
 el('plazaShopModal').addEventListener('click', e => { if(e.target.id === 'plazaShopModal') closePlazaPanel(); });
@@ -3846,8 +4002,9 @@ function reviveSeconds(){ return Math.max(1.1, 2.6 / (1 + mpShopLvl('revive') * 
 
 function applyMpPerks(){
   if(!runBaseStats) return;
-  const sp = Math.max(mpShopLvl('speed'), mpTeamPerks.speed | 0);
-  const thp = Math.max(mpShopLvl('teamHp'), mpTeamPerks.hp | 0);
+  // Sólo las pociones ACTIVAS en esta partida dan bonus de equipo
+  const sp = mpTeamPerks.speed | 0;
+  const thp = mpTeamPerks.hp | 0;
   const newMax = Math.round(runBaseStats.maxHp + mpShopLvl('hp') * 15 + thp * 10);
   const grew = newMax - player.maxHp;
   player.maxHp = newMax;
@@ -3858,7 +4015,7 @@ function applyMpPerks(){
 }
 function shareTeamPerks(){
   if(!mpRoomCode) return;
-  broadcastToAll({ type:'teamPerk', speed: mpShopLvl('speed'), hp: mpShopLvl('teamHp'), n: myNickname || 'Jugador' });
+  broadcastToAll({ type:'teamPerk', speed: mpTeamPerks.speed | 0, hp: mpTeamPerks.hp | 0, n: myNickname || 'Jugador' });
 }
 function applyTeamPerk(d){
   if(!d) return;
@@ -3902,6 +4059,7 @@ function updateDownUI(){
 function reviveLocal(){
   if(!downState) return;
   downState = null;
+  applyMpPerks();
   player.hp = Math.max(35, Math.round(player.maxHp * 0.55));
   player.hitFlash = 250;
   el('downModal').style.display = 'none';
@@ -4609,8 +4767,6 @@ function startRun(){
   applyMpPerks();
   player.hp = player.maxHp;
   player.hitFlash = 0;
-  setTimeout(shareTeamPerks, 900);
-  setTimeout(shareTeamPerks, 2400);
   // Reset torreta
   turret = null; turretCooldown = 0; turretLastShot = 0;
   // Mostrar/ocultar botón de torreta
@@ -4680,6 +4836,7 @@ window.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   if(e.key===' ') e.preventDefault();
   if(e.key.toLowerCase()==='q' && state==='playing' && !iAmInactive()) placeTurret();
+  if(e.key.toLowerCase()==='x' && !(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))) togglePortableInv();
   if(e.key.toLowerCase()==='f') toggleFullscreen();
   // Menu pausado con ESC (solo solitario)
   if(e.key === 'Escape' && state === 'playing' && !mpRoomCode){
@@ -4969,7 +5126,7 @@ function update(dt, t){
     const mdy = window.mobileInput.dy();
     if(Math.abs(mdx)>0.1 || Math.abs(mdy)>0.1){ dx += mdx; dy += mdy; }
   }
-  if(inactive){ dx = 0; dy = 0; }
+  if(inactive || portableInvOpen){ dx = 0; dy = 0; }
   const len = Math.hypot(dx,dy) || 1;
   player.moving = (dx!==0||dy!==0);
   const frameScale = dt / 16.667; // escala de tiempo normalizada a 60fps
@@ -5029,7 +5186,7 @@ function update(dt, t){
     camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), camY));
   }
 
-  if(!inactive && (mouse.down || keys[' '])) tryShoot(t);
+  if(!inactive && !portableInvOpen && (mouse.down || keys[' '])) tryShoot(t);
   if(player.hitFlash > 0) player.hitFlash -= dt;
   if(shake > 0) shake -= dt;
 
