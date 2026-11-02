@@ -486,6 +486,63 @@
     text-shadow:1px 1px 0 #000; background:rgba(0,0,0,0.5);
     padding:4px 10px; border-radius:6px;
   }
+  /* ---- PANELES DE LA PLAZA (tienda / inventario) ---- */
+  .plazaPanelCard {
+    background:#15151f; border:3px solid #ffd76a; border-radius:12px;
+    padding:16px 18px; width:min(560px, 92vw); max-height:82vh; overflow-y:auto;
+    text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.6);
+  }
+  .plazaPanelCard h3 { color:#ffd76a; font-size:12px; margin-bottom:6px; letter-spacing:1px; }
+  .plazaPanelCard .sub { color:#9ab; font-size:8px; margin-bottom:10px; line-height:1.5; }
+  .plazaPanelCard .coins { color:#ffd76a; font-size:10px; margin-bottom:10px; }
+  .mpShopCard {
+    display:flex; align-items:center; gap:10px; text-align:left;
+    background:#1e1e2b; border:2px solid #3a3a55; border-radius:8px;
+    padding:9px 10px; margin-bottom:8px;
+  }
+  .mpShopCard.maxed { border-color:#5fd65f; }
+  .mpShopCard .ico { font-size:20px; width:30px; text-align:center; }
+  .mpShopCard .info { flex:1; min-width:0; }
+  .mpShopCard .nm { color:#fff; font-size:8px; margin-bottom:3px; }
+  .mpShopCard .ds { color:#9ab; font-size:7px; line-height:1.4; }
+  .mpShopCard .lvl { color:#7ad0ff; font-size:7px; margin-top:3px; }
+  .mpShopCard .buy { font-size:8px; padding:7px 10px; white-space:nowrap; }
+  .mpShopCard .buy:disabled { opacity:0.4; }
+  .plazaInvGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
+  /* ---- CAÍDO / REVIVIR / ESPECTAR ---- */
+  #downModal, #deadModal {
+    position:absolute; inset:0; z-index:80; background:rgba(6,0,0,0.72);
+    display:none; align-items:center; justify-content:center;
+  }
+  #downCard, #deadCard {
+    background:#1a1016; border:3px solid #ff6b6b; border-radius:12px;
+    padding:20px 24px; text-align:center; width:min(360px,90vw);
+  }
+  #downCard h3, #deadCard h3 { color:#ff8a8a; font-size:12px; margin-bottom:8px; }
+  #downCard p, #deadCard p { color:#cfb9c4; font-size:8px; line-height:1.6; margin-bottom:10px; }
+  #downBarTrack { height:12px; background:#2a1520; border:2px solid #6a2a3a; border-radius:6px; overflow:hidden; margin:8px 0; }
+  #downBarFill { height:100%; width:0%; background:#ffd76a; transition:width .12s linear; }
+  #downLeft { color:#ffd76a; font-size:9px; }
+  #reviveBtn {
+    position:absolute; bottom:30px; right:120px; width:86px; height:86px;
+    border-radius:12px; background:linear-gradient(135deg,#3fd66a,#1d8a3c);
+    border:3px solid #9cffb4; z-index:62; pointer-events:auto; touch-action:none;
+    display:none; align-items:center; justify-content:center; flex-direction:column;
+    font-family:'Press Start 2P',monospace; font-size:8px; color:#fff;
+    text-shadow:1px 1px 0 #000; box-shadow:0 0 18px rgba(80,255,140,0.45), inset 0 -3px 6px rgba(0,0,0,0.4);
+  }
+  #reviveBtn.active { background:linear-gradient(135deg,#1d8a3c,#0d5522); transform:translateY(2px); }
+  #reviveHint {
+    position:absolute; left:50%; bottom:132px; transform:translateX(-50%);
+    background:rgba(0,0,0,0.7); border:2px solid #5fd65f; border-radius:8px;
+    padding:6px 12px; font-size:8px; color:#bfffd0; z-index:61; display:none;
+  }
+  #spectateBar {
+    position:absolute; top:52px; left:50%; transform:translateX(-50%);
+    background:rgba(0,0,0,0.7); border:2px solid #7ad0ff; border-radius:8px;
+    padding:6px 12px; font-size:8px; color:#cfe3ff; z-index:61; display:none;
+    gap:8px; align-items:center;
+  }
   /* ---- CONFIG DE SALA ---- */
   .cfgRow { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
   .cfgBtn.sel { background:#2a6b2a; border-color:#5fd65f; color:#fff; }
@@ -682,12 +739,67 @@
     <div id="plazaTopBar">
       <div>🌐 PLAZA PÚBLICA · <span id="plazaStatus">conectando…</span></div>
       <div id="plazaCount">1 jugador</div>
-      <button class="smallBtn" id="plazaLeaveBtn">Salir</button>
+      <div>💰 <span id="plazaCoins">0</span></div>
+      <button class="smallBtn" id="plazaLeaveBtn">🚪 Salir del servidor</button>
     </div>
     <div id="plazaBottom">
-      <div id="plazaHint">Paráte en un cuadrito del piso (pegado a la pared) para entrar a esa sala · 4 salas · máx. 5 jugadores</div>
+      <div id="plazaHint">Pisá el círculo 🛒 TIENDA o 🎒 INVENTARIO · pisá un cuadrito del piso para entrar a esa sala · 4 salas · máx. 5 jugadores</div>
     </div>
   </div>
+
+  <!-- TIENDA MULTIJUGADOR (círculo de la plaza) -->
+  <div id="plazaShopModal" class="nicknameModal">
+    <div class="plazaPanelCard">
+      <h3>🛒 TIENDA MULTIJUGADOR</h3>
+      <div class="sub">Se paga SOLO con monedas 💰 (las que juntás jugando). Los bonus de EQUIPO se comparten con tus compañeros en la partida.</div>
+      <div class="coins">💰 <span id="plazaShopCoins">0</span> monedas</div>
+      <div id="plazaShopList"></div>
+      <button class="smallBtn" id="plazaShopClose">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- INVENTARIO RÁPIDO (círculo de la plaza) -->
+  <div id="plazaInvModal" class="nicknameModal">
+    <div class="plazaPanelCard">
+      <h3>🎒 INVENTARIO</h3>
+      <div class="sub">Tocá un ítem para equiparlo o desequiparlo sin salir del servidor.</div>
+      <div class="coins">🎽 Pasivos <span id="plazaInvPassiveCount">0/0</span> · 🔧 Mods <span id="plazaInvWeaponCount">0/0</span></div>
+      <div class="plazaInvGrid" id="plazaInvPassiveList"></div>
+      <div class="plazaInvGrid" id="plazaInvWeaponList"></div>
+      <button class="smallBtn" id="plazaInvClose">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- CAÍDO EN PARTIDA (multijugador) -->
+  <div id="downModal">
+    <div id="downCard">
+      <h3>💀 ESTÁS CAÍDO</h3>
+      <p>Un compañero puede revivirte manteniendo <b>E</b> (o el botón REVIVIR en el teléfono) cerca de vos.</p>
+      <div id="downBarTrack"><div id="downBarFill"></div></div>
+      <div id="downLeft">Sin revivir: 15s</div>
+      <button class="smallBtn" id="downLeaveBtn" style="margin-top:12px;background:#8b3a3a;">Salir de la partida</button>
+    </div>
+  </div>
+
+  <!-- MUERTO: ESPECTAR O SALIR -->
+  <div id="deadModal">
+    <div id="deadCard">
+      <h3>☠ TE ELIMINARON</h3>
+      <p id="deadInfo">Nadie te revivió a tiempo.</p>
+      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="smallBtn" id="deadSpectateBtn" style="background:#1d4a6b;">👁 Espectar</button>
+        <button class="smallBtn" id="deadLeaveBtn" style="background:#8b3a3a;">🚪 Salir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="spectateBar">
+    <span>👁 ESPECTANDO · <b id="spectateName">compañero</b></span>
+    <button class="smallBtn" id="spectateLeaveBtn" style="font-size:7px;padding:4px 8px;background:#8b3a3a;">Salir</button>
+  </div>
+
+  <button id="reviveBtn">🩹<div style="font-size:6px;margin-top:4px;">REVIVIR</div></button>
+  <div id="reviveHint">Mantené <b>E</b> para revivir a <b id="reviveName">compañero</b></div>
 
   <!-- CONFIG DE SALA -->
   <div id="salaConfigModal" class="nicknameModal">
@@ -948,6 +1060,7 @@ const meta = {
   passiveInv: [], weaponInv: [],
   equippedPassive: [], equippedWeapon: [],
   passiveCrateCost: 20, weaponCrateCost: 25,
+  mpShop: { speed: 0, revive: 0, hp: 0, teamHp: 0, dmg: 0 },
 };
 function xpToNext(level){ return Math.floor(80 + level*45); }
 function addXp(amount){
@@ -977,9 +1090,15 @@ function loadProfile(email){
   if(!storageAvailable) return false;
   try {
     const raw = localStorage.getItem(profileKey(email));
-    if(raw){ Object.assign(meta, JSON.parse(raw)); return true; }
+    if(raw){ Object.assign(meta, JSON.parse(raw)); ensureMpShop(); return true; }
   } catch(e){ console.warn('No se pudo cargar el progreso', e); }
   return false;
+}
+// La tienda multijugador se guarda dentro del perfil: si el perfil es viejo,
+// completamos las claves que falten para que nunca queden en undefined.
+function ensureMpShop(){
+  const def = { speed: 0, revive: 0, hp: 0, teamHp: 0, dmg: 0 };
+  meta.mpShop = Object.assign(def, (meta.mpShop && typeof meta.mpShop === 'object') ? meta.mpShop : {});
 }
 const CHEAT_EMAIL = 'jorgito19pera@gmail.com';
 function isCheatEmail(email){ return email && email.trim().toLowerCase() === CHEAT_EMAIL; }
@@ -1989,6 +2108,10 @@ function handleIncomingConnection(conn){
       }
       // Si la partida ya arrancó, entra directo al juego
       if(state === 'playing' || state === 'shop') conn.send({ type: 'startGame', diffId: currentDiff.id });
+      // Compartimos los bonus de equipo de la tienda con el que entra
+      if(conn.open){
+        try { conn.send({ type: 'teamPerk', speed: mpShopLvl('speed'), hp: mpShopLvl('teamHp'), n: myNickname || 'Jugador' }); } catch(e){}
+      }
     }
     conn.on('data', (data) => { handleGuestData(data, conn.peer); });
     conn.on('close', () => {
@@ -2038,6 +2161,27 @@ function handleGuestData(data, peerId){
       const conn = mpConnections[id].conn;
       if(conn && conn.open) conn.send(data);
     }
+  } else if(data.type === 'down'){
+    applyRemoteDown(peerId, data);
+    relayToGuests(peerId, data);
+  } else if(data.type === 'downDead'){
+    applyRemoteDead(peerId);
+    relayToGuests(peerId, data);
+  } else if(data.type === 'revive'){
+    applyRemoteRevive(peerId, data);
+    relayToGuests(peerId, data);
+  } else if(data.type === 'teamPerk'){
+    applyTeamPerk(data);
+    relayToGuests(peerId, data);
+  }
+}
+
+// Reenvía un mensaje de un invitado al resto (el host hace de puente)
+function relayToGuests(fromId, msg){
+  for(const id in mpConnections){
+    if(id === fromId) continue;
+    const conn = mpConnections[id].conn;
+    if(conn && conn.open){ try { conn.send(msg); } catch(e){} }
   }
 }
 
@@ -2102,21 +2246,34 @@ function handleHostData(data, hostId){
 
   } else if(data.type === 'takeDamage' && data.dmg){
     // El host envia dano que el jugador recibio de enemigos
+    if(iAmInactive()) return;
     player.hp -= data.dmg;
     player.hitFlash = 150;
     if(player.hp <= 0){
       player.hp = 0;
-      state = 'gameover';
-      playFailureSfx();
-      document.getElementById('bossBar').style.display = 'none';
-      document.getElementById('gameOverWave').textContent = `Caiste en la oleada ${wave}`;
-      document.getElementById('goMoney').textContent = runStats.money;
-      document.getElementById('goXp').textContent = Math.round(runStats.xp);
-      document.getElementById('goGems').textContent = Math.round(runStats.gems);
-      bankRunMoney(); refreshHubUI();
-      showScreen('gameOverPanel');
-      showMobileControls(false);
+      if(isMpMatch()){
+        enterDownState();
+      } else {
+        state = 'gameover';
+        playFailureSfx();
+        document.getElementById('bossBar').style.display = 'none';
+        document.getElementById('gameOverWave').textContent = `Caiste en la oleada ${wave}`;
+        document.getElementById('goMoney').textContent = runStats.money;
+        document.getElementById('goXp').textContent = Math.round(runStats.xp);
+        document.getElementById('goGems').textContent = Math.round(runStats.gems);
+        bankRunMoney(); refreshHubUI();
+        showScreen('gameOverPanel');
+        showMobileControls(false);
+      }
     }
+  } else if(data.type === 'down'){
+    applyRemoteDown(data.id || hostId, data);
+  } else if(data.type === 'downDead'){
+    applyRemoteDead(data.id || hostId);
+  } else if(data.type === 'revive'){
+    applyRemoteRevive(hostId, data);
+  } else if(data.type === 'teamPerk'){
+    applyTeamPerk(data);
   }
 }
 
@@ -2158,6 +2315,7 @@ function buildOwnState(){
     dir: player.facingDir, mv: player.moving ? 1 : 0, wf: player.walkFrame || 0,
     sh: player.shooting ? 1 : 0, ang: player.angle == null ? 0 : Math.round(player.angle * 100) / 100,
     n: myNickname || 'Jugador', o: isOwnerAccount() ? 1 : 0,
+    dwn: (downState || player.dead) ? 1 : 0,
     b, tu
   };
 }
@@ -2224,6 +2382,7 @@ function applyRemoteState(data){
   op.walkFrame = data.wf || 0;
   op.shooting = !!data.sh;
   op.angle = data.ang || 0;
+  op.down = !!data.dwn;
   op.bul = (data.b || []).map(a => ({ x: a[0], y: a[1], vx: a[2], vy: a[3], r: a[4], source: a[5] ? 'turret' : 'player' }));
   op.tur = data.tu ? { x: data.tu[0], y: data.tu[1], hp: data.tu[2], maxHp: data.tu[3], r: data.tu[4] } : null;
   op.t = performance.now();
@@ -2467,6 +2626,13 @@ function leaveRoom(){
   if(mpPeer){ mpPeer.destroy(); mpPeer = null; }
   document.getElementById('roomInfo').innerHTML = '';
   document.getElementById('roomInfo').style.display = 'none';
+  downState = null; player.dead = false; spectateId = null;
+  reviveTarget = null; reviveProg = 0; reviveHold = false;
+  el('downModal').style.display = 'none';
+  el('deadModal').style.display = 'none';
+  el('spectateBar').style.display = 'none';
+  el('reviveBtn').style.display = 'none';
+  el('reviveHint').style.display = 'none';
   hideMpHuds();
   privateRoom = null;
   if(state === 'lobby') returnToHub();
@@ -2859,7 +3025,11 @@ function returnToHub(){
   showScreen('hub');
   refreshHubUI();
 }
-function hideMpHuds(){ showEl('lobbyHud', false); showEl('plazaHud', false); }
+function hideMpHuds(){
+  showEl('lobbyHud', false);
+  showEl('plazaHud', false);
+  if(plazaPanel) hidePlazaPanels();
+}
 // Entrar a la plaza pública (botón del hub)
 function goPublicPlaza(){
   if(!myNickname){ alert('Necesitas un apodo primero.'); return; }
@@ -3078,6 +3248,8 @@ function renderPlazaUI(){
   if(st) st.textContent = plazaNotice ? plazaNotice : (plazaRole === 'host' ? 'anfitrión' : plazaRole === 'guest' ? 'conectado' : 'sin conexión');
   const c = el('plazaCount');
   if(c) c.textContent = plazaTotal + '/' + PLAZA_MAX_PLAYERS + ' jugadores';
+  const coins = el('plazaCoins');
+  if(coins) coins.textContent = meta.bankMoney.toLocaleString();
 }
 // ---------- Modal de configuración de sala ----------
 function renderSalaConfig(){
@@ -3193,9 +3365,17 @@ function smoothSalaAvatars(dt){
 function updateLobby(dt){ smoothSalaAvatars(dt); moveAvatar(dt, { w: SALA_W, h: SALA_H, top: SALA_WALL_H }); }
 function updatePlaza(dt){
   smoothSalaAvatars(dt);
+  if(plazaPanel) return;   // con la tienda o el inventario abiertos no te movés
   moveAvatar(dt, { w: PLAZA_W, h: PLAZA_H, top: PLAZA_WALL_H });
+  const now = performance.now();
+  // Círculos del piso: al pararte adentro se abre la tienda o el inventario
+  for(const pt of PLAZA_PORTALS){
+    if(Math.hypot(player.x - pt.x, player.y - pt.y) < PLAZA_PORTAL_R * 0.78){
+      if(now > plazaPortalGuard){ openPlazaPanel(pt.id); return; }
+    }
+  }
   // Al pisar un cuadrito del piso te manda a esa salita
-  if(performance.now() < plazaEnterGuard) return;
+  if(now < plazaEnterGuard) return;
   for(let i = 0; i < PUBLIC_ROOMS; i++){
     const s = plazaSquareRect(i);
     if(player.x > s.x && player.x < s.x + s.w && player.y > s.y && player.y < s.y + s.h){
@@ -3393,6 +3573,7 @@ function drawPlaza(){
     }
   }
   // Cartel de la plaza
+  drawPlazaPortals();
   ctx.textAlign = 'center';
   ctx.font = 'bold 13px monospace';
   ctx.fillStyle = '#ffd76a';
@@ -3456,6 +3637,432 @@ el('plazaLeaveBtn').onclick = () => {
   returnToHub();
 };
 el('goPublicBtn').onclick = () => { if(!requireMultiplayerAccount()) return; goPublicPlaza(); };
+
+// ========================================================
+// PLAZA: CÍRCULOS DE TIENDA / INVENTARIO + REVIVIR EN MP
+// ========================================================
+const PLAZA_PORTAL_R = 120;
+const PLAZA_PORTALS = [
+  { id:'shop', label:'TIENDA',     icon:'🛒', color:'#ffd76a', x: PLAZA_W/2 - 360, y: PLAZA_WALL_H + 340 },
+  { id:'inv',  label:'INVENTARIO', icon:'🎒', color:'#7ad0ff', x: PLAZA_W/2 + 360, y: PLAZA_WALL_H + 340 }
+];
+let plazaPanel = null;          // null | 'shop' | 'inv'
+let plazaPortalGuard = 0;       // evita que el panel se reabra al cerrarlo
+
+// ---------- Tienda multijugador: SOLO monedas ----------
+const MP_SHOP_ITEMS = [
+  { id:'speed',  icon:'⚡', name:'Botas de equipo',    desc:'+8% de velocidad para todo el equipo', max:5, base:2000, mult:1.7, team:true },
+  { id:'teamHp', icon:'💚', name:'Vida de equipo',     desc:'+10 de vida máxima para todo el equipo', max:4, base:2600, mult:1.7, team:true },
+  { id:'hp',     icon:'❤',  name:'Vida propia',        desc:'+15 de vida máxima para vos', max:5, base:1600, mult:1.6, team:false },
+  { id:'revive', icon:'🩹', name:'Revivir veloz',      desc:'Revivís compañeros 25% más rápido por nivel', max:4, base:2400, mult:1.7, team:false },
+  { id:'dmg',    icon:'🗡', name:'Munición reforzada', desc:'+5% de daño en partida', max:5, base:2200, mult:1.6, team:false },
+];
+function mpShopLvl(id){ ensureMpShop(); return Math.max(0, meta.mpShop[id] | 0); }
+function mpShopCost(item){ return Math.round(item.base * Math.pow(item.mult, mpShopLvl(item.id))); }
+
+function renderPlazaShop(){
+  const wrap = el('plazaShopList');
+  const coins = el('plazaShopCoins');
+  if(coins) coins.textContent = meta.bankMoney.toLocaleString();
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  MP_SHOP_ITEMS.forEach(item => {
+    const lvl = mpShopLvl(item.id);
+    const maxed = lvl >= item.max;
+    const cost = mpShopCost(item);
+    const card = document.createElement('div');
+    card.className = 'mpShopCard' + (maxed ? ' maxed' : '');
+    card.innerHTML = '<div class="ico">' + item.icon + '</div>' +
+      '<div class="info"><div class="nm">' + item.name + (item.team ? ' · EQUIPO' : '') + '</div>' +
+      '<div class="ds">' + item.desc + '</div>' +
+      '<div class="lvl">Nivel ' + lvl + '/' + item.max + '</div></div>';
+    const btn = document.createElement('button');
+    btn.className = 'smallBtn buy';
+    btn.textContent = maxed ? 'MÁX' : ('💰 ' + cost.toLocaleString());
+    btn.disabled = maxed || meta.bankMoney < cost;
+    btn.onclick = () => buyMpShopItem(item.id);
+    card.appendChild(btn);
+    wrap.appendChild(card);
+  });
+}
+
+function buyMpShopItem(id){
+  const item = MP_SHOP_ITEMS.find(i => i.id === id);
+  if(!item) return;
+  const lvl = mpShopLvl(id);
+  if(lvl >= item.max) return;
+  const cost = mpShopCost(item);
+  if(meta.bankMoney < cost){
+    toast('Te faltan monedas: necesitás 💰' + cost.toLocaleString());
+    return;
+  }
+  meta.bankMoney -= cost;
+  meta.mpShop[id] = lvl + 1;
+  saveProfile();
+  playBtnSfx();
+  if(item.team) shareTeamPerks();
+  refreshHubUI();
+  renderPlazaShop();
+  toast('✅ ' + item.name + ' · nivel ' + (lvl + 1));
+}
+
+function renderPlazaInv(){
+  const pw = el('plazaInvPassiveList'), ww = el('plazaInvWeaponList');
+  if(!pw || !ww) return;
+  const pc = el('plazaInvPassiveCount'), wc = el('plazaInvWeaponCount');
+  if(pc) pc.textContent = meta.equippedPassive.length + '/' + meta.passiveSlotsMax;
+  if(wc) wc.textContent = meta.equippedWeapon.length + '/' + meta.weaponSlotsMax;
+  pw.innerHTML = ''; ww.innerHTML = '';
+  const makeCard = (item, equipped, onClick) => {
+    const r = RARITIES[item.rarityIdx] || RARITIES[0];
+    const d = document.createElement('div');
+    d.className = 'invItem' + (equipped ? ' equipped' : '');
+    d.style.borderColor = r.color;
+    d.style.color = r.color;
+    d.innerHTML = '<div class="rname">' + item.label + '</div>' +
+      '<div class="rval">+' + item.value + item.unit + '</div>' +
+      '<div class="eqTag">' + (equipped ? 'EQUIPADO' : r.name) + '</div>';
+    d.onclick = onClick;
+    return d;
+  };
+  if(!meta.passiveInv.length) pw.innerHTML = '<div class="sub">No tenés pasivos todavía: abrí cajas en el lobby.</div>';
+  if(!meta.weaponInv.length) ww.innerHTML = '<div class="sub">No tenés mods todavía: abrí cajas en el lobby.</div>';
+  meta.passiveInv.forEach(item => {
+    const eq = meta.equippedPassive.includes(item.uid);
+    pw.appendChild(makeCard(item, eq, () => {
+      if(eq){
+        meta.equippedPassive = meta.equippedPassive.filter(u => u !== item.uid);
+      } else {
+        if(meta.equippedPassive.length >= meta.passiveSlotsMax){ toast('Sin ranuras libres de pasivo'); return; }
+        meta.equippedPassive.push(item.uid);
+      }
+      saveProfile();
+      renderPlazaInv();
+      playBtnSfx();
+    }));
+  });
+  meta.weaponInv.forEach(item => {
+    const eq = meta.equippedWeapon.includes(item.uid);
+    ww.appendChild(makeCard(item, eq, () => {
+      if(eq){
+        meta.equippedWeapon = meta.equippedWeapon.filter(u => u !== item.uid);
+      } else {
+        if(meta.equippedWeapon.length >= meta.weaponSlotsMax){ toast('Sin ranuras libres de mod'); return; }
+        meta.equippedWeapon.push(item.uid);
+      }
+      saveProfile();
+      renderPlazaInv();
+      playBtnSfx();
+    }));
+  });
+}
+
+function openPlazaPanel(kind){
+  if(kind === 'shop'){
+    plazaPanel = 'shop';
+    renderPlazaShop();
+    el('plazaShopModal').style.display = 'flex';
+  } else {
+    plazaPanel = 'inv';
+    renderPlazaInv();
+    el('plazaInvModal').style.display = 'flex';
+  }
+  player.moving = false;
+  playBtnSfx();
+}
+function hidePlazaPanels(){
+  plazaPanel = null;
+  el('plazaShopModal').style.display = 'none';
+  el('plazaInvModal').style.display = 'none';
+}
+function closePlazaPanel(){
+  const pt = PLAZA_PORTALS.find(p => p.id === plazaPanel);
+  hidePlazaPanels();
+  if(pt){
+    // Te saca del círculo para que no se vuelva a abrir apenas cerrás
+    let a = Math.atan2(player.y - pt.y, player.x - pt.x);
+    if(!isFinite(a)) a = 0;
+    player.x = Math.max(player.r, Math.min(PLAZA_W - player.r, pt.x + Math.cos(a) * (PLAZA_PORTAL_R + 45)));
+    player.y = Math.max(PLAZA_WALL_H + player.r * 0.5, Math.min(PLAZA_H - player.r, pt.y + Math.sin(a) * (PLAZA_PORTAL_R + 45)));
+  }
+  plazaPortalGuard = performance.now() + 900;
+}
+function drawPlazaPortals(){
+  const t = performance.now();
+  for(const pt of PLAZA_PORTALS){
+    const pulse = 0.5 + 0.5 * Math.sin(t / 500);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, PLAZA_PORTAL_R, 0, Math.PI * 2);
+    ctx.fillStyle = (pt.id === 'shop') ? 'rgba(255,215,106,0.12)' : 'rgba(122,208,255,0.12)';
+    ctx.fill();
+    ctx.globalAlpha = 0.55 + pulse * 0.45;
+    ctx.lineWidth = 5; ctx.strokeStyle = pt.color; ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([12, 9]);
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, PLAZA_PORTAL_R - 20, 0, Math.PI * 2);
+    ctx.lineWidth = 2; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 34px monospace';
+    ctx.fillText(pt.icon, pt.x, pt.y + 6);
+    ctx.font = 'bold 13px monospace';
+    ctx.fillStyle = pt.color;
+    ctx.fillText(pt.label, pt.x, pt.y + 34);
+    ctx.font = 'bold 10px monospace';
+    ctx.fillStyle = '#cfe3ff';
+    ctx.fillText('parate acá', pt.x, pt.y + 52);
+    ctx.restore();
+  }
+}
+function exitPublicServer(){
+  hidePlazaPanels();
+  plazaShutdown();
+  plazaOfflineReset();
+  mySalaRoom = 0;
+  hideMpHuds();
+  toast('Saliste del servidor público');
+  returnToHub();
+}
+el('plazaShopClose').onclick = closePlazaPanel;
+el('plazaInvClose').onclick = closePlazaPanel;
+el('plazaShopModal').addEventListener('click', e => { if(e.target.id === 'plazaShopModal') closePlazaPanel(); });
+el('plazaInvModal').addEventListener('click', e => { if(e.target.id === 'plazaInvModal') closePlazaPanel(); });
+el('plazaLeaveBtn').onclick = exitPublicServer;
+
+// ---------- Revivir en multijugador ----------
+const MP_DOWN_SECONDS = 15;
+let downState = null;       // { until, p, by }
+let reviveHold = false;     // botón táctil mantenido
+let reviveTarget = null;    // peerId del compañero caído más cercano
+let reviveProg = 0;         // 0..1 hacia ese compañero
+let reviveLastSend = 0;
+let spectateId = null;
+let mpTeamPerks = { speed: 0, hp: 0 };
+let runBaseStats = null;
+
+function isMpMatch(){ return !!mpRoomCode; }
+function iAmInactive(){ return !!downState || !!player.dead; }
+function reviveSeconds(){ return Math.max(1.1, 2.6 / (1 + mpShopLvl('revive') * 0.25)); }
+
+function applyMpPerks(){
+  if(!runBaseStats) return;
+  const sp = Math.max(mpShopLvl('speed'), mpTeamPerks.speed | 0);
+  const thp = Math.max(mpShopLvl('teamHp'), mpTeamPerks.hp | 0);
+  const newMax = Math.round(runBaseStats.maxHp + mpShopLvl('hp') * 15 + thp * 10);
+  const grew = newMax - player.maxHp;
+  player.maxHp = newMax;
+  if(grew > 0) player.hp += grew;
+  player.hp = Math.max(0, Math.min(player.hp, player.maxHp));
+  player.speed = runBaseStats.speed * (1 + sp * 0.08);
+  player.damage = Math.round(runBaseStats.damage * (1 + mpShopLvl('dmg') * 0.05));
+}
+function shareTeamPerks(){
+  if(!mpRoomCode) return;
+  broadcastToAll({ type:'teamPerk', speed: mpShopLvl('speed'), hp: mpShopLvl('teamHp'), n: myNickname || 'Jugador' });
+}
+function applyTeamPerk(d){
+  if(!d) return;
+  const sp = Math.max(0, d.speed | 0);
+  const hp = Math.max(0, d.hp | 0);
+  const changed = sp > (mpTeamPerks.speed | 0) || hp > (mpTeamPerks.hp | 0);
+  mpTeamPerks.speed = Math.max(mpTeamPerks.speed | 0, sp);
+  mpTeamPerks.hp = Math.max(mpTeamPerks.hp | 0, hp);
+  if(changed && runBaseStats && (state === 'playing' || state === 'shop') && !iAmInactive()) applyMpPerks();
+}
+
+function shareDown(on){
+  if(!mpRoomCode) return;
+  broadcastToAll({ type:'down', id: mpMyId, on: on ? 1 : 0, x: Math.round(player.x), y: Math.round(player.y), n: myNickname || 'Jugador' });
+}
+function enterDownState(){
+  if(downState || player.dead) return;
+  player.hp = 0;
+  downState = { until: performance.now() + MP_DOWN_SECONDS * 1000, p: 0, by: '' };
+  shareDown(true);
+  showMobileControls(false);
+  el('downModal').style.display = 'flex';
+  updateDownUI();
+}
+function updateDownUI(){
+  if(!downState) return;
+  const left = Math.max(0, Math.ceil((downState.until - performance.now()) / 1000));
+  const p = Math.max(0, Math.min(1, downState.p || 0));
+  const bar = el('downBarFill');
+  if(bar){
+    bar.style.width = Math.round(p * 100) + '%';
+    bar.style.background = p >= 1 ? '#5fd65f' : (p > 0 ? 'linear-gradient(90deg,#ffd76a,#9cff9c)' : '#ffd76a');
+  }
+  const label = el('downLeft');
+  if(label){
+    label.textContent = (p > 0 && downState.by)
+      ? ('🩹 ' + downState.by + ' te está reviviendo… ' + Math.round(p * 100) + '%')
+      : ('Sin revivir: ' + left + 's');
+  }
+}
+function reviveLocal(){
+  if(!downState) return;
+  downState = null;
+  player.hp = Math.max(35, Math.round(player.maxHp * 0.55));
+  player.hitFlash = 250;
+  el('downModal').style.display = 'none';
+  el('reviveBtn').style.display = 'none';
+  el('reviveHint').style.display = 'none';
+  showMobileControls(true);
+  showMsg('❤ ¡Te revivieron!', 1600);
+  shareDown(false);
+}
+function diePermanently(){
+  if(player.dead) return;
+  downState = null;
+  player.dead = true;
+  el('downModal').style.display = 'none';
+  showMobileControls(false);
+  shareDown(false);
+  if(mpRoomCode) broadcastToAll({ type:'downDead', id: mpMyId, n: myNickname || 'Jugador' });
+  bankRunMoney(); refreshHubUI();
+  const teammatesAlive = Object.keys(mpOtherPlayers).some(id => mpOtherPlayers[id] && !mpOtherPlayers[id].down);
+  if(!teammatesAlive){
+    // No hay a quién espectar ni quién te reviva: termina la partida
+    // (dejamos player.dead en true para que no se reentre en estado caído)
+    state = 'gameover';
+    playFailureSfx();
+    el('bossBar').style.display = 'none';
+    el('gameOverWave').textContent = `Caíste en la oleada ${wave} (multijugador)`;
+    el('goMoney').textContent = runStats.money;
+    el('goXp').textContent = Math.round(runStats.xp);
+    el('goGems').textContent = Math.round(runStats.gems);
+    showScreen('gameOverPanel');
+    return;
+  }
+  el('deadInfo').textContent = 'Nadie te revivió a tiempo · oleada ' + wave + '. Podés espectar a tus compañeros.';
+  el('deadModal').style.display = 'flex';
+}
+function startSpectate(){
+  const alive = Object.keys(mpOtherPlayers).filter(id => mpOtherPlayers[id] && !mpOtherPlayers[id].down && mpOtherPlayers[id].x != null);
+  spectateId = alive[0] || null;
+  el('deadModal').style.display = 'none';
+  el('spectateBar').style.display = 'flex';
+  el('spectateName').textContent = spectateId ? (mpOtherPlayers[spectateId].nickname || 'compañero') : 'esperando…';
+}
+function stopSpectate(){
+  spectateId = null;
+  el('spectateBar').style.display = 'none';
+}
+function exitMatchToHub(){
+  el('downModal').style.display = 'none';
+  el('deadModal').style.display = 'none';
+  stopSpectate();
+  downState = null;
+  player.dead = false;
+  el('reviveBtn').style.display = 'none';
+  el('reviveHint').style.display = 'none';
+  if(mpRoomCode) leaveRoom();
+  hideMpHuds();
+  returnToHub();
+}
+function sendRevive(target, p){
+  if(!mpRoomCode || !target) return;
+  broadcastToAll({ type:'revive', target: String(target), p: Math.round(p * 100) / 100, n: myNickname || 'Jugador' });
+}
+function updateMpRevive(dt){
+  if(downState){
+    if(performance.now() >= downState.until){ diePermanently(); return; }
+    updateDownUI();
+  }
+  if(iAmInactive() || !mpRoomCode){
+    reviveTarget = null; reviveProg = 0;
+    el('reviveBtn').style.display = 'none';
+    el('reviveHint').style.display = 'none';
+    return;
+  }
+  // Compañero caído más cercano
+  let best = null, bestD = Infinity;
+  for(const id in mpOtherPlayers){
+    const o = mpOtherPlayers[id];
+    if(!o || !o.down || o.x == null) continue;
+    const d = Math.hypot(player.x - o.x, player.y - o.y);
+    if(d < 150 && d < bestD){ bestD = d; best = id; }
+  }
+  if(best !== reviveTarget){ reviveTarget = best; reviveProg = 0; }
+  const wantBtn = !!reviveTarget && ('ontouchstart' in window);
+  el('reviveBtn').style.display = wantBtn ? 'flex' : 'none';
+  if(reviveTarget){
+    const o = mpOtherPlayers[reviveTarget];
+    el('reviveName').textContent = o.nickname || 'compañero';
+    el('reviveHint').style.display = 'block';
+  } else {
+    el('reviveHint').style.display = 'none';
+  }
+  if(!reviveTarget){ reviveProg = 0; return; }
+  const holding = !!keys['e'] || reviveHold;
+  if(holding){
+    reviveProg = Math.min(1, reviveProg + dt / (reviveSeconds() * 1000));
+    const now = performance.now();
+    if(now - reviveLastSend > 90 || reviveProg >= 1){
+      reviveLastSend = now;
+      sendRevive(reviveTarget, reviveProg);
+    }
+    if(reviveProg >= 1){
+      const nm = mpOtherPlayers[reviveTarget] ? (mpOtherPlayers[reviveTarget].nickname || 'tu compañero') : 'tu compañero';
+      showMsg('❤ Reviviste a ' + nm, 1600);
+      reviveTarget = null;
+      reviveProg = 0;
+    }
+  } else if(reviveProg > 0){
+    reviveProg = 0;
+    sendRevive(reviveTarget, 0);
+  }
+}
+function applyRemoteDown(id, d){
+  if(!d) return;
+  const key = String(id);
+  if(key === String(mpMyId)) return;
+  let op = mpOtherPlayers[key];
+  if(!op) op = mpOtherPlayers[key] = { dx: d.x, dy: d.y, hp: 0, maxHp: 100, bul: [], tur: null, nickname: d.n || 'Jugador' };
+  op.down = !!d.on;
+  op.reviveP = 0;
+  if(d.n) op.nickname = d.n;
+  if(typeof d.x === 'number'){ op.x = d.x; op.y = d.y; op.dx = d.x; op.dy = d.y; }
+}
+function applyRemoteRevive(fromId, d){
+  if(!d) return;
+  const target = String(d.target || fromId);
+  if(target === String(mpMyId)){
+    if(!downState) return;
+    downState.p = Math.max(0, Math.min(1, Number(d.p) || 0));
+    downState.by = d.n || '';
+    if(downState.p >= 1) reviveLocal();
+    else updateDownUI();
+    return;
+  }
+  const op = mpOtherPlayers[target];
+  if(op){
+    op.reviveP = Math.max(0, Math.min(1, Number(d.p) || 0));
+    op.reviveBy = d.n || '';
+  }
+}
+function applyRemoteDead(id){
+  const op = mpOtherPlayers[String(id)];
+  if(op){ op.down = false; op.reviveP = 0; op.hp = 0; }
+}
+
+// Botón táctil de revivir: hay que mantenerlo apretado
+(function(){
+  const b = el('reviveBtn');
+  if(!b) return;
+  const start = e => { e.preventDefault(); reviveHold = true; b.classList.add('active'); };
+  const stop = () => { reviveHold = false; b.classList.remove('active'); };
+  b.addEventListener('touchstart', start, { passive:false });
+  b.addEventListener('touchend', stop);
+  b.addEventListener('touchcancel', stop);
+  b.addEventListener('mousedown', start);
+  b.addEventListener('mouseup', stop);
+  b.addEventListener('mouseleave', stop);
+})();
+el('downLeaveBtn').onclick = exitMatchToHub;
+el('deadLeaveBtn').onclick = exitMatchToHub;
+el('deadSpectateBtn').onclick = startSpectate;
+el('spectateLeaveBtn').onclick = exitMatchToHub;
 
 // ---------- Hook al login para actualizar UI ----------
 const origLoginConfirm = document.getElementById('loginConfirmBtn').onclick;
@@ -3699,6 +4306,7 @@ document.getElementById('buyDmgUpg').onclick = () => {
 };
 
 function refreshHubUI(){
+  ensureMpShop();
   document.getElementById('hubLevel').textContent = meta.level;
   document.getElementById('hubBankMoney').textContent = meta.bankMoney.toLocaleString();
   document.getElementById('hubGems').textContent = meta.gems;
@@ -3980,6 +4588,29 @@ function startRun(){
   syncEnemies = {}; remoteTurrets = {}; pendingHits = [];
   costs = {...costs0};
   runStats = {money:0, xp:0, gems:0};
+  // --- Multijugador: revivir y bonus de la tienda de monedas ---
+  // Deshacemos los bonus del run anterior para que no se acumulen entre partidas
+  if(runBaseStats){
+    player.maxHp = runBaseStats.maxHp;
+    player.speed = runBaseStats.speed;
+    player.damage = runBaseStats.damage;
+  }
+  downState = null;
+  player.dead = false;
+  spectateId = null;
+  reviveTarget = null; reviveProg = 0; reviveHold = false;
+  el('downModal').style.display = 'none';
+  el('deadModal').style.display = 'none';
+  el('spectateBar').style.display = 'none';
+  el('reviveBtn').style.display = 'none';
+  el('reviveHint').style.display = 'none';
+  mpTeamPerks = { speed: 0, hp: 0 };
+  runBaseStats = { maxHp: player.maxHp, speed: player.speed, damage: player.damage };
+  applyMpPerks();
+  player.hp = player.maxHp;
+  player.hitFlash = 0;
+  setTimeout(shareTeamPerks, 900);
+  setTimeout(shareTeamPerks, 2400);
   // Reset torreta
   turret = null; turretCooldown = 0; turretLastShot = 0;
   // Mostrar/ocultar botón de torreta
@@ -3995,6 +4626,7 @@ function startRun(){
 // --- Colocar torreta ---
 function placeTurret(){
   if(!hasTurretItem) return;
+  if(iAmInactive()) return;
   if(turret) return; // Ya hay una activa
   if(turretCooldown > 0) return; // En cooldown
   turret = {
@@ -4047,7 +4679,7 @@ function closePauseMenu(){
 window.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   if(e.key===' ') e.preventDefault();
-  if(e.key.toLowerCase()==='q' && state==='playing') placeTurret();
+  if(e.key.toLowerCase()==='q' && state==='playing' && !iAmInactive()) placeTurret();
   if(e.key.toLowerCase()==='f') toggleFullscreen();
   // Menu pausado con ESC (solo solitario)
   if(e.key === 'Escape' && state === 'playing' && !mpRoomCode){
@@ -4317,6 +4949,15 @@ function update(dt, t){
   if(state === 'plaza'){ updatePlaza(dt); sendPlazaPos(); return; }
   if(state !== 'playing') return;
 
+  const inactive = iAmInactive();
+  updateMpRevive(dt);
+  if(player.dead && (!spectateId || !mpOtherPlayers[spectateId])){
+    const aliveIds = Object.keys(mpOtherPlayers).filter(id => mpOtherPlayers[id] && !mpOtherPlayers[id].down && mpOtherPlayers[id].x != null);
+    spectateId = aliveIds[0] || null;
+    const sName = el('spectateName');
+    if(sName) sName.textContent = spectateId ? (mpOtherPlayers[spectateId].nickname || 'compañero') : 'esperando…';
+  }
+
   let dx=0, dy=0;
   if(keys['w']||keys['arrowup']) dy -= 1;
   if(keys['s']||keys['arrowdown']) dy += 1;
@@ -4328,6 +4969,7 @@ function update(dt, t){
     const mdy = window.mobileInput.dy();
     if(Math.abs(mdx)>0.1 || Math.abs(mdy)>0.1){ dx += mdx; dy += mdy; }
   }
+  if(inactive){ dx = 0; dy = 0; }
   const len = Math.hypot(dx,dy) || 1;
   player.moving = (dx!==0||dy!==0);
   const frameScale = dt / 16.667; // escala de tiempo normalizada a 60fps
@@ -4359,12 +5001,21 @@ function update(dt, t){
   player.aimAngle = player.facing;
 
   // Cámara: si hay intro de boss,Animación cinematográfica
+  // Si estoy muerto, la cámara sigue al compañero que estoy espectando
+  let camX = player.x, camY = player.y;
+  if(player.dead && spectateId && mpOtherPlayers[spectateId]){
+    const spOp = mpOtherPlayers[spectateId];
+    if(spOp.x != null){
+      camX = (spOp.dx != null ? spOp.dx : spOp.x);
+      camY = (spOp.dy != null ? spOp.dy : spOp.y);
+    }
+  }
   if(bossIntroActive && bossIntroTarget){
     if(bossIntroPhase === 'player'){
       // Fase 1: cámara enfocada en el personaje (1 segundo)
       bossIntroZoom = ZOOM;
-      camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
-      camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
+      camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), camX));
+      camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), camY));
     } else {
       // Fase 2: pan lento hacia el boss
       bossIntroZoom = Math.max(2.0, bossIntroZoom - dt*0.0006);
@@ -4374,11 +5025,11 @@ function update(dt, t){
   } else {
     bossIntroZoom = ZOOM;
     bossIntroPhase = 'player';
-    camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), player.x));
-    camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), player.y));
+    camera.x = Math.max(W/(2*ZOOM), Math.min(WORLD_W - W/(2*ZOOM), camX));
+    camera.y = Math.max(H/(2*ZOOM), Math.min(WORLD_H - H/(2*ZOOM), camY));
   }
 
-  if(mouse.down || keys[' ']) tryShoot(t);
+  if(!inactive && (mouse.down || keys[' '])) tryShoot(t);
   if(player.hitFlash > 0) player.hitFlash -= dt;
   if(shake > 0) shake -= dt;
 
@@ -4401,10 +5052,10 @@ function update(dt, t){
     if(cdTxt) cdTxt.textContent = 'Activa';
   }
 
-  if(player.regen > 0 && player.hp < player.maxHp){
+  if(!inactive && player.regen > 0 && player.hp < player.maxHp){
     player.hp = Math.min(player.maxHp, player.hp + player.regen*(dt/1000));
   }
-  if(t < player.poisonUntil){
+  if(!inactive && t < player.poisonUntil){
     player.hp -= player.poisonDps * (dt/1000);
   }
 
@@ -4424,7 +5075,7 @@ function update(dt, t){
     }
 
   // Recopilar todos los jugadores vivos (host + guests)
-  const allPlayers = [{ x: player.x, y: player.y, r: player.r, isLocal: true, hp: player.hp }];
+  const allPlayers = [{ x: player.x, y: player.y, r: player.r, isLocal: true, hp: player.hp, down: inactive }];
   // Añadir torreta como "jugador" para que los enemigos la persigan
   if(turret){
     allPlayers.push({ x: turret.x, y: turret.y, r: turret.r, isLocal: false, isTurret: true, hp: turret.hp, peerId: '__turret__' });
@@ -4514,7 +5165,7 @@ function update(dt, t){
             const dmg = en.dmg * 1.4;
             if(pl.isTurret){
               if(turret){ turret.hp -= dmg; if(turret.hp <= 0) destroyTurret(); }
-            } else if(pl.isLocal){ player.hp -= dmg; player.hitFlash = 200; player.x += en.dashDirX*10; player.y += en.dashDirY*10; }
+            } else if(pl.isLocal && !pl.down){ player.hp -= dmg; player.hitFlash = 200; player.x += en.dashDirX*10; player.y += en.dashDirY*10; }
             else { sendDamageToGuest(pl.peerId, dmg); }
             en.dashHitSet.add(pl.peerId||'local');
           }
@@ -4548,7 +5199,7 @@ function update(dt, t){
             if(pl.isTurret){
               if(pl.remoteTurret){ sendTurretDamage(pl.remoteTurret, dmgAmount); }
               else if(turret){ turret.hp -= dmgAmount; if(turret.hp <= 0){ destroyTurret(); } }
-            } else if(pl.isLocal){ player.hp -= dmgAmount; player.hitFlash = 150; }
+            } else if(pl.isLocal && !pl.down){ player.hp -= dmgAmount; player.hitFlash = 150; }
             else { sendDamageToGuest(pl.peerId, dmgAmount); }
             en.x -= (edx/elen)*2; en.y -= (edy/elen)*2;
             en.atkTimer = atkCD;
@@ -4566,7 +5217,7 @@ function update(dt, t){
         if(pl.isTurret){
           if(pl.remoteTurret){ sendTurretDamage(pl.remoteTurret, p.dmg); }
           else if(turret){ turret.hp -= p.dmg; if(turret.hp <= 0) destroyTurret(); }
-        } else if(pl.isLocal){ player.hp -= p.dmg; player.hitFlash = 150; player.poisonUntil = t+3000; player.poisonDps = 6; }
+        } else if(pl.isLocal && !pl.down){ player.hp -= p.dmg; player.hitFlash = 150; player.poisonUntil = t+3000; player.poisonDps = 6; }
         else { sendDamageToGuest(pl.peerId, p.dmg); }
         p.dead = true;
         spawnParticles(p.x,p.y,'#7be08a',10);
@@ -4674,17 +5325,21 @@ function update(dt, t){
     }
   }
 
-  if(player.hp <= 0){
-    state = 'gameover';
-    playFailureSfx();
-    document.getElementById('bossBar').style.display = 'none';
-    document.getElementById('gameOverWave').textContent = `Caíste en la oleada ${wave} (dificultad: ${currentDiff.name})`;
-    document.getElementById('goMoney').textContent = runStats.money;
-    document.getElementById('goXp').textContent = Math.round(runStats.xp);
-    document.getElementById('goGems').textContent = Math.round(runStats.gems);
-    bankRunMoney(); refreshHubUI();
-    showScreen('gameOverPanel');
-    showMobileControls(false);
+  if(player.hp <= 0 && !downState && !player.dead){
+    if(isMpMatch()){
+      enterDownState();
+    } else {
+      state = 'gameover';
+      playFailureSfx();
+      document.getElementById('bossBar').style.display = 'none';
+      document.getElementById('gameOverWave').textContent = `Caíste en la oleada ${wave} (dificultad: ${currentDiff.name})`;
+      document.getElementById('goMoney').textContent = runStats.money;
+      document.getElementById('goXp').textContent = Math.round(runStats.xp);
+      document.getElementById('goGems').textContent = Math.round(runStats.gems);
+      bankRunMoney(); refreshHubUI();
+      showScreen('gameOverPanel');
+      showMobileControls(false);
+    }
   }
 }
 
@@ -4946,6 +5601,18 @@ function draw(){
     ctx.fillText(myNickname, player.x, player.y - 50);
   }
 
+  // Si estoy caído (multijugador): aro rojo + barra de revivir
+  if(downState){
+    const bob = Math.sin(performance.now()/220) * 2;
+    ctx.strokeStyle = '#ff5c5c'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(player.x, player.y - 6 + bob, 40, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#ffb3b3'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('💀 CAÍDO', player.x, player.y - 72);
+    ctx.fillStyle = '#000'; ctx.fillRect(player.x - 34, player.y - 64, 68, 7);
+    ctx.fillStyle = (downState.p >= 1) ? '#5fd65f' : '#9cff9c';
+    ctx.fillRect(player.x - 34, player.y - 64, 68 * Math.min(1, downState.p || 0), 7);
+  }
+
   // --- Torretas de los demás jugadores (y sus balas) ---
   const turretSpriteImg = sprites.turretFront && sprites.turretFront.width ? sprites.turretFront : null;
   for(const peerId in mpOtherPlayers){
@@ -5049,6 +5716,22 @@ function draw(){
     ctx.fillRect(ox - 15, oy - 50, 30, 3);
     ctx.fillStyle = opHpPct > 0.5 ? '#5fd65f' : opHpPct > 0.25 ? '#ffd76a' : '#ff4444';
     ctx.fillRect(ox - 15, oy - 50, 30 * opHpPct, 3);
+    // Compañero caído: se puede revivir con E
+    if(op.down){
+      const dbob = Math.sin(performance.now()/220) * 2;
+      ctx.fillStyle = 'rgba(255,80,80,0.16)';
+      ctx.beginPath(); ctx.ellipse(ox, oy + 28, 42, 16, 0, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#ff5c5c'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(ox, oy - 6 + dbob, 36, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = '#ff9a9a'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('💀 REVIVIR [E]', ox, oy - 60);
+      const rp = Math.max(0, Math.min(1, op.reviveP || 0));
+      if(rp > 0){
+        ctx.fillStyle = '#000'; ctx.fillRect(ox - 30, oy - 52, 60, 6);
+        ctx.fillStyle = rp >= 1 ? '#5fd65f' : '#9cff9c';
+        ctx.fillRect(ox - 30, oy - 52, 60 * rp, 6);
+      }
+    }
   }
 
 
@@ -5188,16 +5871,16 @@ function openShop(){
   document.getElementById('turretBtn').style.display = 'none';
 }
 document.getElementById('buyDmg').onclick = () => {
-  if(money >= costs.dmg){ money -= costs.dmg; player.damage += 4; player.dmgUpgrades++; costs.dmg = Math.round(costs.dmg*1.4); refreshShopUI(); }
+  if(money >= costs.dmg){ money -= costs.dmg; player.damage += 4; if(runBaseStats) runBaseStats.damage += 4; player.dmgUpgrades++; costs.dmg = Math.round(costs.dmg*1.4); refreshShopUI(); }
 };
 document.getElementById('buyRate').onclick = () => {
   if(money >= costs.rate && player.fireRate > 120){ money -= costs.rate; player.fireRate = Math.max(120, player.fireRate-40); costs.rate = Math.round(costs.rate*1.4); refreshShopUI(); }
 };
 document.getElementById('buyHp').onclick = () => {
-  if(money >= costs.hp){ money -= costs.hp; player.maxHp += 20; player.hp = player.maxHp; costs.hp = Math.round(costs.hp*1.4); refreshShopUI(); }
+  if(money >= costs.hp){ money -= costs.hp; player.maxHp += 20; if(runBaseStats) runBaseStats.maxHp += 20; player.hp = player.maxHp; costs.hp = Math.round(costs.hp*1.4); refreshShopUI(); }
 };
 document.getElementById('buySpeed').onclick = () => {
-  if(money >= costs.speed){ money -= costs.speed; player.speed += 0.4; costs.speed = Math.round(costs.speed*1.4); refreshShopUI(); }
+  if(money >= costs.speed){ money -= costs.speed; player.speed += 0.4; if(runBaseStats) runBaseStats.speed += 0.4; costs.speed = Math.round(costs.speed*1.4); refreshShopUI(); }
 };
 document.getElementById('continueBtn').onclick = () => {
   shopEl.classList.remove('open');
